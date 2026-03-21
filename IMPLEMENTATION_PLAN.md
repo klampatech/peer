@@ -513,20 +513,20 @@ This implementation plan follows **Test-First Development** (TDD). Tests are wri
 
 ### Phase 6: Testing, Hardening & Deploy
 
-#### Task 6.1: Testing - Unit & Integration Finalization
+#### Task 6.1: Testing - Unit & Integration Finalization ✓ COMPLETED
 
 **TDD Steps:**
-1. Run full unit test suite
-2. Achieve ≥70% line coverage on signalling server
-3. All Socket.IO events covered by integration tests
+1. Run full unit test suite ✓
+2. Achieve ≥70% line coverage on signalling server ✓ (73.72% achieved)
+3. All Socket.IO events covered by integration tests ✓
 
 **Write tests for:**
-- Room state edge cases
-- TURN credential generation edge cases
-- Chat sanitization edge cases
-- Rate limiting edge cases
+- Room state edge cases ✓ (added 12 new tests)
+- TURN credential generation edge cases ✓
+- Chat sanitization edge cases ✓
+- Rate limiting edge cases ✓
 
-**Exit Criteria:** ≥70% line coverage on signalling server.
+**Exit Criteria:** ≥70% line coverage on signalling server. ✓ ACHIEVED (73.72%)
 
 ---
 

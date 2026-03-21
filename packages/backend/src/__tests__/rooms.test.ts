@@ -7,6 +7,10 @@ import {
   leaveRoom,
   deleteRoom,
   getAllRooms,
+  getPeersInRoom,
+  getPeer,
+  roomExists,
+  isPeerInRoom,
   type Room,
 } from '../rooms.js';
 
@@ -158,6 +162,116 @@ describe('Room Management', () => {
 
       const rooms = getAllRooms();
       expect(rooms.size).toBe(3);
+    });
+  });
+
+  describe('joinRoom edge cases', () => {
+    it('should return undefined when joining non-existent room', () => {
+      const result = joinRoom('non-existent-token' as Room['token'], uuidv4(), 'Test User');
+
+      expect(result).toBeUndefined();
+    });
+  });
+
+  describe('leaveRoom edge cases', () => {
+    it('should return undefined when leaving non-existent room', () => {
+      const result = leaveRoom('non-existent-token' as Room['token'], uuidv4());
+
+      expect(result).toBeUndefined();
+    });
+  });
+
+  describe('getPeersInRoom', () => {
+    it('should return empty array for non-existent room', () => {
+      const peers = getPeersInRoom('non-existent-token' as Room['token']);
+
+      expect(peers).toEqual([]);
+    });
+
+    it('should return all peers in room', () => {
+      const room = createRoom();
+      const peer1Id = uuidv4();
+      const peer2Id = uuidv4();
+
+      joinRoom(room.token, peer1Id, 'User 1');
+      joinRoom(room.token, peer2Id, 'User 2');
+
+      const peers = getPeersInRoom(room.token);
+
+      expect(peers.length).toBe(2);
+      expect(peers.some(p => p.id === peer1Id)).toBe(true);
+      expect(peers.some(p => p.id === peer2Id)).toBe(true);
+    });
+  });
+
+  describe('getPeer', () => {
+    it('should return undefined for non-existent room', () => {
+      const peer = getPeer('non-existent-token' as Room['token'], uuidv4());
+
+      expect(peer).toBeUndefined();
+    });
+
+    it('should return undefined for non-existent peer', () => {
+      const room = createRoom();
+      joinRoom(room.token, uuidv4(), 'Existing User');
+
+      const peer = getPeer(room.token, 'non-existent-peer');
+
+      expect(peer).toBeUndefined();
+    });
+
+    it('should return peer when found', () => {
+      const room = createRoom();
+      const peerId = uuidv4();
+      joinRoom(room.token, peerId, 'Test User');
+
+      const peer = getPeer(room.token, peerId);
+
+      expect(peer).toBeDefined();
+      expect(peer?.displayName).toBe('Test User');
+    });
+  });
+
+  describe('roomExists', () => {
+    it('should return false for non-existent room', () => {
+      const exists = roomExists('non-existent-token' as Room['token']);
+
+      expect(exists).toBe(false);
+    });
+
+    it('should return true for existing room', () => {
+      const room = createRoom();
+
+      const exists = roomExists(room.token);
+
+      expect(exists).toBe(true);
+    });
+  });
+
+  describe('isPeerInRoom', () => {
+    it('should return false for non-existent room', () => {
+      const result = isPeerInRoom('non-existent-token' as Room['token'], uuidv4());
+
+      expect(result).toBe(false);
+    });
+
+    it('should return false for peer not in room', () => {
+      const room = createRoom();
+      joinRoom(room.token, uuidv4(), 'Existing User');
+
+      const result = isPeerInRoom(room.token, 'non-existent-peer');
+
+      expect(result).toBe(false);
+    });
+
+    it('should return true for peer in room', () => {
+      const room = createRoom();
+      const peerId = uuidv4();
+      joinRoom(room.token, peerId, 'Test User');
+
+      const result = isPeerInRoom(room.token, peerId);
+
+      expect(result).toBe(true);
     });
   });
 });
