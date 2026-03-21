@@ -1,0 +1,29 @@
+{
+  "name": "peer",
+  "version": "1.0.0",
+  "private": true,
+  "description": "P2P VoIP Web Application with WebRTC mesh",
+  "scripts": {
+    "dev": "pnpm -r run dev",
+    "build": "pnpm -r run build",
+    "test": "pnpm -r run test",
+    "test:coverage": "pnpm -r run test:coverage",
+    "lint": "pnpm -r run lint",
+    "typecheck": "pnpm -r run typecheck",
+    "clean": "pnpm -r run clean"
+  },
+  "keywords": [
+    "webrtc",
+    "voip",
+    "p2p",
+    "mesh",
+    "socket.io"
+  ],
+  "author": "",
+  "license": "MIT",
+  "engines": {
+    "node": ">=22.0.0",
+    "pnpm": ">=9.0.0"
+  },
+  "packageManager": "pnpm@9.15.0"
+}

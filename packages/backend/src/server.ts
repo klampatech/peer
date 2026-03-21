@@ -1,0 +1,51 @@
+import express, { type Express } from 'express';
+import http from 'http';
+import { Server as SocketIOServer } from 'socket.io';
+import type { Server as HttpServer } from 'http';
+import { securityMiddleware, corsMiddleware } from './middleware/security.js';
+import { rateLimitMiddleware } from './middleware/rate-limit.js';
+import healthRoutes from './routes/health.js';
+import { setupRoomEvents } from './events/room-events.js';
+
+export interface AppServer {
+  app: Express;
+  httpServer: HttpServer;
+  io: SocketIOServer;
+}
+
+/**
+ * Creates and configures the Express server with Socket.IO
+ */
+export async function createServer(): Promise<AppServer> {
+  const app = express();
+  const httpServer = http.createServer(app);
+
+  // Configure Socket.IO
+  const io = new SocketIOServer(httpServer, {
+    cors: {
+      origin: process.env.CORS_ORIGIN || 'http://localhost:5173',
+      methods: ['GET', 'POST'],
+      credentials: true,
+    },
+    pingTimeout: 60000,
+    pingInterval: 25000,
+  });
+
+  // Middleware
+  app.use(securityMiddleware);
+  app.use(corsMiddleware);
+  app.use(express.json());
+  app.use(rateLimitMiddleware);
+
+  // Routes
+  app.use('/health', healthRoutes);
+
+  // Socket.IO events
+  setupRoomEvents(io);
+
+  return {
+    app,
+    httpServer,
+    io,
+  };
+}

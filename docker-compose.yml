@@ -1,0 +1,63 @@
+version: '3.8'
+
+services:
+  # Signalling server (Node.js + Socket.IO)
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile.backend
+    container_name: peer-backend
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+      - PORT=3000
+      - CORS_ORIGIN=https://localhost
+      - TURN_SECRET=${TURN_SECRET:-change-me-in-production}
+      - COTURN_PORT=3478
+      - TURN_REALM=peer
+      - RATE_LIMIT_MAX_POINTS=100
+      - RATE_LIMIT_WINDOW_MS=60000
+    volumes:
+      - ./packages/backend/data:/app/data
+    restart: unless-stopped
+    networks:
+      - peer-network
+
+  # Nginx reverse proxy
+  nginx:
+    image: nginx:1.26-alpine
+    container_name: peer-nginx
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./certs:/etc/nginx/certs:ro
+    depends_on:
+      - backend
+    restart: unless-stopped
+    networks:
+      - peer-network
+
+  # coturn TURN server (placeholder for Sprint 3)
+  coturn:
+    image: coturn/coturn:4.6.2-alpine
+    container_name: peer-coturn
+    ports:
+      - "3478:3478"
+      - "3478:3478/udp"
+      - "5349:5349"
+      - "5349:5349/udp"
+    environment:
+      - TURN_SECRET=${TURN_SECRET:-change-me-in-production}
+      - REALM=peer
+    volumes:
+      - ./turnserver.conf:/etc/coturn/turnserver.conf:ro
+    restart: unless-stopped
+    networks:
+      - peer-network
+
+networks:
+  peer-network:
+    driver: bridge
