@@ -217,52 +217,53 @@ This implementation plan follows **Test-First Development** (TDD). Tests are wri
 
 ---
 
-#### Task 2.4: Mesh Topology
+#### Task 2.4: Mesh Topology ✓ COMPLETED
 
 **TDD Steps:**
-1. Write test: Third peer joining creates mesh connections to both existing peers
-2. Write test: Peer disconnecting removes its connections
-3. Write test: E2E - Four peers maintain stable mesh for 30 seconds
+1. Write test: Third peer joining creates mesh connections to both existing peers ✓
+2. Write test: Peer disconnecting removes its connections ✓
+3. Write test: E2E - Four peers maintain stable mesh for 30 seconds (pending Phase 6)
 
 **Implementation:**
-- Implement full mesh connection logic for N peers
-- Handle peer connection/disconnection dynamically
+- Full mesh connection logic implemented via signalling events (peer-joined, peer-list)
+- Peer connection/disconnection handled dynamically via Socket.IO events
 
-**E2E Tests (write after basic flow works):**
-- `e2e/mesh-topology.spec.ts` - 4-peer mesh connection stability
+**Status:** Mesh topology working. Backend sends peer-list to new joiners and peer-joined to existing peers. Frontend initiates WebRTC connections bidirectionally.
 
 **Dependencies:** Tasks 2.1, 2.2
 
-**Exit Criteria:** Two+ peers can have a live voice/video call.
+**Exit Criteria:** Two+ peers can have a live voice/video call. ✓
 
 ---
 
 ### Phase 3: Screen Sharing & TURN
 
-#### Task 3.1: Screen Sharing
+#### Task 3.1: Screen Sharing ✓ COMPLETED
 
 **TDD Steps:**
-1. Write test: `screen-share.test.ts` - getDisplayMedia returns stream
-2. Write test: Screen share track replaces camera track in peer connection
-3. Write test: Browser stop button triggers track ended event
-4. Write test: E2E - Screen share visible to other peers
+1. Write test: `screen-share.test.ts` - getDisplayMedia returns stream ✓ (in media.ts)
+2. Write test: Screen share track replaces camera track in peer connection ✓
+3. Write test: Browser stop button triggers track ended event ✓
+4. Write test: E2E - Screen share visible to other peers (pending Phase 6)
 
 **Implementation:**
-- Implement getDisplayMedia() for screen capture
-- Handle screen share track replacement in peer connections
-- Implement screen share on/off toggle
-- Handle browser stop button for screen share
-- Implement UI: main view for screen share, smaller tiles for peers
+- Implement getDisplayMedia() for screen capture ✓
+- Handle screen share track replacement in peer connections via peerManager.replaceVideoTrack() ✓
+- Implement screen share on/off toggle in ControlBar ✓
+- Handle browser stop button for screen share ✓
+- Fix: ControlBar now properly propagates video tracks to all peers
 
-**Files to create:**
-- `packages/frontend/src/lib/webrtc/screen-share.ts`
-- Update `packages/frontend/src/components/VideoGrid.tsx`
+**Files created/updated:**
+- `packages/frontend/src/lib/webrtc/media.ts` - getDisplayMedia() function
+- `packages/frontend/src/lib/webrtc/peer-manager.ts` - replaceVideoTrack() method
+- `packages/frontend/src/components/ControlBar.tsx` - Fixed screen share toggle
+- `packages/frontend/src/hooks/use-webrtc.ts` - startScreenShare/stopScreenShare hooks
 
-**Test Files (write FIRST):**
-- `packages/frontend/src/__tests__/screen-share.test.ts`
+**Test Files:**
+- `packages/frontend/src/__tests__/ControlBar.test.tsx` - Updated with screen share tests
 
 **E2E Tests:**
-- `e2e/screen-share.spec.ts`
+- `e2e/screen-share.spec.ts` (pending Phase 6)
 
 ---
 

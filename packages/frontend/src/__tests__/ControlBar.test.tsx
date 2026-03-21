@@ -9,6 +9,22 @@ vi.mock('../stores/room-store', () => ({
   cleanupMedia: vi.fn(),
 }));
 
+// Mock the peer-manager module
+vi.mock('../lib/webrtc/peer-manager', () => ({
+  peerManager: {
+    replaceVideoTrack: vi.fn().mockResolvedValue(undefined),
+  },
+}));
+
+// Mock the media module
+vi.mock('../lib/webrtc/media', () => ({
+  getUserMedia: vi.fn().mockResolvedValue({
+    getVideoTracks: () => [{ kind: 'video' }],
+    getAudioTracks: () => [],
+    getTracks: () => [],
+  }),
+}));
+
 // Import after vi.mock
 import { useRoomStore } from '../stores/room-store';
 
@@ -26,6 +42,7 @@ describe('ControlBar', () => {
     setAudioEnabled: mockSetAudioEnabled,
     setVideoEnabled: mockSetVideoEnabled,
     setScreenSharing: mockSetScreenSharing,
+    setLocalStream: vi.fn(),
   };
 
   beforeEach(() => {

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import {
   Mic,
   MicOff,
@@ -8,7 +8,9 @@ import {
   PhoneOff,
   MessageSquare,
 } from 'lucide-react';
-import { useRoomStore, initializeMedia, cleanupMedia } from '../stores/room-store';
+import { useRoomStore, initializeMedia } from '../stores/room-store';
+import { peerManager } from '../lib/webrtc/peer-manager';
+import { getUserMedia } from '../lib/webrtc/media';
 
 interface ControlBarProps {
   onLeave: () => void;
@@ -22,6 +24,7 @@ export default function ControlBar({ onLeave }: ControlBarProps) {
     setAudioEnabled,
     setVideoEnabled,
     setScreenSharing,
+    setLocalStream,
     localStream,
   } = useRoomStore();
 
@@ -49,32 +52,74 @@ export default function ControlBar({ onLeave }: ControlBarProps) {
     setVideoEnabled(!videoEnabled);
   };
 
+  const cameraStreamRef = useRef<MediaStream | null>(null);
+
   const handleToggleScreenShare = async () => {
     if (screenSharing) {
-      // Stop screen share
-      setScreenSharing(false);
-      // Re-initialize camera
+      // Stop screen share - restore camera
       try {
-        cleanupMedia();
-        await initializeMedia(audioEnabled, videoEnabled);
+        // Get camera stream
+        const cameraStream = await getUserMedia({
+          video: true,
+          audio: false,
+        });
+        cameraStreamRef.current = cameraStream;
+
+        // Replace video track in all peer connections
+        const videoTrack = cameraStream.getVideoTracks()[0];
+        if (videoTrack) {
+          await peerManager.replaceVideoTrack(videoTrack);
+        }
+
+        // Update local store with camera stream
+        setLocalStream(cameraStream);
+        setScreenSharing(false);
       } catch (err) {
-        console.error('Failed to re-initialize camera:', err);
+        console.error('Failed to stop screen share:', err);
       }
     } else {
       // Start screen share
       try {
         const screenStream = await navigator.mediaDevices.getDisplayMedia({
           video: true,
+          audio: false,
         });
+
+        // Save current camera stream for later restoration
+        if (localStream) {
+          cameraStreamRef.current = localStream;
+        }
+
+        // Replace video track in all peer connections
+        const videoTrack = screenStream.getVideoTracks()[0];
+        if (videoTrack) {
+          await peerManager.replaceVideoTrack(videoTrack);
+        }
+
+        // Update local store with screen stream
+        setLocalStream(screenStream);
         setScreenSharing(true);
 
         // Handle user stopping screen share via browser UI
-        const videoTrack = screenStream.getVideoTracks()[0];
         if (videoTrack) {
-          videoTrack.onended = () => {
+          videoTrack.onended = async () => {
+          console.log('Screen share stopped via browser UI');
+          // Restore camera
+          try {
+            const cameraStream = await getUserMedia({
+              video: true,
+              audio: false,
+            });
+            const cameraVideoTrack = cameraStream.getVideoTracks()[0];
+            if (cameraVideoTrack) {
+              await peerManager.replaceVideoTrack(cameraVideoTrack);
+            }
+            setLocalStream(cameraStream);
             setScreenSharing(false);
-            initializeMedia(audioEnabled, videoEnabled);
-          };
+          } catch (err) {
+            console.error('Failed to restore camera after screen share:', err);
+          }
+        };
         }
       } catch (err) {
         console.error('Failed to start screen share:', err);
