@@ -48,7 +48,7 @@ export default function VideoGrid({
   }
 
   return (
-    <div className={`grid ${getGridColumns()} gap-4 p-4`}>
+    <div className={`grid ${getGridColumns()} gap-4 p-4`} role="region" aria-label="Video grid">
       {/* Local Video Tile */}
       {localStream && (
         <VideoTile

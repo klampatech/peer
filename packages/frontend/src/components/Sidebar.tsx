@@ -19,7 +19,11 @@ export default function Sidebar() {
       <div className="p-4 border-b border-border">
         <h3 className="text-sm font-medium text-textSecondary mb-2">Room</h3>
         <div className="flex items-center gap-2">
-          <div className={`w-2 h-2 rounded-full ${isConnected ? 'bg-success' : 'bg-warning'}`} />
+          <div
+            className={`w-2 h-2 rounded-full ${isConnected ? 'bg-success' : 'bg-warning'}`}
+            role="status"
+            aria-label={isConnected ? 'Connected to room' : 'Connecting to room'}
+          />
           <span className="text-sm text-textPrimary">
             {isConnected ? 'Connected' : 'Connecting...'}
           </span>

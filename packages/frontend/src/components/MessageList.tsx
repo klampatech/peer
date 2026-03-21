@@ -23,14 +23,14 @@ export function MessageList() {
 
   if (messages.length === 0) {
     return (
-      <div className="flex-1 flex items-center justify-center text-gray-400 text-sm p-4">
+      <div className="flex-1 flex items-center justify-center text-gray-400 text-sm p-4" role="status" aria-live="polite">
         No messages yet. Start the conversation!
       </div>
     );
   }
 
   return (
-    <div ref={listRef} className="flex-1 overflow-y-auto p-4 space-y-3">
+    <div ref={listRef} className="flex-1 overflow-y-auto p-4 space-y-3" role="log" aria-label="Chat messages" aria-live="polite">
       {messages.map((msg) => {
         const isOwnMessage = msg.peerId === peerId;
 

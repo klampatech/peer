@@ -65,6 +65,7 @@ export default function VideoTile({
           playsInline
           muted={isLocal}
           className="w-full h-full object-cover"
+          aria-label={isLocal ? 'Your video' : `${displayName}'s video`}
         />
       ) : (
         /* Avatar Placeholder */
