@@ -2,7 +2,7 @@
  * Cleanup Service Tests
  */
 
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { deleteOldMessages } from '../repositories/message-repository.js';
 
 // Mock the database
@@ -21,7 +21,7 @@ describe('Cleanup Service', () => {
         run: vi.fn(),
         exec: vi.fn(() => [{ values: [] }]),
       };
-      vi.mocked(getDatabase).mockReturnValue(mockDb as any);
+      vi.mocked(getDatabase).mockReturnValue(mockDb as unknown as ReturnType<typeof getDatabase>);
 
       const result = deleteOldMessages(24);
 
@@ -35,7 +35,7 @@ describe('Cleanup Service', () => {
         run: vi.fn(),
         exec: vi.fn(() => [{ values: [] }]),
       };
-      vi.mocked(getDatabase).mockReturnValue(mockDb as any);
+      vi.mocked(getDatabase).mockReturnValue(mockDb as unknown as ReturnType<typeof getDatabase>);
 
       deleteOldMessages();
 
