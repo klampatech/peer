@@ -1,11 +1,14 @@
-import { signallingClient } from '../signalling';
+import { signallingClient, type TurnCredentials } from '../signalling';
 import { useRoomStore } from '../../stores/room-store';
 
 // STUN servers for NAT traversal
-const ICE_SERVERS: RTCIceServer[] = [
+const STUN_SERVERS: RTCIceServer[] = [
   { urls: 'stun:stun.l.google.com:19302' },
   { urls: 'stun:stun1.l.google.com:19302' },
 ];
+
+// Will be updated when TURN credentials are received
+let iceServers: RTCIceServer[] = [...STUN_SERVERS];
 
 export interface PeerConnection {
   peerId: string;
@@ -77,7 +80,7 @@ class PeerManager {
    */
   private createPeerConnection(peerId: string): RTCPeerConnection {
     const connection = new RTCPeerConnection({
-      iceServers: ICE_SERVERS,
+      iceServers,
     });
 
     // Add local tracks to the connection
@@ -264,6 +267,42 @@ class PeerManager {
       return peer.connection.getStats();
     }
     return null;
+  }
+
+  /**
+   * Set TURN servers from credentials received from server
+   */
+  setTurnServers(credentials: TurnCredentials): void {
+    if (!credentials.username || !credentials.password || credentials.urls.length === 0) {
+      console.warn('Invalid TURN credentials provided');
+      return;
+    }
+
+    // Build TURN ice servers with credentials
+    const turnServers: RTCIceServer[] = credentials.urls.map((url) => ({
+      urls: url,
+      username: credentials.username,
+      credential: credentials.password,
+    }));
+
+    // Combine STUN and TURN servers
+    // TURN servers are tried after STUN, so list STUN first for faster connection
+    iceServers = [...STUN_SERVERS, ...turnServers];
+
+    console.log('TURN servers configured:', turnServers.map((s) => s.urls));
+
+    // Update existing peer connections with new ICE servers
+    this.updateIceServers();
+  }
+
+  /**
+   * Update ICE servers on all existing peer connections
+   */
+  private updateIceServers(): void {
+    this.peers.forEach(({ connection }, peerId) => {
+      console.log('Updating ICE servers for peer:', peerId);
+      connection.setConfiguration({ iceServers });
+    });
   }
 }
 

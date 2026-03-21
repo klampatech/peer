@@ -159,6 +159,9 @@ export async function connect(token: string, displayName: string): Promise<void>
   // Connect to signalling server
   await signallingClient.connect(token, displayName);
 
+  // Request TURN credentials for NAT traversal
+  signallingClient.requestTurnCredentials();
+
   // Initialize peer manager with local stream
   peerManager.initialize(stream);
 

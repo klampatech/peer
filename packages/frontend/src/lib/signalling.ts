@@ -4,6 +4,13 @@ import { peerManager } from './webrtc/peer-manager';
 
 const SOCKET_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 
+export interface TurnCredentials {
+  username: string;
+  password: string;
+  urls: string[];
+  ttl: number;
+}
+
 class SignallingClient {
   private socket: Socket | null = null;
 
@@ -103,6 +110,14 @@ class SignallingClient {
         console.log('Received ICE candidate from:', data.peerId);
         window.dispatchEvent(new CustomEvent('ice-candidate', { detail: data }));
       });
+
+      // Handle TURN credentials
+      this.socket.on('turn:credentials', (credentials: TurnCredentials) => {
+        console.log('Received TURN credentials');
+        if (credentials.username && credentials.password && credentials.urls.length > 0) {
+          peerManager.setTurnServers(credentials);
+        }
+      });
     });
   }
 
@@ -132,6 +147,11 @@ class SignallingClient {
   // Get socket ID
   getSocketId(): string | undefined {
     return this.socket?.id;
+  }
+
+  // Request TURN credentials from server
+  requestTurnCredentials(): void {
+    this.socket?.emit('turn:request');
   }
 }
 

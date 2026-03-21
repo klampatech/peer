@@ -6,6 +6,7 @@ import { securityMiddleware, corsMiddleware } from './middleware/security.js';
 import { rateLimitMiddleware } from './middleware/rate-limit.js';
 import healthRoutes from './routes/health.js';
 import { setupRoomEvents } from './events/room-events.js';
+import { setupTurnEvents } from './events/turn-events.js';
 
 export interface AppServer {
   app: Express;
@@ -42,6 +43,7 @@ export async function createServer(): Promise<AppServer> {
 
   // Socket.IO events
   setupRoomEvents(io);
+  setupTurnEvents(io);
 
   return {
     app,

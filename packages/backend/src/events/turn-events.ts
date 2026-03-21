@@ -1,0 +1,52 @@
+import type { Server, Socket } from 'socket.io';
+import { generateTurnCredentials } from '../services/turn-credentials.js';
+
+/**
+ * Sets up TURN-related Socket.IO event handlers
+ */
+export function setupTurnEvents(io: Server): void {
+  io.on('connection', (socket: Socket) => {
+    /**
+     * Handle TURN credentials request
+     * Generates temporary TURN credentials for the client to use in WebRTC
+     */
+    socket.on('turn:request', (callback?: (credentials: {
+      username: string;
+      password: string;
+      urls: string[];
+      ttl: number;
+    }) => void) => {
+      try {
+        const credentials = generateTurnCredentials();
+
+        console.log(`TURN credentials generated for socket ${socket.id}`);
+
+        // Send credentials back via callback if provided
+        if (callback) {
+          callback(credentials);
+        } else {
+          // Or emit as event
+          socket.emit('turn:credentials', credentials);
+        }
+      } catch (error) {
+        console.error('Error generating TURN credentials:', error);
+
+        if (callback) {
+          callback({
+            username: '',
+            password: '',
+            urls: [],
+            ttl: 0,
+          });
+        } else {
+          socket.emit('turn:credentials', {
+            username: '',
+            password: '',
+            urls: [],
+            ttl: 0,
+          });
+        }
+      }
+    });
+  });
+}

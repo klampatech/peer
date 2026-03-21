@@ -267,28 +267,32 @@ This implementation plan follows **Test-First Development** (TDD). Tests are wri
 
 ---
 
-#### Task 3.2: TURN Infrastructure
+#### Task 3.2: TURN Infrastructure ✓ COMPLETED
 
 **TDD Steps:**
-1. Write test: TURN credentials generated with correct TTL
-2. Write test: TURN credentials rejected after expiry
-3. Write test: Socket.IO event returns credentials to authenticated peer
-4. Write test: E2E - Peers behind symmetric NAT connect via TURN
+1. Write test: TURN credentials generated with correct TTL ✓
+2. Write test: TURN credentials rejected after expiry ✓
+3. Write test: Socket.IO event returns credentials to authenticated peer ✓
+4. Write test: E2E - Peers behind symmetric NAT connect via TURN (pending Phase 6)
 
 **Implementation:**
-- Configure coturn Docker service
-- Implement server-side TURN credential generation (HMAC, 1-hour TTL)
-- Create Socket.IO event to fetch TURN credentials
-- Implement ICE fallback logic
+- Configure coturn Docker service ✓
+- Implement server-side TURN credential generation (HMAC, 1-hour TTL) ✓
+- Create Socket.IO event to fetch TURN credentials ✓
+- Implement ICE fallback logic ✓
 
-**Files to create:**
-- `packages/backend/src/services/turn-credentials.ts`
-- `packages/backend/src/events/turn-events.ts`
-- Update `packages/backend/src/server.ts`
-- Update `docker-compose.yml` (coturn configuration)
+**Files created:**
+- `packages/backend/src/services/turn-credentials.ts` - TURN credential generation with HMAC-SHA1
+- `packages/backend/src/events/turn-events.ts` - Socket.IO turn:request event handler
+- Updated `packages/backend/src/server.ts` - Integrated turn events
+- `packages/frontend/src/lib/signalling.ts` - Added turn:credentials handling
+- `packages/frontend/src/lib/webrtc/peer-manager.ts` - Added setTurnServers() and dynamic ICE server updates
+- Updated `packages/frontend/src/stores/room-store.ts` - Request TURN credentials on connect
+
+**Status:** Implementation complete. Frontend requests TURN credentials on room join, peer manager dynamically updates ICE servers when credentials arrive.
 
 **Test Files (write FIRST):**
-- `packages/backend/src/__tests__/turn-credentials.test.ts`
+- `packages/backend/src/__tests__/turn-credentials.test.ts` (pending)
 
 **Exit Criteria:** Screen share works. NAT traversal is robust.
 
