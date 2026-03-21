@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useRoomStore, connect, disconnect } from '../stores/room-store';
 import Layout from '../components/Layout';
+import VideoGrid from '../components/VideoGrid';
 
 interface RoomPageProps {
   displayName: string;
@@ -12,7 +13,7 @@ export default function RoomPage({ displayName }: RoomPageProps) {
   const navigate = useNavigate();
   const [isConnecting, setIsConnecting] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const { localStream, peers, isConnected } = useRoomStore();
+  const { localStream, peers, audioEnabled } = useRoomStore();
 
   useEffect(() => {
     if (!token) {
@@ -75,61 +76,11 @@ export default function RoomPage({ displayName }: RoomPageProps) {
 
   return (
     <Layout onLeave={handleLeave}>
-      <div className="flex-1 p-4">
-        {/* Video Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {/* Local Video */}
-          {localStream && (
-            <div className="relative aspect-video bg-surface rounded-lg overflow-hidden">
-              <video
-                autoPlay
-                muted
-                playsInline
-                ref={(el) => {
-                  if (el) el.srcObject = localStream;
-                }}
-                className="w-full h-full object-cover"
-              />
-              <div className="absolute bottom-2 left-2 bg-black/50 px-2 py-1 rounded text-sm">
-                You {isConnected ? '' : '(Connecting...)'}
-              </div>
-            </div>
-          )}
-
-          {/* Remote Peers */}
-          {peers.map((peer) => (
-            <div key={peer.id} className="relative aspect-video bg-surface rounded-lg overflow-hidden">
-              {peer.stream ? (
-                <video
-                  autoPlay
-                  playsInline
-                  ref={(el) => {
-                    if (el && peer.stream) el.srcObject = peer.stream;
-                  }}
-                  className="w-full h-full object-cover"
-                />
-              ) : (
-                <div className="w-full h-full flex items-center justify-center">
-                  <div className="w-16 h-16 bg-primary rounded-full flex items-center justify-center text-2xl font-bold">
-                    {peer.displayName.charAt(0).toUpperCase()}
-                  </div>
-                </div>
-              )}
-              <div className="absolute bottom-2 left-2 bg-black/50 px-2 py-1 rounded text-sm">
-                {peer.displayName}
-              </div>
-            </div>
-          ))}
-
-          {/* Empty State */}
-          {peers.length === 0 && !localStream && (
-            <div className="col-span-full text-center py-12 text-textMuted">
-              <p>Waiting for others to join...</p>
-              <p className="text-sm mt-2">Share the link to invite others</p>
-            </div>
-          )}
-        </div>
-      </div>
+      <VideoGrid
+        localStream={localStream ?? undefined}
+        peers={peers}
+        isMuted={!audioEnabled}
+      />
     </Layout>
   );
 }
