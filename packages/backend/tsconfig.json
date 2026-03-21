@@ -3,7 +3,11 @@
   "compilerOptions": {
     "outDir": "./dist",
     "rootDir": "./src",
-    "types": ["node"]
+    "types": ["node"],
+    "paths": {
+      "@peer/shared": ["../shared/dist/index.d.ts"],
+      "@peer/shared/*": ["../shared/dist/*"]
+    }
   },
   "include": ["src/**/*"],
   "references": [

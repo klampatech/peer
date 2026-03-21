@@ -7,6 +7,8 @@ import { rateLimitMiddleware } from './middleware/rate-limit.js';
 import healthRoutes from './routes/health.js';
 import { setupRoomEvents } from './events/room-events.js';
 import { setupTurnEvents } from './events/turn-events.js';
+import { setupChatEvents } from './events/chat-events.js';
+import { initDatabase } from './db/index.js';
 
 export interface AppServer {
   app: Express;
@@ -18,6 +20,9 @@ export interface AppServer {
  * Creates and configures the Express server with Socket.IO
  */
 export async function createServer(): Promise<AppServer> {
+  // Initialize database first
+  await initDatabase();
+
   const app = express();
   const httpServer = http.createServer(app);
 
@@ -44,6 +49,7 @@ export async function createServer(): Promise<AppServer> {
   // Socket.IO events
   setupRoomEvents(io);
   setupTurnEvents(io);
+  setupChatEvents(io);
 
   return {
     app,

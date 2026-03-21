@@ -4,6 +4,14 @@ import { peerManager } from './webrtc/peer-manager';
 
 const SOCKET_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 
+export interface ChatMessage {
+  id: string;
+  peerId: string;
+  displayName: string;
+  message: string;
+  timestamp: string;
+}
+
 export interface TurnCredentials {
   username: string;
   password: string;
@@ -118,6 +126,39 @@ class SignallingClient {
           peerManager.setTurnServers(credentials);
         }
       });
+
+      // Handle incoming chat messages
+      this.socket.on('chat:message', (message: ChatMessage) => {
+        console.log('Received chat message:', message);
+        useRoomStore.getState().addMessage({
+          id: message.id,
+          peerId: message.peerId,
+          displayName: message.displayName,
+          message: message.message,
+          timestamp: new Date(message.timestamp),
+        });
+      });
+
+      // Handle chat history response
+      this.socket.on('chat:history', (messages: ChatMessage[]) => {
+        console.log('Received chat history:', messages);
+        // Clear existing messages and add history
+        useRoomStore.getState().clearMessages();
+        for (const msg of messages) {
+          useRoomStore.getState().addMessage({
+            id: msg.id,
+            peerId: msg.peerId,
+            displayName: msg.displayName,
+            message: msg.message,
+            timestamp: new Date(msg.timestamp),
+          });
+        }
+      });
+
+      // Handle chat errors
+      this.socket.on('chat:error', (error: { code: string; message: string }) => {
+        console.error('Chat error:', error);
+      });
     });
   }
 
@@ -152,6 +193,22 @@ class SignallingClient {
   // Request TURN credentials from server
   requestTurnCredentials(): void {
     this.socket?.emit('turn:request');
+  }
+
+  // Send a chat message
+  sendChatMessage(message: string): void {
+    const { roomToken } = useRoomStore.getState();
+    if (roomToken) {
+      this.socket?.emit('chat:message', { roomToken, message });
+    }
+  }
+
+  // Request chat history
+  requestChatHistory(): void {
+    const { roomToken } = useRoomStore.getState();
+    if (roomToken) {
+      this.socket?.emit('chat:history', { roomToken });
+    }
   }
 }
 

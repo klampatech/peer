@@ -1,6 +1,7 @@
 import { useParams } from 'react-router-dom';
 import Sidebar from './Sidebar';
 import ControlBar from './ControlBar';
+import { ChatPanel } from './ChatPanel';
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -31,22 +32,9 @@ export default function Layout({ children, onLeave }: LayoutProps) {
           {children}
         </main>
 
-        {/* Chat Panel (placeholder) */}
+        {/* Chat Panel */}
         <aside className="w-80 border-l border-border bg-surface hidden lg:flex flex-col">
-          <div className="p-4 border-b border-border">
-            <h2 className="font-medium text-textPrimary">Chat</h2>
-          </div>
-          <div className="flex-1 p-4 text-textMuted text-sm">
-            <p>Chat messages will appear here.</p>
-          </div>
-          <div className="p-4 border-t border-border">
-            <input
-              type="text"
-              className="input"
-              placeholder="Type a message..."
-              disabled
-            />
-          </div>
+          <ChatPanel />
         </aside>
       </div>
 

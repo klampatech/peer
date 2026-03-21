@@ -1,5 +1,6 @@
 import { v4 as uuidv4 } from 'uuid';
 import type { RoomToken } from '../../shared/src/index.js';
+import { softDeleteRoomMessages } from './repositories/message-repository.js';
 
 export interface Peer {
   id: string;
@@ -88,6 +89,8 @@ export function leaveRoom(token: RoomToken, peerId: string): Room | undefined {
 
   // Destroy room if no peers left
   if (room.peers.size === 0) {
+    // Soft delete all messages in the room
+    softDeleteRoomMessages(token);
     rooms.delete(token);
     return undefined;
   }
@@ -134,4 +137,18 @@ export function getPeer(token: RoomToken, peerId: string): Peer | undefined {
  */
 export function roomExists(token: RoomToken): boolean {
   return rooms.has(token);
+}
+
+/**
+ * Checks if a peer is in a room
+ * @param token - The room token
+ * @param peerId - The peer ID
+ * @returns True if peer is in the room
+ */
+export function isPeerInRoom(token: RoomToken, peerId: string): boolean {
+  const room = rooms.get(token);
+  if (!room) {
+    return false;
+  }
+  return room.peers.has(peerId);
 }
