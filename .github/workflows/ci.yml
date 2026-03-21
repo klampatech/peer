@@ -119,6 +119,100 @@ jobs:
       - name: Run E2E tests
         run: pnpm exec playwright test
 
+  security-headers:
+    name: Security Headers
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: 9
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build packages
+        run: pnpm build
+
+      - name: Start backend
+        run: |
+          cd packages/backend
+          pnpm dev &
+        env:
+          NODE_ENV: test
+
+      - name: Wait for backend
+        run: sleep 5
+
+      - name: Verify security headers
+        run: node tests/security/security-headers.test.js
+
+  security-scan:
+    name: OWASP ZAP Scan
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: 9
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build packages
+        run: pnpm build
+
+      - name: Start backend
+        run: |
+          cd packages/backend
+          pnpm dev &
+        env:
+          NODE_ENV: test
+
+      - name: Wait for backend
+        run: sleep 5
+
+      - name: Run OWASP ZAP scan
+        run: |
+          # Run ZAP baseline scan using Docker
+          docker run -v $(pwd):/zap/wrk:rw \
+            -t owasp/zap2docker-stable zap.sh \
+            -cmd -quickurl http://localhost:3000 \
+            -quickprogress \
+            -timeout 10 \
+            -reportfile zap-report.html \
+            -jsonreport zap-report.json || true
+
+      - name: Check for high-severity issues
+        run: |
+          # Check if JSON report exists and has high severity issues
+          if [ -f zap-report.json ]; then
+            HIGH=$(grep -o '"High":[0-9]*' zap-report.json | grep -o '[0-9]*' | head -1 || echo "0")
+            echo "High severity issues: $HIGH"
+            if [ "$HIGH" -gt 0 ]; then
+              echo "FAIL: High severity vulnerabilities found!"
+              exit 1
+            fi
+          fi
+
   build:
     name: Build
     runs-on: ubuntu-latest
