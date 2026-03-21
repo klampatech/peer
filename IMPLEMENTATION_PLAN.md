@@ -191,23 +191,25 @@ This implementation plan follows **Test-First Development** (TDD). Tests are wri
 
 ---
 
-#### Task 2.3: Media Controls
+#### Task 2.3: Media Controls ✓ COMPLETED
 
 **TDD Steps:**
-1. Write test: Mute button toggles local audio track enabled state
-2. Write test: Camera button toggles local video track enabled state
-3. Write test: Speaking indicator activates on audio input
-4. Write test: E2E - Remote peer sees mute/camera state
+1. Write test: Mute button toggles local audio track enabled state ✓
+2. Write test: Camera button toggles local video track enabled state ✓
+3. Write test: Speaking indicator activates on audio input ✓
+4. Write test: E2E - Remote peer sees mute/camera state (pending Phase 6)
 
 **Implementation:**
-- Implement mute/unmute toggle
-- Implement camera on/off toggle
-- Implement speaking indicator via Web Audio API
+- Implement mute/unmute toggle ✓
+- Implement camera on/off toggle ✓
+- Implement speaking indicator via Web Audio API ✓
 
-**Files to create:**
-- `packages/frontend/src/components/VideoTile.tsx`
-- `packages/frontend/src/components/ControlBar.tsx`
-- `packages/frontend/src/hooks/use-audio-level.ts` - Speaking indicator
+**Files created:**
+- `packages/frontend/src/components/VideoTile.tsx` - Video tile with avatar, speaking indicator
+- `packages/frontend/src/components/ControlBar.tsx` - Mute, camera, screen share, leave buttons
+- `packages/frontend/src/hooks/use-audio-level.ts` - Speaking indicator via Web Audio API
+- `packages/frontend/src/__tests__/ControlBar.test.tsx` - 7 tests
+- `packages/frontend/src/__tests__/VideoTile.test.tsx` - 17 tests
 
 **Test Files (write FIRST):**
 - `packages/frontend/src/__tests__/use-audio-level.test.ts`
@@ -614,8 +616,8 @@ Phase 2 (WebRTC)
 │   └── [TDD] Write tests for router and store
 ├── Task 2.2: WebRTC Integration ← Task 1.2, Task 2.1
 │   └── [TDD] Write tests for peer connection lifecycle
-├── Task 2.3: Media Controls ← Task 2.2
-│   └── [TDD] Write tests for mute/camera toggles
+├── Task 2.3: Media Controls ← Task 2.2 ✓ COMPLETED
+│   └── [TDD] Write tests for mute/camera toggles ✓
 └── Task 2.4: Mesh Topology ← Task 2.2
     └── [TDD] Write E2E tests for N-peer mesh
 
