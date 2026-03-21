@@ -483,13 +483,13 @@ This implementation plan follows **Test-First Development** (TDD). Tests are wri
 
 ---
 
-#### Task 5.4: Typography & Icons
+#### Task 5.4: Typography & Icons ✓ COMPLETED
 
 **Implementation:**
-- Self-host Inter font
-- Integrate Lucide React icons
+- Self-host Inter font ✓ (imported in globals.css)
+- Integrate Lucide React icons ✓ (used in Layout, Sidebar, ControlBar, VideoTile, HomePage)
 
-**Files to create:**
+**Files:**
 - `packages/frontend/src/styles/globals.css` (font imports)
 
 ---
@@ -532,9 +532,9 @@ This implementation plan follows **Test-First Development** (TDD). Tests are wri
 
 ---
 
-#### Task 6.2: Testing - E2E Full Suite ✓ IN PROGRESS
+#### Task 6.2: Testing - E2E Full Suite ✓ COMPLETED
 
-**Status:** Playwright configured and tests created for rooms, calls, and chat flows.
+**Status:** Playwright configured and tests created for rooms, calls, and chat flows. All 11 Chromium E2E tests pass.
 
 **E2E Test Files (all acceptance criteria):**
 
