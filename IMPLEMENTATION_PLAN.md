@@ -519,7 +519,9 @@ This implementation plan follows **Test-First Development** (TDD). Tests are wri
 
 ---
 
-#### Task 6.2: Testing - E2E Full Suite
+#### Task 6.2: Testing - E2E Full Suite ✓ IN PROGRESS
+
+**Status:** Playwright configured and tests created for rooms, calls, and chat flows.
 
 **E2E Test Files (all acceptance criteria):**
 
