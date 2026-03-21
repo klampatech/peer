@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useRef } from 'react';
 import {
   Mic,
   MicOff,
@@ -14,9 +14,10 @@ import { getUserMedia } from '../lib/webrtc/media';
 
 interface ControlBarProps {
   onLeave: () => void;
+  onToggleChat?: () => void;
 }
 
-export default function ControlBar({ onLeave }: ControlBarProps) {
+export default function ControlBar({ onLeave, onToggleChat }: ControlBarProps) {
   const {
     audioEnabled,
     videoEnabled,
@@ -27,8 +28,6 @@ export default function ControlBar({ onLeave }: ControlBarProps) {
     setLocalStream,
     localStream,
   } = useRoomStore();
-
-  const [showChat, setShowChat] = useState(false);
 
   const handleToggleAudio = async () => {
     if (!localStream) {
@@ -158,7 +157,7 @@ export default function ControlBar({ onLeave }: ControlBarProps) {
 
       {/* Chat Button */}
       <button
-        onClick={() => setShowChat(!showChat)}
+        onClick={onToggleChat}
         className="btn bg-surfaceHover text-textPrimary rounded-full w-12 h-12"
         aria-label="Toggle chat"
       >

@@ -57,3 +57,31 @@
 ::-webkit-scrollbar-thumb:hover {
   background: #484F58;
 }
+
+/* Mobile drawer slide-in animation */
+@keyframes slideIn {
+  from {
+    transform: translateX(-100%);
+  }
+  to {
+    transform: translateX(0);
+  }
+}
+
+.animate-slide-in {
+  animation: slideIn 0.2s ease-out;
+}
+
+/* Mobile drawer slide-in from right */
+@keyframes slideInRight {
+  from {
+    transform: translateX(100%);
+  }
+  to {
+    transform: translateX(0);
+  }
+}
+
+[style*="right: 0"].animate-slide-in {
+  animation: slideInRight 0.2s ease-out;
+}

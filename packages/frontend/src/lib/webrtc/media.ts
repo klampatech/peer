@@ -75,13 +75,30 @@ export async function getUserMedia(options: MediaStreamOptions = {}): Promise<Me
 }
 
 /**
+ * Detect if running on iOS (iPhone, iPad, iPod)
+ */
+function isIOS(): boolean {
+  const ua = navigator.userAgent;
+  return /iPad|iPhone|iPod/.test(ua);
+}
+
+/**
  * Get display media (screen sharing)
+ * Handles iOS Safari limitations gracefully
  */
 export async function getDisplayMedia(): Promise<MediaStream> {
+  const isIOSDevice = isIOS();
+
   try {
+    // On iOS Safari, only 'browser' surface is supported
+    // On desktop, prefer 'monitor' for full screen capture
+    const displaySurface = isIOSDevice ? 'browser' : 'monitor';
+
     const stream = await navigator.mediaDevices.getDisplayMedia({
       video: {
-        displaySurface: 'monitor',
+        displaySurface,
+        width: { ideal: 1920 },
+        height: { ideal: 1080 },
       },
       audio: false,
     });
@@ -98,9 +115,39 @@ export async function getDisplayMedia(): Promise<MediaStream> {
 
     return stream;
   } catch (error) {
+    // Check if user denied permission
+    if (error instanceof DOMException) {
+      if (error.name === 'NotAllowedError' || error.name === 'AbortError') {
+        console.log('Screen share cancelled or denied by user');
+
+        // On iOS, provide more helpful message
+        if (isIOSDevice) {
+          console.log('Note: iOS Safari has limited screen sharing support');
+        }
+      }
+    }
+
     console.error('Failed to get display media:', error);
     throw error;
   }
+}
+
+/**
+ * Check if screen sharing is supported on current platform
+ */
+export function isScreenShareSupported(): boolean {
+  return !!(navigator.mediaDevices && navigator.mediaDevices.getDisplayMedia);
+}
+
+/**
+ * Check if screen sharing is fully supported (not limited on iOS)
+ */
+export function isScreenShareFullySupported(): boolean {
+  // iOS has limited support
+  if (isIOS()) {
+    return false;
+  }
+  return isScreenShareSupported();
 }
 
 /**

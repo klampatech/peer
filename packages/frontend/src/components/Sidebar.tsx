@@ -14,7 +14,7 @@ export default function Sidebar() {
   };
 
   return (
-    <aside className="w-64 border-r border-border bg-surface hidden md:flex flex-col">
+    <aside className="w-full border-r border-border bg-surface flex flex-col">
       {/* Room Info */}
       <div className="p-4 border-b border-border">
         <h3 className="text-sm font-medium text-textSecondary mb-2">Room</h3>

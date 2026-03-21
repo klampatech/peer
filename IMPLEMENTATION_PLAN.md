@@ -404,7 +404,9 @@ This implementation plan follows **Test-First Development** (TDD). Tests are wri
 
 ### Phase 5: UI Polish & UX
 
-#### Task 5.1: Layout & Theme
+#### Task 5.1: Layout & Theme ✓ COMPLETED
+
+**Status:** VideoGrid component created with responsive grid layout. Grid columns adjust based on participant count (1-4+). Tests added.
 
 **TDD Steps:**
 1. Write test: Video grid reflows when peer count changes
@@ -430,7 +432,9 @@ This implementation plan follows **Test-First Development** (TDD). Tests are wri
 
 ---
 
-#### Task 5.2: Components
+#### Task 5.2: Components ✓ COMPLETED
+
+**Status:** VideoTile component with avatar, speaking indicator, muted indicator. ControlBar with mute, camera, screen share, leave buttons. Tests exist.
 
 **TDD Steps:**
 1. Write test: Video tile shows avatar when camera off
@@ -457,16 +461,25 @@ This implementation plan follows **Test-First Development** (TDD). Tests are wri
 
 ---
 
-#### Task 5.3: Responsive & Mobile
+#### Task 5.3: Responsive & Mobile ✓ COMPLETED
 
 **TDD Steps:**
-1. Write test: Mobile layout stacks vertically
-2. Write test: iOS screen share restriction handled gracefully
+1. Write test: Mobile layout stacks vertically ✓
+2. Write test: iOS screen share restriction handled gracefully ✓
 
 **Implementation:**
-- Implement mobile-responsive layout
-- Optimize for iOS Safari and Android Chrome
-- Handle iOS screen share restriction gracefully
+- Implement mobile-responsive layout ✓
+- Optimize for iOS Safari and Android Chrome ✓
+- Handle iOS screen share restriction gracefully ✓
+
+**Files created/updated:**
+- `packages/frontend/src/components/Layout.tsx` - Added mobile drawer pattern for sidebar and chat panel with overlay toggles in header
+- `packages/frontend/src/components/ControlBar.tsx` - Wired up chat toggle to use parent prop for mobile drawer
+- `packages/frontend/src/components/Sidebar.tsx` - Removed fixed width/hidden classes to work in both desktop sidebar and mobile drawer
+- `packages/frontend/src/lib/webrtc/media.ts` - Added iOS detection and graceful fallback for screen share (uses 'browser' displaySurface on iOS instead of 'monitor')
+- `packages/frontend/src/styles/globals.css` - Added slide-in animation for mobile drawers
+
+**Exit Criteria:** Mobile users can access sidebar and chat via header toggle buttons. iOS screen share handled gracefully.
 
 ---
 
