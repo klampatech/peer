@@ -1,4 +1,6 @@
 import { create } from 'zustand';
+import { signallingClient } from '../lib/signalling';
+import { peerManager } from '../lib/webrtc/peer-manager';
 
 export interface Peer {
   id: string;
@@ -148,17 +150,37 @@ export function cleanupMedia(): void {
   }
 }
 
-// Connect to room - this will be implemented with signalling client
-export async function connect(token: string, _displayName: string): Promise<void> {
-  // This will be connected to signalling client
-  // For now, we just initialize media
-  await initializeMedia(true, true);
+// Connect to room via signalling server
+export async function connect(token: string, displayName: string): Promise<void> {
+  // Initialize media first
+  const stream = await initializeMedia(true, true);
   useRoomStore.getState().setRoomToken(token);
+
+  // Connect to signalling server
+  await signallingClient.connect(token, displayName);
+
+  // Initialize peer manager with local stream
+  peerManager.initialize(stream);
+
+  // Connect to any existing peers in the room
+  const { peers } = useRoomStore.getState();
+  for (const peer of peers) {
+    await peerManager.connectToPeer(peer.id);
+  }
+
   useRoomStore.getState().setConnected(true);
 }
 
 // Disconnect from room
 export function disconnect(): void {
+  // Clean up peer connections
+  peerManager.cleanup();
+
+  // Disconnect from signalling
+  signallingClient.disconnect();
+
+  // Clean up media
   cleanupMedia();
+
   useRoomStore.getState().reset();
 }

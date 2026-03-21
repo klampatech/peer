@@ -1,5 +1,6 @@
 import { io, Socket } from 'socket.io-client';
 import { useRoomStore } from '../stores/room-store';
+import { peerManager } from './webrtc/peer-manager';
 
 const SOCKET_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 
@@ -42,7 +43,7 @@ class SignallingClient {
       });
 
       // Handle peer joined
-      this.socket.on('peer-joined', (data: { peerId: string; displayName: string }) => {
+      this.socket.on('peer-joined', async (data: { peerId: string; displayName: string }) => {
         console.log('Peer joined:', data);
         useRoomStore.getState().addPeer({
           id: data.peerId,
@@ -50,25 +51,40 @@ class SignallingClient {
           audioEnabled: true,
           videoEnabled: true,
         });
+
+        // Initiate WebRTC connection to the new peer
+        const { localStream, isConnected } = useRoomStore.getState();
+        if (localStream && isConnected) {
+          await peerManager.connectToPeer(data.peerId);
+        }
       });
 
       // Handle peer left
       this.socket.on('peer-left', (data: { peerId: string }) => {
         console.log('Peer left:', data);
+        // Clean up WebRTC connection
+        peerManager.disconnectFromPeer(data.peerId);
         useRoomStore.getState().removePeer(data.peerId);
       });
 
       // Handle peer list (when joining existing room)
-      this.socket.on('peer-list', (peers: Array<{ id: string; displayName: string }>) => {
+      this.socket.on('peer-list', async (peers: Array<{ id: string; displayName: string }>) => {
         console.log('Peer list:', peers);
-        peers.forEach((peer) => {
+        const { localStream, isConnected } = useRoomStore.getState();
+
+        for (const peer of peers) {
           useRoomStore.getState().addPeer({
             id: peer.id,
             displayName: peer.displayName,
             audioEnabled: true,
             videoEnabled: true,
           });
-        });
+
+          // Initiate WebRTC connection to each existing peer
+          if (localStream && isConnected) {
+            await peerManager.connectToPeer(peer.id);
+          }
+        }
       });
 
       // Handle WebRTC signaling
