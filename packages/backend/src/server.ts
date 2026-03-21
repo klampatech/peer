@@ -9,6 +9,7 @@ import { setupRoomEvents } from './events/room-events.js';
 import { setupTurnEvents } from './events/turn-events.js';
 import { setupChatEvents } from './events/chat-events.js';
 import { initDatabase } from './db/index.js';
+import { startCleanupScheduler } from './services/cleanup.js';
 
 export interface AppServer {
   app: Express;
@@ -22,6 +23,9 @@ export interface AppServer {
 export async function createServer(): Promise<AppServer> {
   // Initialize database first
   await initDatabase();
+
+  // Start cleanup scheduler for old chat messages
+  startCleanupScheduler();
 
   const app = express();
   const httpServer = http.createServer(app);

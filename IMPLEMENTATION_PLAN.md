@@ -379,23 +379,21 @@ This implementation plan follows **Test-First Development** (TDD). Tests are wri
 **TDD Steps:**
 1. Write test: Soft-delete messages on room destroy ✓
 2. Write test: Hard-delete removes messages older than 24 hours ✓
-3. Write test: Cleanup job runs on schedule (pending)
+3. Write test: Cleanup job runs on schedule ✓
 
 **Implementation:**
-- Soft-delete messages on room destroy (rooms.ts calls softDeleteRoomMessages)
-- Hard-delete function implemented (deleteOldMessages in message-repository.ts)
-- Cleanup job structure ready (could add cron job for production)
+- Soft-delete messages on room destroy (rooms.ts calls softDeleteRoomMessages) ✓
+- Hard-delete function implemented (deleteOldMessages in message-repository.ts) ✓
+- 24-hour chat cleanup cron job via setInterval running hourly ✓
 
 **Files updated:**
 - `packages/backend/src/rooms.ts` - Added soft-delete on room leave
+- `packages/backend/src/server.ts` - Integrated cleanup scheduler
+- `packages/backend/src/repositories/message-repository.ts` - Added error handling to deleteOldMessages
 
-**Implementation:**
-- Implement 24-hour chat cleanup cron job
-- Soft-delete messages on room destroy
-- Hard-delete after 24 hours
-
-**Files to create:**
-- `packages/backend/src/services/cleanup.ts` - Cron job
+**Files created:**
+- `packages/backend/src/services/cleanup.ts` - Cron job service with hourly cleanup
+- `packages/backend/src/__tests__/cleanup.test.ts` - Unit tests for cleanup
 
 **Test Files (write FIRST):**
 - `packages/backend/src/__tests__/cleanup.test.ts`
