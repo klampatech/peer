@@ -1,6 +1,6 @@
 # Peer P2P VoIP Application - Implementation Plan
 
-> **Status:** Complete - All tasks finished, production verified
+> **Status:** In Progress - Addressing spec gaps
 > **Last Updated:** 2026-03-22
 
 ---
@@ -22,6 +22,30 @@
 | CI: Fixed sleep 5 causes flaky tests | Fixed v0.6.13 - replaced with health-check loop |
 | CI: Build job has no artifact output | Fixed v0.6.13 - added artifact publishing |
 | CI: All 7 Playwright browsers run in CI | Fixed v0.6.13 - chromium only in CI, full matrix locally |
+| Event listeners accumulate on reconnect (.bind(this) issue) | Fixed in v0.6.14 - store bound handlers in constructor |
+
+---
+
+## Remaining Spec Gaps (Post-Implementation Review)
+
+The following gaps were identified between the spec and implementation:
+
+| Priority | Issue | Location | Status |
+|----------|-------|----------|--------|
+| CRITICAL | coturn auth misconfigured (env var not read by coturn) | turnserver.conf, docker-compose | Not Fixed |
+| CRITICAL | certbot --staging flag in production | docker-compose.production.yml:119 | Not Fixed |
+| CRITICAL | Backend port 3000 exposed bypassing nginx | docker-compose.production.yml:6-7 | Not Fixed |
+| CRITICAL | Camera stream tracks leak after screen share | use-webrtc.ts:182-200 | Not Fixed |
+| CRITICAL | Event listeners accumulate on reconnect | peer-manager.ts | **FIXED v0.6.14** |
+| HIGH | ICE candidates leak private host IPs | peer-manager.ts:83-86 | Not Fixed |
+| HIGH | SDP content unvalidated (only wrapper) | room-events.ts | Not Fixed |
+| HIGH | security-headers CI tests backend not nginx | ci.yml:178 | Not Fixed |
+| HIGH | ZAP CI scans backend only | ci.yml:233 | Not Fixed |
+| HIGH | Duplicate install+build in CI jobs | ci.yml | Not Fixed |
+| MEDIUM | CSP has unsafe-inline/unsafe-eval | nginx.conf:76 | Not Fixed |
+| MEDIUM | Permissions-Policy not in nginx | nginx.conf | Not Fixed |
+| MEDIUM | Single flat Docker network | docker-compose.production.yml | Not Fixed |
+| LOW | nginx runs as root | packages/frontend/Dockerfile | Not Fixed |
 
 ---
 

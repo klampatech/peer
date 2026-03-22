@@ -29,6 +29,17 @@ class PeerManager {
   private onPeerConnected: PeerConnectionCallback | null = null;
   private onPeerDisconnected: PeerDisconnectedCallback | null = null;
   private signalingReady: boolean = false;
+  // Store bound handlers for proper cleanup
+  private boundSdpOfferHandler: (event: Event) => Promise<void>;
+  private boundSdpAnswerHandler: (event: Event) => Promise<void>;
+  private boundIceCandidateHandler: (event: Event) => Promise<void>;
+
+  constructor() {
+    // Pre-bind handlers once in constructor for proper cleanup
+    this.boundSdpOfferHandler = this.handleSdpOffer.bind(this);
+    this.boundSdpAnswerHandler = this.handleSdpAnswer.bind(this);
+    this.boundIceCandidateHandler = this.handleIceCandidate.bind(this);
+  }
 
   /**
    * Initialize the peer manager with local stream
@@ -51,13 +62,13 @@ class PeerManager {
    */
   private setupSignalingListeners(): void {
     // Handle incoming SDP offers
-    window.addEventListener('sdp:offer', this.handleSdpOffer.bind(this) as EventListener);
+    window.addEventListener('sdp:offer', this.boundSdpOfferHandler as EventListener);
 
     // Handle incoming SDP answers
-    window.addEventListener('sdp:answer', this.handleSdpAnswer.bind(this) as EventListener);
+    window.addEventListener('sdp:answer', this.boundSdpAnswerHandler as EventListener);
 
     // Handle incoming ICE candidates
-    window.addEventListener('ice-candidate', this.handleIceCandidate.bind(this) as EventListener);
+    window.addEventListener('ice-candidate', this.boundIceCandidateHandler as EventListener);
   }
 
   /**
@@ -71,10 +82,10 @@ class PeerManager {
     this.localStream = null;
     this.signalingReady = false;
 
-    // Remove event listeners
-    window.removeEventListener('sdp:offer', this.handleSdpOffer.bind(this) as EventListener);
-    window.removeEventListener('sdp:answer', this.handleSdpAnswer.bind(this) as EventListener);
-    window.removeEventListener('ice-candidate', this.handleIceCandidate.bind(this) as EventListener);
+    // Remove event listeners using the same bound handlers
+    window.removeEventListener('sdp:offer', this.boundSdpOfferHandler as EventListener);
+    window.removeEventListener('sdp:answer', this.boundSdpAnswerHandler as EventListener);
+    window.removeEventListener('ice-candidate', this.boundIceCandidateHandler as EventListener);
   }
 
   /**
