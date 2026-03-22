@@ -80,7 +80,7 @@ export interface ChatMessageResponsePayload {
 export interface TurnCredentialsPayload {
   urls: string[];
   username: string;
-  credential: string;
+  password: string;
 }
 
 // WebRTC Signaling Events - using generic types for cross-platform compatibility
