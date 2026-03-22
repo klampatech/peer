@@ -405,4 +405,18 @@ P5 (Security Post-Audit)
 - Added `baseUrl` to tsconfig.json for proper path resolution
 - All 104 backend tests and 115 frontend tests now pass with clean typecheck
 
+### Test Infrastructure Notes (2026-03-22)
+
+**E2E Test Flakiness:**
+- Tests pass reliably when run sequentially (`--workers=1`)
+- Parallel execution can cause flaky failures due to backend resource contention
+- CI configuration already sets `workers: 1` for reliable CI runs
+- Local parallel testing: expect occasional flakiness; re-run if needed
+
+**Verification Results:**
+- Backend tests: 104 passed
+- Frontend tests: 115 passed
+- E2E tests: 168 passed (6 skipped for mobile)
+- TypeScript: Clean compilation
+
 - [ ] Production deployment verified
