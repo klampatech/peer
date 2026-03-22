@@ -23,6 +23,9 @@
 | CI: Build job has no artifact output | Fixed v0.6.13 - added artifact publishing |
 | CI: All 7 Playwright browsers run in CI | Fixed v0.6.13 - chromium only in CI, full matrix locally |
 | Event listeners accumulate on reconnect (.bind(this) issue) | Fixed in v0.6.14 - store bound handlers in constructor |
+| Backend port 3000 exposed bypassing nginx | Fixed v0.6.15 - remove port mapping, backend only accessible via nginx |
+| coturn auth misconfigured (env var not read by coturn) | Fixed v0.6.15 - use static-auth-secret with entrypoint script |
+| certbot --staging flag in production | Fixed v0.6.15 - remove staging flag for production certs |
 
 ---
 
@@ -32,9 +35,6 @@ The following gaps were identified between the spec and implementation:
 
 | Priority | Issue | Location | Status |
 |----------|-------|----------|--------|
-| CRITICAL | coturn auth misconfigured (env var not read by coturn) | turnserver.conf, docker-compose | Not Fixed |
-| CRITICAL | certbot --staging flag in production | docker-compose.production.yml:119 | Not Fixed |
-| CRITICAL | Backend port 3000 exposed bypassing nginx | docker-compose.production.yml:6-7 | Not Fixed |
 | CRITICAL | Camera stream tracks leak after screen share | use-webrtc.ts | **FIXED v0.6.14** |
 | CRITICAL | Event listeners accumulate on reconnect | peer-manager.ts | **FIXED v0.6.14** |
 | HIGH | ICE candidates leak private host IPs | peer-manager.ts | **FIXED v0.6.14** |

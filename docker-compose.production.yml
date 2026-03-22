@@ -3,8 +3,8 @@ services:
     build:
       context: ./packages/backend
       dockerfile: Dockerfile
-    ports:
-      - "3000:3000"
+    # Backend not exposed to host - only accessible through nginx
+    # Port 3000 is internal only via docker network
     environment:
       - NODE_ENV=production
       - PORT=3000
@@ -67,7 +67,10 @@ services:
     volumes:
       - coturn-data:/var/lib/coturn
       - certbot-etc:/etc/letsencrypt:ro
-      - ./turnserver.conf:/etc/coturn/turnserver.conf:ro
+      - ./turnserver.conf:/etc/coturn/turnserver.conf
+      - ./coturn-entrypoint.sh:/entrypoint.sh:ro
+    entrypoint: ["/bin/sh", "/entrypoint.sh"]
+    command: ["turnserver", "-c", "/etc/coturn/turnserver.conf", "-n"]
     restart: unless-stopped
     networks:
       - peer-network
@@ -114,9 +117,9 @@ services:
       - certbot-etc:/etc/letsencrypt
       - certbot-var:/var/lib/letsencrypt
       - ./nginx-frontend.conf:/etc/nginx/conf.d/default.conf:ro
-    # Remove --staging flag for production certificates
-    # Also update DOMAIN in your environment before running
-    command: certonly --webroot --webroot-path=/var/www/certbot --email ${CERTBOT_EMAIL:-admin@example.com} --agree-tos --no-eff-email --staging -d ${DOMAIN:-peer}
+    # Production certificates - no staging flag
+    # Update DOMAIN and CERTBOT_EMAIL in your environment before running
+    command: certonly --webroot --webroot-path=/var/www/certbot --email ${CERTBOT_EMAIL:-admin@example.com} --agree-tos --no-eff-email -d ${DOMAIN:-peer}
     networks:
       - peer-network
 
