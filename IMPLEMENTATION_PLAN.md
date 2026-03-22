@@ -198,11 +198,18 @@ These must be fixed before production deployment.
 
 ### P3: Testing Improvements
 
-#### Task P3.1: Add Missing Unit Tests
-**Steps:**
-1. Write tests for `message-repository.test.ts` (if not complete)
-2. Write tests for cleanup service edge cases
-3. Commit with message: `test: add missing unit tests`
+#### Task P3.1: Add Missing Unit Tests ✅ COMPLETE
+**Severity:** Medium
+**File:** `packages/backend/src/__tests__/cleanup.test.ts`
+
+**Completed:**
+- Added tests for cleanup service functions:
+  - `performCleanup()` - 2 tests (verifies call to deleteOldMessages, error handling)
+  - `startCleanupScheduler()` - 2 tests (verifies immediate run, prevents duplicate schedulers)
+  - `stopCleanupScheduler()` - 2 tests (verifies stop behavior, handles already-stopped state)
+- Total: 6 new tests added (98 → 104 backend tests)
+- All 104 backend tests pass
+- All 115 frontend tests pass
 
 #### Task P3.2: Add Missing E2E Tests
 **Steps:**
@@ -282,7 +289,7 @@ P2 (Medium - Code Quality)
 └── P2.5: Trace IDs ✅ Complete
 
 P3 (Testing)
-├── P3.1: Unit test gaps
+├── P3.1: Unit test gaps ✅ Complete
 ├── P3.2: E2E gaps
 └── P3.3: Add load test to CI ✅ Complete
 
