@@ -37,7 +37,7 @@ The following gaps were identified between the spec and implementation:
 | CRITICAL | Backend port 3000 exposed bypassing nginx | docker-compose.production.yml:6-7 | Not Fixed |
 | CRITICAL | Camera stream tracks leak after screen share | use-webrtc.ts | **FIXED v0.6.14** |
 | CRITICAL | Event listeners accumulate on reconnect | peer-manager.ts | **FIXED v0.6.14** |
-| HIGH | ICE candidates leak private host IPs | peer-manager.ts:83-86 | Not Fixed |
+| HIGH | ICE candidates leak private host IPs | peer-manager.ts | **FIXED v0.6.14** |
 | HIGH | SDP content unvalidated (only wrapper) | room-events.ts | Not Fixed |
 | HIGH | security-headers CI tests backend not nginx | ci.yml:178 | Not Fixed |
 | HIGH | ZAP CI scans backend only | ci.yml:233 | Not Fixed |
