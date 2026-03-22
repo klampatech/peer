@@ -154,7 +154,7 @@ jobs:
         run: sleep 5
 
       - name: Verify security headers
-        run: node tests/security/security-headers.test.js
+        run: node tests/security/http-headers.js
 
   security-scan:
     name: OWASP ZAP Scan

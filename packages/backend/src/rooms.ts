@@ -142,10 +142,11 @@ export function roomExists(token: RoomToken): boolean {
 /**
  * Checks if a peer is in a room
  * @param token - The room token
- * @param peerId - The peer ID
+ * @param peerId - The peer ID (socket.id)
  * @returns True if peer is in the room
  */
-export function isPeerInRoom(token: RoomToken, peerId: string): boolean {
+export function isPeerInRoom(token: RoomToken, peerId: string | undefined): boolean {
+  if (!peerId) return false;
   const room = rooms.get(token);
   if (!room) {
     return false;

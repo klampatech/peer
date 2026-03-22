@@ -47,6 +47,8 @@ export function setupRoomEvents(io: Server): void {
         joinRoom(room.token, socket.id, data.displayName.trim());
 
         socket.join(room.token);
+        socket.data.peerId = socket.id;
+        socket.data.displayName = data.displayName.trim();
 
         callback({
           success: true,
@@ -105,6 +107,8 @@ export function setupRoomEvents(io: Server): void {
 
         joinRoom(token as Room['token'], socket.id, displayName.trim());
         socket.join(token);
+        socket.data.peerId = socket.id;
+        socket.data.displayName = displayName.trim();
 
         // Notify existing peers about new peer
         const peers = getPeersInRoom(token as Room['token']);

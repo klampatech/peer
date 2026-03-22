@@ -10,7 +10,12 @@ export function setupTurnEvents(io: Server): void {
      * Handle TURN credentials request
      * Generates temporary TURN credentials for the client to use in WebRTC
      */
-    socket.on('turn:request', (callback?: (credentials: {
+    /**
+     * Handle TURN credentials request.
+     * Socket.IO v4 acknowledgement: callback is the THIRD argument (after payload).
+     * We also emit 'turn:credentials' as a fallback event for non-acknowledge clients.
+     */
+    socket.on('turn:request', (payload: unknown, callback?: (credentials: {
       username: string;
       password: string;
       urls: string[];
@@ -22,18 +27,18 @@ export function setupTurnEvents(io: Server): void {
         // eslint-disable-next-line no-console
         console.log(`TURN credentials generated for socket ${socket.id}`);
 
-        // Send credentials back via callback if provided
-        if (callback) {
+        // Prefer acknowledgement callback if the client sent one
+        if (typeof callback === 'function') {
           callback(credentials);
         } else {
-          // Or emit as event
+          // Fallback: emit as a named event
           socket.emit('turn:credentials', credentials);
         }
       } catch (error) {
         // eslint-disable-next-line no-console
         console.error('Error generating TURN credentials:', error);
 
-        if (callback) {
+        if (typeof callback === 'function') {
           callback({
             username: '',
             password: '',
