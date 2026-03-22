@@ -9,7 +9,7 @@
 
 Most specification requirements from `specs/Peer_System_Design.md`, `specs/Testing_Strategy.md`, `specs/SECURITY_AUDIT.md`, and `specs/CI_CD_ANALYSIS.md` have been implemented. This document tracks remaining gaps and their priority.
 
-**Current Status: v0.7.12** | **Tests: 241 passing** | **Coverage: 76.05%**
+**Current Status: v0.7.13** | **Tests: 241+ passing** | **Coverage: 76.05%**
 
 ---
 
@@ -168,6 +168,7 @@ Phase 6: Testing + Hardening █████████████████
 
 | Version | Date | Changes |
 |---------|------|---------|
+| 0.7.13 | 2026-03-22 | Gap analysis refreshed - 2 remaining tasks confirmed |
 | 0.7.12 | 2026-03-22 | Updated implementation plan (Zod validation confirmed complete) |
 | 0.7.11 | 2026-03-22 | Sourcemaps disabled, remaining gaps identified |
 | 0.7.10 | 2026-03-22 | Release (all critical security fixes) |
