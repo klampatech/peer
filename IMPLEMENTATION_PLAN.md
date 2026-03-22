@@ -38,7 +38,7 @@ The following gaps were identified between the spec and implementation:
 | CRITICAL | Camera stream tracks leak after screen share | use-webrtc.ts | **FIXED v0.6.14** |
 | CRITICAL | Event listeners accumulate on reconnect | peer-manager.ts | **FIXED v0.6.14** |
 | HIGH | ICE candidates leak private host IPs | peer-manager.ts | **FIXED v0.6.14** |
-| HIGH | SDP content unvalidated (only wrapper) | room-events.ts | Not Fixed |
+| HIGH | SDP content unvalidated (only wrapper) | room-events.ts, shared/src | **FIXED v0.6.14** |
 | HIGH | security-headers CI tests backend not nginx | ci.yml:178 | Not Fixed |
 | HIGH | ZAP CI scans backend only | ci.yml:233 | Not Fixed |
 | HIGH | Duplicate install+build in CI jobs | ci.yml | Not Fixed |

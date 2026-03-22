@@ -287,7 +287,7 @@ export const SdpOfferSchema = z.object({
   targetPeerId: z.string().min(1, 'Target peer ID is required'),
   sdp: z.object({
     type: z.literal('offer'),
-    sdp: z.string().min(1, 'SDP content is required'),
+    sdp: z.string().min(1, 'SDP content is required').max(10240, 'SDP exceeds 10KB limit'),
   }),
 });
 
@@ -300,7 +300,7 @@ export const SdpAnswerSchema = z.object({
   targetPeerId: z.string().min(1, 'Target peer ID is required'),
   sdp: z.object({
     type: z.literal('answer'),
-    sdp: z.string().min(1, 'SDP content is required'),
+    sdp: z.string().min(1, 'SDP content is required').max(10240, 'SDP exceeds 10KB limit'),
   }),
 });
 
@@ -407,4 +407,44 @@ export function validatePayload<T>(schema: z.ZodSchema<T>, data: unknown): Valid
     success: false,
     error: { code, message },
   };
+}
+
+// Private IP patterns to reject in SDP/ICE candidates (per spec Section 8.5)
+const PRIVATE_IP_PATTERNS = [
+  // 10.x.x.x
+  /^10\.\d{1,3}\.\d{1,3}\.\d{1,3}$/,
+  // 172.16.x.x - 172.31.x.x
+  /^172\.(1[6-9]|2\d|3[01])\.\d{1,3}\.\d{1,3}$/,
+  // 192.168.x.x
+  /^192\.168\.\d{1,3}\.\d{1,3}$/,
+  // 127.x.x.x (localhost)
+  /^127\.\d{1,3}\.\d{1,3}\.\d{1,3}$/,
+];
+
+/**
+ * Validates that SDP content doesn't contain private IP addresses
+ * in ICE candidates. Returns error if private IPs are found.
+ */
+export function validateSdpNoPrivateIPs(sdp: string): ValidationResult<true> {
+  // Check for private IP addresses in candidate lines
+  const lines = sdp.split('\n');
+  for (const line of lines) {
+    if (line.startsWith('a=candidate:') || line.startsWith('candidate:')) {
+      // Extract IP from candidate line (format: candidate:...IP...)
+      const ipMatch = line.match(/(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})/);
+      if (ipMatch && ipMatch[1]) {
+        const ip = ipMatch[1];
+        for (const pattern of PRIVATE_IP_PATTERNS) {
+          if (pattern.test(ip)) {
+            return {
+              success: false,
+              error: { code: 'SDP_CONTAINS_PRIVATE_IP', message: `SDP contains private IP address: ${ip}` },
+            };
+          }
+        }
+      }
+    }
+  }
+
+  return { success: true, data: true };
 }

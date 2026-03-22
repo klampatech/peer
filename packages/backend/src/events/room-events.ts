@@ -17,6 +17,7 @@ import {
   SdpAnswerSchema,
   IceCandidateSchema,
   validatePayload,
+  validateSdpNoPrivateIPs,
   isRoomToken,
   type RoomCreateInput,
   type RoomJoinInput,
@@ -192,6 +193,13 @@ export function setupRoomEvents(io: Server): void {
 
       const { targetPeerId, sdp } = validation.data!;
 
+      // Validate SDP doesn't contain private IP addresses
+      const ipValidation = validateSdpNoPrivateIPs(sdp.sdp);
+      if (!ipValidation.success) {
+        logger.warn({ traceId: socket.data.traceId, error: ipValidation.error }, 'SDP contains private IP');
+        return;
+      }
+
       // Authorization: verify sender is in a room and target is in same room
       if (!socket.data.peerId || !socket.rooms.has(targetPeerId)) {
         logger.warn({ traceId: socket.data.traceId, targetPeerId }, 'Unauthorized SDP offer - peers not in same room');
@@ -213,6 +221,13 @@ export function setupRoomEvents(io: Server): void {
       }
 
       const { targetPeerId, sdp } = validation.data!;
+
+      // Validate SDP doesn't contain private IP addresses
+      const ipValidation = validateSdpNoPrivateIPs(sdp.sdp);
+      if (!ipValidation.success) {
+        logger.warn({ traceId: socket.data.traceId, error: ipValidation.error }, 'SDP contains private IP');
+        return;
+      }
 
       // Authorization: verify sender is in a room and target is in same room
       if (!socket.data.peerId || !socket.rooms.has(targetPeerId)) {
