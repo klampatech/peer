@@ -17,6 +17,7 @@
 | Permissions-Policy security header missing (required by spec) | Fixed v0.6.11 |
 | Socket.IO rate limiter too permissive (180/min vs spec's 10/min) | Fixed v0.6.11 |
 | Speaking indicator not connected to UI (useAudioLevel hook unused) | Fixed v0.6.11 |
+| E2E tests fail when run in batch due to Socket.IO rate limit (10/min) | Fixed - made socket rate limiter configurable via SOCKET_RATE_LIMIT_POINTS and SOCKET_RATE_LIMIT_DURATION env vars |
 
 ---
 

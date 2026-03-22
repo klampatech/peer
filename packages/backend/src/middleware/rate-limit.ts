@@ -43,10 +43,13 @@ export function rateLimitMiddleware(
  * Spec: 10 joins per IP per minute (Section 8.2)
  */
 export function setupSocketRateLimiter(io: ReturnType<typeof require>['socket.io']['Server']): void {
-  // 10 join attempts per minute per IP - matches spec Section 8.2
+  // Configurable socket rate limiting - 10 by default for production, higher for testing
+  const socketRateLimitPoints = parseInt(process.env.SOCKET_RATE_LIMIT_POINTS || '10', 10);
+  const socketRateLimitDuration = parseInt(process.env.SOCKET_RATE_LIMIT_DURATION || '60', 10);
+
   const socketRateLimiter = new RateLimiterMemory({
-    points: 10, // 10 events
-    duration: 60, // per 60 seconds (1 minute)
+    points: socketRateLimitPoints,
+    duration: socketRateLimitDuration,
     blockDuration: 0,
   });
 
