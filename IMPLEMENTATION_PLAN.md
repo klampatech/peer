@@ -33,6 +33,7 @@
 | Docker network isolation (flat network + nginx root) | Fixed v0.6.17 - segmented networks (proxy-network, turn-network), nginx runs as non-root user |
 | Backend rate limit test flaky (100 sequential requests timing out) | Fixed v0.7.7 - use Promise.all batches for faster execution while maintaining test reliability |
 | ICE transport policy forced relay only (no STUN fallback) | Fixed v0.7.8 - use 'all' policy for STUN-first, TURN-fallback |
+| PeerManager and SignallingClient unit tests were placeholder only | Fixed v0.7.9 - implemented proper unit tests with 22 new test cases |
 
 ---
 
@@ -78,7 +79,7 @@ The following gaps were identified between the spec and implementation:
 | Area | Count | Status |
 |------|-------|--------|
 | Backend unit tests | 104 | Passing |
-| Frontend tests | 115 | Passing |
+| Frontend tests | 137 | Passing |
 | E2E tests | 168 (6 skipped) | Passing |
 | Backend coverage | 76.05% | Exceeds target |
 
