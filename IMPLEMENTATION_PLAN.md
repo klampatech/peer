@@ -18,6 +18,10 @@
 | Socket.IO rate limiter too permissive (180/min vs spec's 10/min) | Fixed v0.6.11 |
 | Speaking indicator not connected to UI (useAudioLevel hook unused) | Fixed v0.6.11 |
 | E2E tests fail when run in batch due to Socket.IO rate limit (10/min) | Fixed - made socket rate limiter configurable via SOCKET_RATE_LIMIT_POINTS and SOCKET_RATE_LIMIT_DURATION env vars |
+| CI: ZAP scan always passes (|| true) | Fixed v0.6.13 |
+| CI: Fixed sleep 5 causes flaky tests | Fixed v0.6.13 - replaced with health-check loop |
+| CI: Build job has no artifact output | Fixed v0.6.13 - added artifact publishing |
+| CI: All 7 Playwright browsers run in CI | Fixed v0.6.13 - chromium only in CI, full matrix locally |
 
 ---
 
