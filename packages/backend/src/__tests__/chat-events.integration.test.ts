@@ -264,7 +264,7 @@ describe('Chat Events Integration', () => {
       const err = errors[0] as Record<string, unknown>;
       expect(err).toHaveProperty('success', false);
       expect(err).toHaveProperty('error');
-      expect((err.error as Record<string, unknown>)).toHaveProperty('code', 'INVALID_MESSAGE');
+      expect((err.error as Record<string, unknown>)).toHaveProperty('code', 'MESSAGE_TOO_LONG');
       expect((err.error as Record<string, unknown>)).toHaveProperty('message');
       expect(((err.error as Record<string, unknown>)).message as string).toContain('2000');
     });

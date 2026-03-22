@@ -4,19 +4,23 @@
 
 import { Server as SocketIOServer, Socket } from 'socket.io';
 import { v4 as uuidv4 } from 'uuid';
-import type { RoomToken, ChatMessagePayload, ChatMessageResponsePayload } from '@peer/shared';
+import type { RoomToken, ChatMessageResponsePayload } from '@peer/shared';
 import { createMessage, getMessagesByRoom, validateMessage } from '../repositories/message-repository';
 import { isPeerInRoom } from '../rooms';
 import { logger } from '../utils/logger.js';
+import {
+  ChatMessageSchema,
+  ChatHistorySchema,
+  validatePayload,
+  createRoomToken,
+  type ChatMessageInput,
+  type ChatHistoryInput,
+} from '@peer/shared';
 
 interface SocketData {
   peerId: string;
   displayName: string;
   roomToken?: RoomToken;
-}
-
-interface ChatHistoryPayload {
-  roomToken: RoomToken;
 }
 
 /**
@@ -35,14 +39,28 @@ export function setupChatEvents(io: SocketIOServer): void {
      * Handle incoming chat messages
      * Uses push-based model: broadcasts to room, no callback needed
      */
-    socket.on('chat:message', (payload: ChatMessagePayload) => {
+    socket.on('chat:message', (payload: unknown) => {
       try {
-        const { roomToken, message } = payload;
+        const validation = validatePayload<ChatMessageInput>(ChatMessageSchema, payload);
+
+        if (!validation.success) {
+          socket.emit('chat:error', {
+            success: false,
+            error: {
+              code: validation.error!.code,
+              message: validation.error!.message,
+            },
+          });
+          return;
+        }
+
+        const { roomToken, message } = validation.data!;
+        const roomTokenTyped = createRoomToken(roomToken);
         const peerId = socketData.peerId;
         const displayName = socketData.displayName;
 
         // Validate peer is in the room
-        if (!roomToken || !isPeerInRoom(roomToken, peerId)) {
+        if (!roomTokenTyped || !isPeerInRoom(roomTokenTyped, peerId)) {
           socket.emit('chat:error', {
             success: false,
             error: {
@@ -53,14 +71,14 @@ export function setupChatEvents(io: SocketIOServer): void {
           return;
         }
 
-        // Validate message
-        const validation = validateMessage(message);
-        if (!validation.valid) {
+        // Validate message (additional business logic validation)
+        const messageValidation = validateMessage(message);
+        if (!messageValidation.valid) {
           socket.emit('chat:error', {
             success: false,
             error: {
               code: 'INVALID_MESSAGE',
-              message: validation.error || 'Invalid message',
+              message: messageValidation.error || 'Invalid message',
             },
           });
           return;
@@ -68,14 +86,14 @@ export function setupChatEvents(io: SocketIOServer): void {
 
         // Create message in database
         const chatMessage = createMessage({
-          roomToken,
+          roomToken: roomTokenTyped,
           peerId,
           displayName,
           message: message.trim(),
         });
 
         // Broadcast message to all peers in the room
-        io.to(roomToken).emit('chat:message', chatMessage);
+        io.to(roomTokenTyped).emit('chat:message', chatMessage);
       } catch (error) {
         logger.error({ traceId: socket.data.traceId, err: error }, 'Error handling chat:message');
         socket.emit('chat:error', {
@@ -92,17 +110,36 @@ export function setupChatEvents(io: SocketIOServer): void {
      * Handle request for message history
      * Uses callback pattern for consistency with room events
      */
-    socket.on('chat:history', (payload: ChatHistoryPayload, callback?: (response: {
+    socket.on('chat:history', (payload: unknown, callback?: (response: {
       success: boolean;
       data?: { messages: ChatMessageResponsePayload[] };
       error?: { code: string; message: string };
     }) => void) => {
       try {
-        const { roomToken } = payload;
+        const validation = validatePayload<ChatHistoryInput>(ChatHistorySchema, payload);
+
+        if (!validation.success) {
+          const errorResponse = {
+            success: false,
+            error: {
+              code: validation.error!.code,
+              message: validation.error!.message,
+            },
+          };
+          if (typeof callback === 'function') {
+            callback(errorResponse);
+          } else {
+            socket.emit('chat:error', errorResponse);
+          }
+          return;
+        }
+
+        const { roomToken } = validation.data!;
+        const roomTokenTyped = createRoomToken(roomToken);
         const peerId = socketData.peerId;
 
         // Validate peer is in the room
-        if (!isPeerInRoom(roomToken, peerId)) {
+        if (!isPeerInRoom(roomTokenTyped, peerId)) {
           const errorResponse = {
             success: false,
             error: {
@@ -119,7 +156,7 @@ export function setupChatEvents(io: SocketIOServer): void {
         }
 
         // Get message history
-        const messages = getMessagesByRoom(roomToken, 100);
+        const messages = getMessagesByRoom(roomTokenTyped, 100);
 
         const response = {
           success: true,

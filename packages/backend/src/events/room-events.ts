@@ -9,14 +9,22 @@ import {
   type Room,
 } from '../rooms.js';
 import { logger } from '../utils/logger.js';
-
-/**
- * Type guard for RoomToken - validates UUID v4 format
- */
-function isRoomToken(value: string): boolean {
-  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
-  return uuidRegex.test(value);
-}
+import {
+  RoomCreateSchema,
+  RoomJoinSchema,
+  RoomLeaveSchema,
+  SdpOfferSchema,
+  SdpAnswerSchema,
+  IceCandidateSchema,
+  validatePayload,
+  isRoomToken,
+  type RoomCreateInput,
+  type RoomJoinInput,
+  type RoomLeaveInput,
+  type SdpOfferInput,
+  type SdpAnswerInput,
+  type IceCandidateInput,
+} from '@peer/shared';
 
 /**
  * Sets up room-related Socket.IO event handlers
@@ -30,9 +38,22 @@ export function setupRoomEvents(io: Server): void {
     logger.info({ socketId: socket.id, traceId }, 'Client connected');
 
     // Handle room creation
-    socket.on('room:create', (data: { displayName: string }, callback) => {
+    socket.on('room:create', (data: unknown, callback) => {
       try {
-        if (!data.displayName || data.displayName.trim().length === 0) {
+        const validation = validatePayload<RoomCreateInput>(RoomCreateSchema, data);
+
+        if (!validation.success) {
+          callback({
+            success: false,
+            error: { code: validation.error!.code, message: validation.error!.message },
+          });
+          return;
+        }
+
+        const { displayName } = validation.data!;
+
+        // Additional check for whitespace-only (Zod's min(1) allows whitespace)
+        if (!displayName || displayName.trim().length === 0) {
           callback({
             success: false,
             error: { code: 'INVALID_DISPLAY_NAME', message: 'Display name is required' },
@@ -40,20 +61,12 @@ export function setupRoomEvents(io: Server): void {
           return;
         }
 
-        if (data.displayName.length > 50) {
-          callback({
-            success: false,
-            error: { code: 'DISPLAY_NAME_TOO_LONG', message: 'Display name must be 50 characters or less' },
-          });
-          return;
-        }
-
         const room = createRoom();
-        joinRoom(room.token, socket.id, data.displayName.trim());
+        joinRoom(room.token, socket.id, displayName.trim());
 
         socket.join(room.token);
         socket.data.peerId = socket.id;
-        socket.data.displayName = data.displayName.trim();
+        socket.data.displayName = displayName.trim();
 
         callback({
           success: true,
@@ -71,30 +84,25 @@ export function setupRoomEvents(io: Server): void {
     });
 
     // Handle room joining
-    socket.on('room:join', (data: { token: string; displayName: string }, callback) => {
+    socket.on('room:join', (data: unknown, callback) => {
       try {
-        const { token, displayName } = data;
+        const validation = validatePayload<RoomJoinInput>(RoomJoinSchema, data);
 
-        if (!token || !isRoomToken(token)) {
+        if (!validation.success) {
           callback({
             success: false,
-            error: { code: 'INVALID_TOKEN', message: 'Invalid room token' },
+            error: { code: validation.error!.code, message: validation.error!.message },
           });
           return;
         }
 
+        const { token, displayName } = validation.data!;
+
+        // Additional check for whitespace-only (Zod's min(1) allows whitespace)
         if (!displayName || displayName.trim().length === 0) {
           callback({
             success: false,
             error: { code: 'INVALID_DISPLAY_NAME', message: 'Display name is required' },
-          });
-          return;
-        }
-
-        if (displayName.length > 50) {
-          callback({
-            success: false,
-            error: { code: 'DISPLAY_NAME_TOO_LONG', message: 'Display name must be 50 characters or less' },
           });
           return;
         }
@@ -142,17 +150,19 @@ export function setupRoomEvents(io: Server): void {
     });
 
     // Handle leaving room
-    socket.on('room:leave', (data: { token: string }, callback) => {
+    socket.on('room:leave', (data: unknown, callback) => {
       try {
-        const { token } = data;
+        const validation = validatePayload<RoomLeaveInput>(RoomLeaveSchema, data);
 
-        if (!token || !isRoomToken(token)) {
+        if (!validation.success) {
           callback?.({
             success: false,
-            error: { code: 'INVALID_TOKEN', message: 'Invalid room token' },
+            error: { code: validation.error!.code, message: validation.error!.message },
           });
           return;
         }
+
+        const { token } = validation.data!;
 
         const room = getRoom(token as Room['token']);
         if (room) {
@@ -173,8 +183,13 @@ export function setupRoomEvents(io: Server): void {
     });
 
     // Handle WebRTC signaling - SDP offer
-    socket.on('sdp:offer', (data: { targetPeerId: string; sdp: object }) => {
-      const { targetPeerId, sdp } = data;
+    socket.on('sdp:offer', (data: unknown) => {
+      const validation = validatePayload<SdpOfferInput>(SdpOfferSchema, data);
+      if (!validation.success) {
+        logger.warn({ traceId: socket.data.traceId, error: validation.error }, 'Invalid SDP offer');
+        return;
+      }
+      const { targetPeerId, sdp } = validation.data!;
       socket.to(targetPeerId).emit('sdp:offer', {
         peerId: socket.id,
         sdp,
@@ -182,8 +197,13 @@ export function setupRoomEvents(io: Server): void {
     });
 
     // Handle WebRTC signaling - SDP answer
-    socket.on('sdp:answer', (data: { targetPeerId: string; sdp: object }) => {
-      const { targetPeerId, sdp } = data;
+    socket.on('sdp:answer', (data: unknown) => {
+      const validation = validatePayload<SdpAnswerInput>(SdpAnswerSchema, data);
+      if (!validation.success) {
+        logger.warn({ traceId: socket.data.traceId, error: validation.error }, 'Invalid SDP answer');
+        return;
+      }
+      const { targetPeerId, sdp } = validation.data!;
       socket.to(targetPeerId).emit('sdp:answer', {
         peerId: socket.id,
         sdp,
@@ -191,8 +211,13 @@ export function setupRoomEvents(io: Server): void {
     });
 
     // Handle WebRTC signaling - ICE candidate
-    socket.on('ice-candidate', (data: { targetPeerId: string; candidate: object }) => {
-      const { targetPeerId, candidate } = data;
+    socket.on('ice-candidate', (data: unknown) => {
+      const validation = validatePayload<IceCandidateInput>(IceCandidateSchema, data);
+      if (!validation.success) {
+        logger.warn({ traceId: socket.data.traceId, error: validation.error }, 'Invalid ICE candidate');
+        return;
+      }
+      const { targetPeerId, candidate } = validation.data!;
       socket.to(targetPeerId).emit('ice-candidate', {
         peerId: socket.id,
         candidate,

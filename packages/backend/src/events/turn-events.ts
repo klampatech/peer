@@ -2,6 +2,7 @@ import type { Server, Socket } from 'socket.io';
 import { v4 as uuidv4 } from 'uuid';
 import { generateTurnCredentials } from '../services/turn-credentials.js';
 import { logger } from '../utils/logger.js';
+import { TurnRequestSchema, validatePayload, type TurnRequestInput } from '@peer/shared';
 
 interface TurnCredentials {
   username: string;
@@ -25,12 +26,32 @@ export function setupTurnEvents(io: Server): void {
      * Socket.IO v4 acknowledgement: callback is the THIRD argument (after payload).
      * Uses consistent SocketResponse format with { success, data, error }.
      */
-    socket.on('turn:request', (_payload: unknown, callback?: (response: {
+    socket.on('turn:request', (payload: unknown, callback?: (response: {
       success: boolean;
       data?: TurnCredentials;
       error?: { code: string; message: string };
     }) => void) => {
       try {
+        // Validate payload (optional - accepts empty or valid roomToken)
+        const validation = validatePayload<TurnRequestInput>(TurnRequestSchema, payload);
+
+        if (!validation.success) {
+          const errorResponse = {
+            success: false,
+            error: {
+              code: validation.error!.code,
+              message: validation.error!.message,
+            },
+          };
+
+          if (typeof callback === 'function') {
+            callback(errorResponse);
+          } else {
+            socket.emit('turn:credentials', errorResponse);
+          }
+          return;
+        }
+
         const credentials = generateTurnCredentials();
 
         logger.info({ traceId: socket.data.traceId, socketId: socket.id }, 'TURN credentials generated');

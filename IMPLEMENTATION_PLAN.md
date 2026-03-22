@@ -148,15 +148,22 @@ These must be fixed before production deployment.
 - Updated test assertions to match new format
 - All 98 backend tests pass
 
-#### Task P2.3: Add Zod Validation for Socket.IO Payloads
+#### Task P2.3: Add Zod Validation for Socket.IO Payloads ✅ COMPLETE
 **Severity:** Medium
-**Files:** `packages/backend/src/events/*.ts`
+**Files:** `packages/shared/src/index.ts`, `packages/backend/src/events/*.ts`
 
-**Steps:**
-1. Add Zod to package.json dependencies
-2. Create validation schemas for each event type
-3. Add runtime validation before processing
-4. Commit with message: `feat: add Zod validation for Socket.IO payloads`
+**Completed:**
+- Added Zod to `packages/shared/package.json` dependencies
+- Created validation schemas for all event types in `packages/shared/src/index.ts`:
+  - RoomCreateSchema, RoomJoinSchema, RoomLeaveSchema
+  - ChatMessageSchema, ChatHistorySchema
+  - TurnRequestSchema
+  - SdpOfferSchema, SdpAnswerSchema, IceCandidateSchema
+- Added `validatePayload` function for runtime validation
+- Updated `room-events.ts` to use Zod validation
+- Updated `chat-events.ts` to use Zod validation
+- Updated `turn-events.ts` to use Zod validation
+- All 98 backend tests pass
 
 #### Task P2.4: Fail Fast on Missing TURN_SECRET ✅ COMPLETE
 **Severity:** High
@@ -269,7 +276,7 @@ P1 (High - Production Readiness)
 P2 (Medium - Code Quality)
 ├── P2.1: Structured logging ✅ Complete
 ├── P2.2: Response shapes ✅ Complete
-├── P2.3: Zod validation
+├── P2.3: Zod validation ✅ Complete
 ├── P2.4: TURN_SECRET fail-fast ✅ Complete
 └── P2.5: Trace IDs ✅ Complete
 
@@ -288,7 +295,7 @@ P4 (Documentation)
 
 - [x] All P0 tasks complete (Critical security issues fixed)
 - [x] All P1 tasks complete (Production-ready infrastructure)
-- [ ] All P2 tasks complete (Code quality improved - P2.3 Zod validation pending)
+- [x] All P2 tasks complete (Code quality improved)
 - [ ] All P3 tasks complete (Testing gaps closed)
 - [ ] All P4 tasks complete (Documentation updated)
 - [x] All tests pass (98 backend tests pass)
