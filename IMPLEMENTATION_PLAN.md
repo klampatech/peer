@@ -1,38 +1,46 @@
 # Peer P2P VoIP Application - Implementation Plan
 
-> **Status:** Complete - All spec gaps resolved
+> **Status:** In Progress - Resolving remaining spec gaps
 > **Last Updated:** 2026-03-22
 
 ---
 
 ## Executive Summary
 
-All specification requirements from `specs/Peer_System_Design.md`, `specs/Testing_Strategy.md`, `specs/SECURITY_AUDIT.md`, and `specs/CI_CD_ANALYSIS.md` have been implemented. The application is production-ready.
+Most specification requirements from `specs/Peer_System_Design.md`, `specs/Testing_Strategy.md`, `specs/SECURITY_AUDIT.md`, and `specs/CI_CD_ANALYSIS.md` have been implemented. This document tracks remaining gaps and their priority.
+
+**Current Status: v0.7.11** | **Tests: 409 passing** | **Coverage: 76.05%**
 
 ---
 
-## Specification Coverage
+## Remaining Tasks
 
-### specs/Peer_System_Design.md
+### Priority 1: CI/CD Pipeline Gaps
 
-| Section | Status | Implementation |
-|---------|--------|----------------|
-| 5.1.1 Room Management | ✓ Complete | UUID v4 tokens, room create/join/leave events |
-| 5.1.2 Voice (VoIP) | ✓ Complete | WebRTC mesh, opus codec, mute/unmute |
-| 5.1.3 Video | ✓ Complete | Camera streams, VP8 codec, grid layout |
-| 5.1.4 Screen Sharing | ✓ Complete | getDisplayMedia(), track management |
-| 5.1.5 Text Chat | ✓ Complete | SQLite persistence, message history |
-| 5.1.6 NAT Traversal | ✓ Complete | STUN-first, TURN fallback |
-| 6.1 Sprint 1 (Foundation) | ✓ Complete | pnpm workspaces, Socket.IO server |
-| 6.2 Sprint 2 (WebRTC) | ✓ Complete | simple-peer, ICE candidates |
-| 6.3 Sprint 3 (Screen+TURN) | ✓ Complete | coturn, TURN credentials |
-| 6.4 Sprint 4 (Chat) | ✓ Complete | SQLite, message handling |
-| 6.5 Sprint 5 (UI) | ✓ Complete | React/TailwindCSS dark theme |
-| 6.6 Sprint 6 (Testing) | ✓ Complete | 409 total tests |
+| Issue | Status | Description |
+|-------|--------|-------------|
+| Build artifact publishing | **PENDING** | `.github/workflows/ci.yml` build job produces no artifacts |
+| E2E tests startup config | **PENDING** | Playwright webServer conflicts with manual backend start; frontend not started |
+| Security-headers tests nginx | **PENDING** | Tests backend (port 3000) instead of nginx (port 80/443) |
 
-## Specification Coverage
+### Priority 2: Code Quality Gaps (specs/code-review-findings.md)
 
-### specs/Peer_System_Design.md
+| Issue | Status | Description |
+|-------|--------|-------------|
+| Inconsistent response shapes | **PENDING** | Socket.IO events return different response formats |
+| No Zod validation | **PENDING** | Zod in dependencies but unused for payload validation |
+| Console.* usage | **PENDING** | Uses console logging instead of structured logger |
+| No metrics endpoint | **PENDING** | Missing `/metrics` endpoint for Prometheus |
+
+### Priority 3: Production Docker Compose Gaps
+
+| Issue | Status | Description |
+|-------|--------|-------------|
+| Port 3478 exposed plaintext | **PENDING** | TURN port 3478 exposed (should be 5349 TLS only) |
+
+---
+
+## Specification Coverage (Complete)
 
 | Section | Status | Implementation |
 |---------|--------|----------------|
@@ -94,23 +102,17 @@ All specification requirements from `specs/Peer_System_Design.md`, `specs/Testin
 | Backend rate limit test flaky | **Fixed v0.7.7** - batched requests |
 | ICE transport policy forced relay only | **Fixed v0.7.8** - STUN-first |
 | PeerManager unit tests placeholder only | **Fixed v0.7.9** - full tests |
-| Sourcemaps enabled in production (H-4) | **Pending** - need to set `build.sourcemap: false` in vite.config.ts |
+| Sourcemaps enabled in production (H-4) | **Fixed v0.7.11** - `build.sourcemap: false` |
+| Socket.IO rate limiter not wired | **Fixed** - properly wired in server.ts |
+| TURN URLs hardcoded to localhost | **Fixed** - uses TURN_HOST env var |
+| Chat feature broken (peerId undefined) | **Fixed** - peerId set at room join |
+| Nginx HTTPS block commented | **Fixed** - HTTPS enabled |
+| coturn auth misconfigured | **Fixed** - static-auth-secret in turnserver.conf |
+| Plaintext TURN port exposed | **Fixed** - TLS only externally (PENDING verification) |
 
 ---
 
-## Remaining Tasks
-
-All specification requirements have been implemented. The application is production-ready.
-
-### Completed Items
-
-| Item | Status |
-|------|--------|
-| H-4: Sourcemaps enabled in production | **Fixed v0.7.11** - set `build.sourcemap: false` in vite.config.ts |
-
----
-
-## Test Coverage Summary
+## Testing
 
 | Area | Count | Status |
 |------|-------|--------|
@@ -122,7 +124,7 @@ All specification requirements have been implemented. The application is product
 
 ---
 
-## Implementation Phases Complete
+## Implementation Phases
 
 ```
 Phase 1: Foundation          ████████████████████ 100%
@@ -130,71 +132,64 @@ Phase 2: WebRTC              █████████████████
 Phase 3: Screen Share + TURN ████████████████████ 100%
 Phase 4: Chat + Persistence  ████████████████████ 100%
 Phase 5: UI Polish           ████████████████████ 100%
-Phase 6: Testing + Hardening ████████████████████ 100%
+Phase 6: Testing + Hardening ████████████████████ 95%
 ```
 
 ---
 
-## Exit Criteria - All Met
+## Remaining Tasks (Actionable)
 
-- [x] All P0 tasks (Critical security fixes)
-- [x] All P1 tasks (Production-ready infrastructure)
-- [x] All P2 tasks (Code quality improvements)
-- [x] All P3 tasks (Testing complete - 409 total tests)
-- [x] All P4 tasks (Documentation updated)
-- [x] All P5 tasks (Security audit fixes)
-- [x] TypeScript compiles without errors
-- [x] Module resolution fixed for dev server
-- [x] Production deployment verified (v0.7.10)
-- [x] H-4: Sourcemaps disabled in production (v0.7.11)
+### Task 1: Add Build Artifact Publishing to CI
+**File:** `.github/workflows/ci.yml`
+- Add `actions/upload-artifact` step in the `build` job
+- Upload `packages/backend/dist/`, `packages/frontend/dist/`, `packages/shared/dist/`
 
----
+### Task 2: Fix E2E Test Startup Configuration
+**File:** `.github/workflows/ci.yml` and `playwright.config.ts`
+- Option A: Remove `webServer` from playwright.config.ts and start both frontend+backend in CI
+- Option B: Start frontend in CI job and use `reuseExistingServer`
+- Verify tests can connect to both services
 
-## Acceptance Criteria (from specs/Peer_System_Design.md §9)
+### Task 3: Update Security Headers Test to Target Nginx
+**File:** `.github/workflows/ci.yml` and `tests/security/http-headers.js`
+- Change to test against nginx (port 80/443), not backend (port 3000)
+- Result: Tests actual production security headers
 
-| AC | Criterion | Test Coverage |
-|----|-----------|----------------|
-| AC-01 | Room Creation | E2E |
-| AC-02 | Room Join | E2E |
-| AC-03 | Voice Call | E2E |
-| AC-04 | Video Call | E2E |
-| AC-05 | Mute Toggle | E2E |
-| AC-06 | Camera Toggle | E2E |
-| AC-07 | Screen Share | E2E |
-| AC-08 | Screen Share Stop | E2E |
-| AC-09 | Text Chat | E2E |
-| AC-10 | Chat Persistence | E2E + Integration |
-| AC-11 | Ephemeral Room | E2E + Security |
-| AC-12 | NAT Traversal | Integration |
-| AC-13 | 8-peer 10min stability | E2E |
-| AC-14 | OWASP ZAP zero HIGH | Security |
-| AC-15 | Security Headers Grade A | Security |
-| AC-16 | Cross-browser | E2E matrix |
-| AC-17 | Mobile | Tested |
-| AC-18 | 100 rooms < 200ms | Load test |
-| AC-19 | Keyboard nav | Manual |
-| AC-20 | Permission denied UX | E2E |
+### Task 4: Add Structured Logging (Replace console.*)
+**Files:** `packages/backend/src/events/*.ts`, `packages/backend/src/services/*.ts`
+- Replace `console.log/warn/error` with structured logger from `packages/backend/src/utils/logger.ts`
+
+### Task 5: Implement Zod Validation for Socket.IO Payloads
+**Files:** `packages/shared/src/schemas.ts`, `packages/backend/src/events/*.ts`
+- Add Zod schemas for room:create, room:join, chat:message, turn:request
+- Add validation in event handlers
+
+### Task 6: Add Metrics Endpoint
+**File:** `packages/backend/src/routes/`
+- Add `/metrics` endpoint returning request rate, error rate, latency in Prometheus format
+
+### Task 7: Verify Plaintext TURN Port Removal
+**File:** `docker-compose.production.yml`
+- Verify port 3478 is not exposed externally (only 5349 TLS)
 
 ---
 
-## Remaining Considerations (Out of Scope)
+## Exit Criteria (When Complete)
 
-The following items from `specs/Peer_System_Design.md` §10 (Recommended Upgrade Paths) are intentionally not implemented for v1:
-
-| Feature | Notes |
-|---------|-------|
-| SFU (mediasoup) | Only needed when rooms exceed 8 peers regularly |
-| Recording | Requires dedicated recording peer |
-| User accounts | Adds complexity, breaks ephemeral model |
-| End-to-end encryption | Layer on existing DTLS-SRTP when needed |
-| Mobile apps | React Native approach available |
-| Persistent rooms | Can add 'pin room' later |
+- [ ] Build job produces artifacts
+- [ ] E2E tests run with proper service startup
+- [ ] Security headers test runs against nginx
+- [ ] No console.* usage in backend (structured logging)
+- [ ] Zod validation for all Socket.IO payloads
+- [ ] Metrics endpoint available
+- [ ] Plaintext TURN port not exposed
 
 ---
 
-## No Remaining Gaps
+## Version History
 
-**The implementation is complete and meets all v1.0 specification requirements.**
-
-Version: 0.7.11
-Last Commit:`f731d89 chore: release v0.7.10`
+| Version | Date | Changes |
+|---------|------|---------|
+| 0.7.11 | 2026-03-22 | Sourcemaps disabled, status updated to "In Progress" |
+| 0.7.10 | 2026-03-22 | Release (all critical security fixes) |
+| 0.7.9 | 2026-03-21 | PeerManager unit tests implemented |
