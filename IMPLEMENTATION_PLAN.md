@@ -9,7 +9,7 @@
 
 This document tracks the gap analysis between specification files in `specs/*` and the current codebase implementation.
 
-**Current Status: v0.7.17** | **Tests: 241+ passing** | **Coverage: 76.05%**
+**Current Status: v0.7.18** | **Tests: 241+ passing** | **Coverage: 76.05%**
 
 ---
 
@@ -22,6 +22,7 @@ This document tracks the gap analysis between specification files in `specs/*` a
 | `specs/SECURITY_AUDIT.md` | 69 security findings (12 Critical, 19 High, 19 Medium, 19 Low) |
 | `specs/code-review-findings.md` | Backend code quality review |
 | `specs/CI_CD_ANALYSIS.md` | CI pipeline issues and remediation |
+| `specs/SECURITY_STANDARDS.md` | Industry security standards reference (OWASP, NIST, CIS, IETF) |
 
 ---
 
@@ -180,18 +181,18 @@ The development docker-compose uses `coturn/coturn:4.6.2-alpine`, but this shoul
 - [x] Zod validation for all Socket.IO payloads
 - [x] Metrics endpoint available (`/metrics`)
 - [x] Plaintext TURN port not exposed in production (TLS-only 5349)
-- [ ] Development docker-compose consistency with production
-- [ ] CSP hardened in nginx configs
-- [ ] HSTS header in all nginx configs
+- [ ] Development docker-compose consistency with production (remove 3478 port)
+- [ ] CSP hardened in nginx configs (remove unsafe-eval)
+- [ ] HSTS header in all nginx configs (nginx-frontend.conf missing)
 
 ---
 
-## v0.7.17 Tasks
+## v0.7.18 Tasks
 
 | Task | Priority | Status |
 |------|----------|--------|
-| Remove plaintext TURN port 3478 from docker-compose.yml | Medium | **Pending** - dev docker-compose.yml ports 58-61 still expose 3478 |
-| Remove unsafe-eval from nginx CSP | Medium | **Pending** - both nginx.conf:78 and nginx-frontend.conf:32 contain unsafe-eval |
+| Remove plaintext TURN port 3478 from docker-compose.yml | Medium | **Pending** - dev docker-compose.yml lines 58-60 still expose ports 3478 (TCP/UDP) |
+| Remove unsafe-eval from nginx CSP | Medium | **Pending** - nginx.conf:78 and nginx-frontend.conf:32 contain unsafe-eval |
 | Add HSTS header to nginx-frontend.conf | Low | **Pending** - HSTS absent from nginx-frontend.conf (only in nginx.conf:69) |
 | Verify coturn image tag alignment | Low | **Completed** - both configs use coturn:4.6.2-alpine |
 
@@ -210,7 +211,7 @@ The development docker-compose uses `coturn/coturn:4.6.2-alpine`, but this shoul
 
 | Version | Date | Changes |
 |---------|------|---------|
-| 0.7.18 | 2026-03-22 | Gap analysis refreshed - 3 tasks still pending |
+| 0.7.18 | 2026-03-22 | Gap analysis refreshed - 3 tasks still pending (verified current state) |
 | 0.7.17 | 2026-03-22 | Gap analysis refreshed - 3 tasks remaining (TURN port, CSP, HSTS) |
 | 0.7.16 | 2026-03-22 | All exit criteria complete: metrics endpoint, no plaintext TURN |
 
@@ -250,6 +251,7 @@ All 12 Critical findings have been fixed. All 19 High findings have been fixed o
 
 | Version | Date | Changes |
 |---------|------|---------|
+| 0.7.18 | 2026-03-22 | Added SECURITY_STANDARDS.md reference; 3 infrastructure tasks pending |
 | 0.7.17 | 2026-03-22 | Gap analysis refreshed - 3 tasks remaining (TURN port, CSP, HSTS) |
 | 0.7.16 | 2026-03-22 | All exit criteria complete: metrics endpoint, no plaintext TURN |
 | 0.7.15 | 2026-03-22 | Added /metrics endpoint, removed plaintext TURN port 3478 |
