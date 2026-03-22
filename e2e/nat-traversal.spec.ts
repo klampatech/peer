@@ -70,18 +70,13 @@ test.describe('NAT Traversal', () => {
   });
 
   test('peer connection state updates correctly', async ({ page }) => {
-    // This test is inherently flaky in parallel mode due to async resource contention
+    // This test can be flaky in parallel mode due to async resource contention
     // The core room creation flow is tested in rooms.spec.ts "can create a new room"
-    // Skip in parallel mode - use slower page.waitForURL instead of expect().toHaveURL
     await page.goto('/');
     await page.getByLabel('Your Name').fill('State Test');
     await page.getByRole('button', { name: 'Create New Room' }).click();
 
-    // Use page.waitForURL which is more reliable in CI parallel mode
-    // This test verifies the page navigation completes successfully
-    await page.waitForURL(/\/room\/.+/, { timeout: 20000 });
-
-    // Verify we're on room page - alternative check
-    expect(page.url()).toContain('/room/');
+    // Use expect().toHaveURL with timeout to handle slow navigation
+    await expect(page).toHaveURL(/\/room\/.+/, { timeout: 30000 });
   });
 });

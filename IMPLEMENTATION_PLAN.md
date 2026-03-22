@@ -11,7 +11,7 @@
 |-------|--------|
 | HomePage health check uses wrong default URL | Fixed in v0.6.1 |
 | E2E test runner Vitest conflict workaround | Documented in AGENTS.md |
-| E2E "peer connection state updates correctly" test flaky | Fixed (use page.waitForURL instead of expect.toHaveURL) |
+| E2E "peer connection state updates correctly" test flaky | Fixed (use expect.toHaveURL with 30s timeout instead of page.waitForURL) |
 
 ---
 
