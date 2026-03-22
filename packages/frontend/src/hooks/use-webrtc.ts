@@ -4,6 +4,12 @@ import { peerManager } from '../lib/webrtc/peer-manager';
 import { getUserMedia, getDisplayMedia, toggleAudio, toggleVideo } from '../lib/webrtc/media';
 import type { MediaStreamOptions } from '../lib/webrtc/media';
 
+// Refs for callbacks to avoid dependency issues
+const callbacksRef = {
+  onPeerConnected: null as ((peerId: string, stream: MediaStream) => void) | null,
+  onPeerDisconnected: null as ((peerId: string) => void) | null,
+};
+
 export interface UseWebRTCOptions {
   /** Automatically request media on mount */
   autoRequestMedia?: boolean;
@@ -46,6 +52,7 @@ export function useWebRTC(options: UseWebRTCOptions = {}): UseWebRTCReturn {
   } = options;
 
   const errorRef = useRef<Error | null>(null);
+  const stopScreenShareRef = useRef<() => void>(() => {});
 
   const {
     localStream,
@@ -61,19 +68,28 @@ export function useWebRTC(options: UseWebRTCOptions = {}): UseWebRTCReturn {
   } = useRoomStore();
 
   // Request media on mount if autoRequestMedia is true
+  // Intentional empty deps - this should only run once on mount
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     if (autoRequestMedia && !localStream) {
       initializeMedia();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // Update refs when callbacks change
+  useEffect(() => {
+    callbacksRef.onPeerConnected = onPeerConnected ?? null;
+    callbacksRef.onPeerDisconnected = onPeerDisconnected ?? null;
+  }, [onPeerConnected, onPeerDisconnected]);
 
   // Initialize peer manager when connected
   useEffect(() => {
     if (isConnected && localStream) {
       peerManager.initialize(
         localStream,
-        onPeerConnected ?? undefined,
-        onPeerDisconnected ?? undefined
+        callbacksRef.onPeerConnected ?? undefined,
+        callbacksRef.onPeerDisconnected ?? undefined
       );
 
       // Connect to existing peers
@@ -90,13 +106,8 @@ export function useWebRTC(options: UseWebRTCOptions = {}): UseWebRTCReturn {
     };
   }, [isConnected, localStream, peers]);
 
-  // Handle new peers joining
-  useEffect(() => {
-    if (isConnected && localStream) {
-      // New peers are handled via the peer-joined event in the store
-      // We need to initiate connection to them
-    }
-  }, [peers]);
+  // Note: New peers joining are handled via the peer-joined event in the store
+  // No additional effect needed here
 
   /**
    * Initialize local media
@@ -152,7 +163,7 @@ export function useWebRTC(options: UseWebRTCOptions = {}): UseWebRTCReturn {
 
         // Handle when user stops sharing via browser UI
         videoTrack.onended = () => {
-          stopScreenShare();
+          stopScreenShareRef.current();
         };
       }
 
@@ -187,6 +198,12 @@ export function useWebRTC(options: UseWebRTCOptions = {}): UseWebRTCReturn {
     setLocalStream(cameraStream);
     setScreenSharing(false);
   }, [screenSharing, setLocalStream, setScreenSharing]);
+
+  // Update ref for stopScreenShare
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => {
+    stopScreenShareRef.current = stopScreenShare;
+  }, [stopScreenShare]);
 
   /**
    * Reconnect to a peer
