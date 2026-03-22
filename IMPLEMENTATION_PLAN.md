@@ -1,7 +1,7 @@
 # Peer P2P VoIP Application - Implementation Plan
 
 > **Status:** Complete - All tasks finished
-> **Last Updated:** 2026-03-22 (both remaining tasks completed)
+> **Last Updated:** 2026-03-22 (v0.7.16 release)
 
 ---
 
@@ -9,7 +9,7 @@
 
 Most specification requirements from `specs/Peer_System_Design.md`, `specs/Testing_Strategy.md`, `specs/SECURITY_AUDIT.md`, and `specs/CI_CD_ANALYSIS.md` have been implemented. This document tracks remaining gaps and their priority.
 
-**Current Status: v0.7.15** | **Tests: 241+ passing** | **Coverage: 76.05%**
+**Current Status: v0.7.16** | **Tests: 241+ passing** | **Coverage: 76.05%**
 
 ---
 
