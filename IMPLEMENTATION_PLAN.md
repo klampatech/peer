@@ -9,7 +9,7 @@
 
 Most specification requirements from `specs/Peer_System_Design.md`, `specs/Testing_Strategy.md`, `specs/SECURITY_AUDIT.md`, and `specs/CI_CD_ANALYSIS.md` have been implemented. This document tracks remaining gaps and their priority.
 
-**Current Status: v0.7.13** | **Tests: 241+ passing** | **Coverage: 76.05%**
+**Current Status: v0.7.14** | **Tests: 241+ passing** | **Coverage: 76.05%**
 
 ---
 
