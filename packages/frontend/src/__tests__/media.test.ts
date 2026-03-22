@@ -179,15 +179,15 @@ describe('media module', () => {
     it('should return categorized media devices', async () => {
       vi.mocked(getAvailableDevices).mockResolvedValue({
         audioInputs: [
-          { kind: 'audioinput', deviceId: 'mic1', label: 'Microphone 1' },
-          { kind: 'audioinput', deviceId: 'mic2', label: 'Microphone 2' },
+          { kind: 'audioinput', deviceId: 'mic1', label: 'Microphone 1', groupId: '', toJSON: () => '' },
+          { kind: 'audioinput', deviceId: 'mic2', label: 'Microphone 2', groupId: '', toJSON: () => '' },
         ],
         videoInputs: [
-          { kind: 'videoinput', deviceId: 'cam1', label: 'Camera 1' },
-          { kind: 'videoinput', deviceId: 'cam2', label: 'Camera 2' },
+          { kind: 'videoinput', deviceId: 'cam1', label: 'Camera 1', groupId: '', toJSON: () => '' },
+          { kind: 'videoinput', deviceId: 'cam2', label: 'Camera 2', groupId: '', toJSON: () => '' },
         ],
         audioOutputs: [
-          { kind: 'audiooutput', deviceId: 'spk1', label: 'Speaker 1' },
+          { kind: 'audiooutput', deviceId: 'spk1', label: 'Speaker 1', groupId: '', toJSON: () => '' },
         ],
       });
 

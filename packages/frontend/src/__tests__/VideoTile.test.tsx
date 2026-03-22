@@ -152,7 +152,7 @@ describe('VideoTile', () => {
 
       rerender(
         <VideoTile
-          stream={null}
+          stream={undefined}
           displayName="John Doe"
         />
       );

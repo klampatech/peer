@@ -243,7 +243,7 @@ describe('useRoomStore', () => {
       });
 
       expect(useRoomStore.getState().peers).toHaveLength(1);
-      expect(useRoomStore.getState().peers[0].id).toBe('peer-2');
+      expect(useRoomStore.getState().peers[0]?.id).toBe('peer-2');
     });
   });
 
@@ -261,7 +261,7 @@ describe('useRoomStore', () => {
         updatePeer('peer-1', { audioEnabled: false });
       });
 
-      expect(useRoomStore.getState().peers[0].audioEnabled).toBe(false);
+      expect(useRoomStore.getState().peers[0]?.audioEnabled).toBe(false);
     });
 
     it('should not modify other peer properties', () => {
@@ -277,8 +277,8 @@ describe('useRoomStore', () => {
         updatePeer('peer-1', { audioEnabled: false });
       });
 
-      expect(useRoomStore.getState().peers[0].displayName).toBe('Alice');
-      expect(useRoomStore.getState().peers[0].videoEnabled).toBe(true);
+      expect(useRoomStore.getState().peers[0]?.displayName).toBe('Alice');
+      expect(useRoomStore.getState().peers[0]?.videoEnabled).toBe(true);
     });
   });
 
