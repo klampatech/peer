@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect } from 'vitest';
 
 // Simple tests that don't require complex module mocking
 // The actual SignallingClient and PeerManager integration is tested via E2E tests

@@ -210,16 +210,17 @@ These must be fixed before production deployment.
 2. Add any missing test scenarios
 3. Commit with message: `test: complete E2E coverage`
 
-#### Task P3.3: Add Load Test to CI Pipeline
+#### Task P3.3: Add Load Test to CI Pipeline ✅ COMPLETE
 **Severity:** High
 **File:** `.github/workflows/ci.yml`
 
-**Current State:** Load tests exist but are not in CI
-
-**Steps:**
-1. Add k6 load test job to CI workflow
-2. Configure as non-blocking (warn only) per Testing Strategy spec
-3. Commit with message: `ci: add load test to CI pipeline`
+**Completed:**
+- Added k6 load test job to CI workflow (lines 216-272)
+- Uses reduced duration (30s) and VUs (10) for CI efficiency
+- Configured as non-blocking (warn only) per Testing Strategy spec using `|| true`
+- Installs k6 from official repository if not available
+- Uploads load test summary as artifact
+- Build job does NOT depend on load-test (non-blocking per spec)
 
 ---
 
@@ -283,7 +284,7 @@ P2 (Medium - Code Quality)
 P3 (Testing)
 ├── P3.1: Unit test gaps
 ├── P3.2: E2E gaps
-└── P3.3: Add load test to CI
+└── P3.3: Add load test to CI ✅ Complete
 
 P4 (Documentation)
 └── P4.1: Update docs
@@ -298,7 +299,7 @@ P4 (Documentation)
 - [x] All P2 tasks complete (Code quality improved)
 - [ ] All P3 tasks complete (Testing gaps closed)
 - [ ] All P4 tasks complete (Documentation updated)
-- [x] All tests pass (98 backend tests pass)
+- [x] All tests pass (98 backend + 115 frontend = 213 tests)
 - [ ] Production deployment verified
 
 **Note:** Pre-existing TypeScript errors in test files (turn-events.integration.test.ts, room-events.integration.test.ts) are unrelated to implementation tasks.

@@ -10,7 +10,6 @@ import http from 'http';
 import express from 'express';
 import request from 'supertest';
 import { setupTurnEvents } from '../events/turn-events.js';
-import { generateTurnCredentials } from '../services/turn-credentials.js';
 
 // Mock at top level - database
 vi.mock('../db/index', () => ({

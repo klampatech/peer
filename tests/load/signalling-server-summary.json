@@ -1,0 +1,20 @@
+{
+  "test": "Peer Signalling Server Load Test",
+  "duration": "10s",
+  "vus": 3,
+  "mode": "both",
+  "pass": true,
+  "thresholds": {
+    "http_req p(95) < 500 ms": true,
+    "error rate < 5 %": true
+  },
+  "metrics": {
+    "http_requests": 36,
+    "ws_sessions": 36,
+    "rooms_created": 18,
+    "peers_joined": 0,
+    "http_req_avg": 0.8412222222222222,
+    "http_req_p95": 1.6905,
+    "error_rate": 0
+  }
+}

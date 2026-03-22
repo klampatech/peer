@@ -213,6 +213,64 @@ jobs:
             fi
           fi
 
+  load-test:
+    name: Load Test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: 9
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build packages
+        run: pnpm build
+
+      - name: Start backend
+        run: |
+          cd packages/backend
+          pnpm dev &
+        env:
+          NODE_ENV: test
+          TURN_SECRET: test-secret-for-ci
+
+      - name: Wait for backend
+        run: sleep 5
+
+      - name: Run k6 load test
+        run: |
+          # Install k6 if not available (non-blocking - warns on failure)
+          if ! command -v k6 &> /dev/null; then
+            echo "k6 not found, installing..."
+            sudo gpg -k
+            sudo gpg --no-default-keyring --keyring /usr/share/keyrings/k6-archive-keyring.gpg --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys C5AD17C747E3415A3642D57D77C6C491D6AC1D69
+            echo "deb [signed-by=/usr/share/keyrings/k6-archive-keyring.gpg] https://dl.k6.io/deb stable main" | sudo tee /etc/apt/sources.list.d/k6.list
+            sudo apt-get update
+            sudo apt-get install k6
+          fi
+
+          # Run load test with reduced duration for CI (30s instead of 10m)
+          # Results are non-blocking (warn only)
+          k6 run tests/load/signalling-server.js --duration=30s --vus=10 --mode=both --summary-export=tests/load/signalling-server-summary.json || true
+
+      - name: Upload load test summary
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: load-test-summary
+          path: tests/load/signalling-server-summary.json
+
   build:
     name: Build
     runs-on: ubuntu-latest

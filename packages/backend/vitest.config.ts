@@ -7,6 +7,9 @@ export default defineConfig({
     environment: 'node',
     include: ['src/**/*.test.ts'],
     testTimeout: 30000,
+    env: {
+      TURN_SECRET: 'test-secret-for-unit-tests',
+    },
     coverage: {
       provider: 'v8',
       reporter: ['text', 'json', 'html'],
