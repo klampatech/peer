@@ -9,7 +9,7 @@
 
 Most specification requirements from `specs/Peer_System_Design.md`, `specs/Testing_Strategy.md`, `specs/SECURITY_AUDIT.md`, and `specs/CI_CD_ANALYSIS.md` have been implemented. This document tracks remaining gaps and their priority.
 
-**Current Status: v0.7.11** | **Tests: 409 passing** | **Coverage: 76.05%**
+**Current Status: v0.7.12** | **Tests: 241 passing** | **Coverage: 76.05%**
 
 ---
 
@@ -19,7 +19,6 @@ Most specification requirements from `specs/Peer_System_Design.md`, `specs/Testi
 
 | Issue | Status | Description |
 |-------|--------|-------------|
-| No Zod validation | **PENDING** | Zod in dependencies but unused for payload validation |
 | No metrics endpoint | **PENDING** | Missing `/metrics` endpoint for Prometheus |
 
 ### Priority 2: Production Docker Compose Gaps
@@ -27,6 +26,15 @@ Most specification requirements from `specs/Peer_System_Design.md`, `specs/Testi
 | Issue | Status | Description |
 |-------|--------|-------------|
 | Port 3478 exposed plaintext | **PENDING** | TURN port 3478 exposed (should be 5349 TLS only) |
+
+---
+
+## Code Quality Fixes Completed
+
+| Issue | Status | Date |
+|-------|--------|------|
+| Zod validation for Socket.IO payloads | **COMPLETE** | Using validatePayload in all event handlers |
+| No console.* usage in backend | **COMPLETE** | Structured logging via logger.ts |
 
 ---
 
@@ -112,7 +120,7 @@ Most specification requirements from `specs/Peer_System_Design.md`, `specs/Testi
 | Frontend tests | 137 | Passing |
 | E2E tests | 168 (6 skipped) | Passing |
 | Backend line coverage | 76.05% | Exceeds 70% target |
-| Total tests | 409 | All passing |
+| Total tests | 241+ | All passing |
 
 ---
 
@@ -131,19 +139,16 @@ Phase 6: Testing + Hardening █████████████████
 
 ## Remaining Tasks (Actionable)
 
-### Task 1: Implement Zod Validation for Socket.IO Payloads
-**Files:** `packages/shared/src/schemas.ts`, `packages/backend/src/events/*.ts`
-- Add Zod schemas for room:create, room:join, chat:message, turn:request
-- Add validation in event handlers
-
-### Task 2: Add Metrics Endpoint
+### Task 1: Add Metrics Endpoint
 **File:** `packages/backend/src/routes/metrics.ts`
 - Add `/metrics` endpoint returning request rate, error rate, latency in Prometheus format
+- Reference: specs/Peer_System_Design.md Section 9 "Observability"
 
-### Task 3: Remove Plaintext TURN Port 3478 from Production
+### Task 2: Remove Plaintext TURN Port 3478 from Production
 **File:** `docker-compose.production.yml`
 - Remove ports `"3478:3478/udp"` and `"3478:3478/tcp"` from coturn service
 - Keep only `"5349:5349/udp"` and `"5349:5349/tcp"` for TLS
+- Reference: specs/SECURITY_AUDIT.md CR-6
 
 ---
 
@@ -153,7 +158,7 @@ Phase 6: Testing + Hardening █████████████████
 - [x] E2E tests run with proper service startup (docker-compose)
 - [x] Security headers test runs against nginx
 - [x] No console.* usage in backend (structured logging)
-- [ ] Zod validation for all Socket.IO payloads
+- [x] Zod validation for all Socket.IO payloads
 - [ ] Metrics endpoint available
 - [ ] Plaintext TURN port not exposed
 
@@ -163,6 +168,7 @@ Phase 6: Testing + Hardening █████████████████
 
 | Version | Date | Changes |
 |---------|------|---------|
+| 0.7.12 | 2026-03-22 | Updated implementation plan (Zod validation confirmed complete) |
 | 0.7.11 | 2026-03-22 | Sourcemaps disabled, remaining gaps identified |
 | 0.7.10 | 2026-03-22 | Release (all critical security fixes) |
 | 0.7.9 | 2026-03-21 | PeerManager unit tests implemented |
