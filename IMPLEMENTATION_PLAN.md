@@ -31,6 +31,7 @@
 | Duplicate install+build in CI jobs | Fixed v0.6.16 - combined into single step |
 | Permissions-Policy missing in nginx | Fixed v0.6.16 - added to nginx.conf |
 | Docker network isolation (flat network + nginx root) | Fixed v0.6.17 - segmented networks (proxy-network, turn-network), nginx runs as non-root user |
+| Backend rate limit test flaky (100 sequential requests timing out) | Known issue - passes in isolation, may fail when run with full test suite due to rate limiter state |
 
 ---
 
