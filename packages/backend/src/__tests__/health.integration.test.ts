@@ -102,8 +102,9 @@ describe('Health Endpoint Integration', () => {
       expect(body).toHaveProperty('status');
       expect(body).toHaveProperty('uptime');
       expect(body).toHaveProperty('version');
+      expect(body).toHaveProperty('dependencies');
 
-      const allowedKeys = ['status', 'uptime', 'version'];
+      const allowedKeys = ['status', 'uptime', 'version', 'dependencies'];
       const actualKeys = Object.keys(body);
       const extraKeys = actualKeys.filter(key => !allowedKeys.includes(key));
       expect(extraKeys).toHaveLength(0);

@@ -66,6 +66,8 @@ services:
       - REALM=peer
     volumes:
       - coturn-data:/var/lib/coturn
+      - certbot-etc:/etc/letsencrypt:ro
+      - ./turnserver.conf:/etc/coturn/turnserver.conf:ro
     restart: unless-stopped
     networks:
       - peer-network

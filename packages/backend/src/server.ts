@@ -10,6 +10,7 @@ import { setupTurnEvents } from './events/turn-events.js';
 import { setupChatEvents } from './events/chat-events.js';
 import { initDatabase } from './db/index.js';
 import { startCleanupScheduler } from './services/cleanup.js';
+import { setCleanupSchedulerStatus } from './routes/health.js';
 
 export interface AppServer {
   app: Express;
@@ -26,6 +27,7 @@ export async function createServer(): Promise<AppServer> {
 
   // Start cleanup scheduler for old chat messages
   startCleanupScheduler();
+  setCleanupSchedulerStatus(true);
 
   const app = express();
   const httpServer = http.createServer(app);
