@@ -30,6 +30,25 @@ All specification requirements from `specs/Peer_System_Design.md`, `specs/Testin
 | 6.5 Sprint 5 (UI) | ✓ Complete | React/TailwindCSS dark theme |
 | 6.6 Sprint 6 (Testing) | ✓ Complete | 409 total tests |
 
+## Specification Coverage
+
+### specs/Peer_System_Design.md
+
+| Section | Status | Implementation |
+|---------|--------|----------------|
+| 5.1.1 Room Management | ✓ Complete | UUID v4 tokens, room create/join/leave events |
+| 5.1.2 Voice (VoIP) | ✓ Complete | WebRTC mesh, opus codec, mute/unmute |
+| 5.1.3 Video | ✓ Complete | Camera streams, VP8 codec, grid layout |
+| 5.1.4 Screen Sharing | ✓ Complete | getDisplayMedia(), track management |
+| 5.1.5 Text Chat | ✓ Complete | SQLite persistence, message history |
+| 5.1.6 NAT Traversal | ✓ Complete | STUN-first, TURN fallback |
+| 6.1 Sprint 1 (Foundation) | ✓ Complete | pnpm workspaces, Socket.IO server |
+| 6.2 Sprint 2 (WebRTC) | ✓ Complete | simple-peer, ICE candidates |
+| 6.3 Sprint 3 (Screen+TURN) | ✓ Complete | coturn, TURN credentials |
+| 6.4 Sprint 4 (Chat) | ✓ Complete | SQLite, message handling |
+| 6.5 Sprint 5 (UI) | ✓ Complete | React/TailwindCSS dark theme |
+| 6.6 Sprint 6 (Testing) | ✓ Complete | 409 total tests |
+
 ---
 
 ## Security Audit Resolution (specs/SECURITY_AUDIT.md)
@@ -75,6 +94,19 @@ All specification requirements from `specs/Peer_System_Design.md`, `specs/Testin
 | Backend rate limit test flaky | **Fixed v0.7.7** - batched requests |
 | ICE transport policy forced relay only | **Fixed v0.7.8** - STUN-first |
 | PeerManager unit tests placeholder only | **Fixed v0.7.9** - full tests |
+| Sourcemaps enabled in production (H-4) | **Pending** - need to set `build.sourcemap: false` in vite.config.ts |
+
+---
+
+## Remaining Tasks
+
+All specification requirements have been implemented. The application is production-ready.
+
+### Completed Items
+
+| Item | Status |
+|------|--------|
+| H-4: Sourcemaps enabled in production | **Fixed v0.7.11** - set `build.sourcemap: false` in vite.config.ts |
 
 ---
 
@@ -114,6 +146,7 @@ Phase 6: Testing + Hardening █████████████████
 - [x] TypeScript compiles without errors
 - [x] Module resolution fixed for dev server
 - [x] Production deployment verified (v0.7.10)
+- [x] H-4: Sourcemaps disabled in production (v0.7.11)
 
 ---
 
@@ -163,5 +196,5 @@ The following items from `specs/Peer_System_Design.md` §10 (Recommended Upgrade
 
 **The implementation is complete and meets all v1.0 specification requirements.**
 
-Version: 0.7.10
-Last Commit: `f731d89 chore: release v0.7.10`
+Version: 0.7.11
+Last Commit:`f731d89 chore: release v0.7.10`
