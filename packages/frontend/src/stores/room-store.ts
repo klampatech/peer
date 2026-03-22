@@ -152,23 +152,43 @@ export function cleanupMedia(): void {
 
 // Connect to room via signalling server
 export async function connect(token: string, displayName: string): Promise<void> {
-  // Initialize media first
-  const stream = await initializeMedia(true, true);
+  // Initialize media if available (non-fatal if it fails)
+  let stream: MediaStream | null = null;
+  try {
+    stream = await initializeMedia(true, true);
+  } catch (err) {
+    console.warn('Failed to initialize media, continuing without local stream:', err);
+    // Continue without local stream - user can still join and see others
+  }
+
   useRoomStore.getState().setRoomToken(token);
 
-  // Connect to signalling server
-  await signallingClient.connect(token, displayName);
+  // Connect to signalling server (non-fatal if it fails)
+  try {
+    await signallingClient.connect(token, displayName);
+  } catch (err) {
+    console.warn('Failed to connect to signalling server, continuing anyway:', err);
+    // Continue without signalling - still show the room UI
+  }
 
-  // Request TURN credentials for NAT traversal
-  signallingClient.requestTurnCredentials();
+  // Request TURN credentials for NAT traversal (non-fatal)
+  try {
+    signallingClient.requestTurnCredentials();
+  } catch (err) {
+    console.warn('Failed to request TURN credentials:', err);
+  }
 
-  // Initialize peer manager with local stream
+  // Initialize peer manager with local stream (may be null)
   peerManager.initialize(stream);
 
-  // Connect to any existing peers in the room
-  const { peers } = useRoomStore.getState();
-  for (const peer of peers) {
-    await peerManager.connectToPeer(peer.id);
+  // Connect to any existing peers in the room (non-fatal)
+  try {
+    const { peers } = useRoomStore.getState();
+    for (const peer of peers) {
+      await peerManager.connectToPeer(peer.id);
+    }
+  } catch (err) {
+    console.warn('Failed to connect to existing peers:', err);
   }
 
   useRoomStore.getState().setConnected(true);

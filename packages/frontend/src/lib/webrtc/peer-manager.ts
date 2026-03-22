@@ -32,9 +32,10 @@ class PeerManager {
 
   /**
    * Initialize the peer manager with local stream
+   * @param localStream - Local media stream (can be null if media unavailable)
    */
   initialize(
-    localStream: MediaStream,
+    localStream: MediaStream | null,
     onPeerConnected?: PeerConnectionCallback,
     onPeerDisconnected?: PeerDisconnectedCallback
   ): void {
