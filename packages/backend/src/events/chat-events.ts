@@ -3,7 +3,7 @@
  */
 
 import { Server as SocketIOServer, Socket } from 'socket.io';
-import type { RoomToken, ChatMessagePayload } from '@peer/shared';
+import type { RoomToken, ChatMessagePayload, ChatMessageResponsePayload } from '@peer/shared';
 import { createMessage, getMessagesByRoom, validateMessage } from '../repositories/message-repository';
 import { isPeerInRoom } from '../rooms';
 import { logger } from '../utils/logger.js';
@@ -12,6 +12,10 @@ interface SocketData {
   peerId: string;
   displayName: string;
   roomToken?: RoomToken;
+}
+
+interface ChatHistoryPayload {
+  roomToken: RoomToken;
 }
 
 /**
@@ -23,6 +27,7 @@ export function setupChatEvents(io: SocketIOServer): void {
 
     /**
      * Handle incoming chat messages
+     * Uses push-based model: broadcasts to room, no callback needed
      */
     socket.on('chat:message', (payload: ChatMessagePayload) => {
       try {
@@ -33,8 +38,11 @@ export function setupChatEvents(io: SocketIOServer): void {
         // Validate peer is in the room
         if (!roomToken || !isPeerInRoom(roomToken, peerId)) {
           socket.emit('chat:error', {
-            code: 'NOT_IN_ROOM',
-            message: 'You must be in a room to send messages',
+            success: false,
+            error: {
+              code: 'NOT_IN_ROOM',
+              message: 'You must be in a room to send messages',
+            },
           });
           return;
         }
@@ -43,8 +51,11 @@ export function setupChatEvents(io: SocketIOServer): void {
         const validation = validateMessage(message);
         if (!validation.valid) {
           socket.emit('chat:error', {
-            code: 'INVALID_MESSAGE',
-            message: validation.error || 'Invalid message',
+            success: false,
+            error: {
+              code: 'INVALID_MESSAGE',
+              message: validation.error || 'Invalid message',
+            },
           });
           return;
         }
@@ -62,39 +73,72 @@ export function setupChatEvents(io: SocketIOServer): void {
       } catch (error) {
         logger.error({ err: error }, 'Error handling chat:message');
         socket.emit('chat:error', {
-          code: 'SERVER_ERROR',
-          message: 'Failed to send message',
+          success: false,
+          error: {
+            code: 'SERVER_ERROR',
+            message: 'Failed to send message',
+          },
         });
       }
     });
 
     /**
      * Handle request for message history
+     * Uses callback pattern for consistency with room events
      */
-    socket.on('chat:history', (payload: { roomToken: RoomToken }) => {
+    socket.on('chat:history', (payload: ChatHistoryPayload, callback?: (response: {
+      success: boolean;
+      data?: { messages: ChatMessageResponsePayload[] };
+      error?: { code: string; message: string };
+    }) => void) => {
       try {
         const { roomToken } = payload;
         const peerId = socketData.peerId;
 
         // Validate peer is in the room
         if (!isPeerInRoom(roomToken, peerId)) {
-          socket.emit('chat:error', {
-            code: 'NOT_IN_ROOM',
-            message: 'You must be in a room to view history',
-          });
+          const errorResponse = {
+            success: false,
+            error: {
+              code: 'NOT_IN_ROOM',
+              message: 'You must be in a room to view history',
+            },
+          };
+          if (typeof callback === 'function') {
+            callback(errorResponse);
+          } else {
+            socket.emit('chat:error', errorResponse);
+          }
           return;
         }
 
         // Get message history
         const messages = getMessagesByRoom(roomToken, 100);
 
-        socket.emit('chat:history', messages);
+        const response = {
+          success: true,
+          data: { messages },
+        };
+
+        if (typeof callback === 'function') {
+          callback(response);
+        } else {
+          socket.emit('chat:history', messages);
+        }
       } catch (error) {
         logger.error({ err: error }, 'Error handling chat:history');
-        socket.emit('chat:error', {
-          code: 'SERVER_ERROR',
-          message: 'Failed to retrieve message history',
-        });
+        const errorResponse = {
+          success: false,
+          error: {
+            code: 'SERVER_ERROR',
+            message: 'Failed to retrieve message history',
+          },
+        };
+        if (typeof callback === 'function') {
+          callback(errorResponse);
+        } else {
+          socket.emit('chat:error', errorResponse);
+        }
       }
     });
   });

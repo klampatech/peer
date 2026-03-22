@@ -130,7 +130,9 @@ describe('Chat Events Integration', () => {
 
       expect(errors).toHaveLength(1);
       const err = errors[0] as Record<string, unknown>;
-      expect(err).toHaveProperty('code', 'NOT_IN_ROOM');
+      expect(err).toHaveProperty('success', false);
+      expect(err).toHaveProperty('error');
+      expect((err.error as Record<string, unknown>)).toHaveProperty('code', 'NOT_IN_ROOM');
     });
 
     it('should reject empty message', async () => {
@@ -158,7 +160,9 @@ describe('Chat Events Integration', () => {
 
       expect(errors).toHaveLength(1);
       const err = errors[0] as Record<string, unknown>;
-      expect(err).toHaveProperty('code', 'INVALID_MESSAGE');
+      expect(err).toHaveProperty('success', false);
+      expect(err).toHaveProperty('error');
+      expect((err.error as Record<string, unknown>)).toHaveProperty('code', 'INVALID_MESSAGE');
     });
 
     it('should sanitize HTML in messages', async () => {
@@ -258,8 +262,11 @@ describe('Chat Events Integration', () => {
 
       expect(errors).toHaveLength(1);
       const err = errors[0] as Record<string, unknown>;
-      expect(err).toHaveProperty('code', 'INVALID_MESSAGE');
-      expect(err.message).toContain('2000');
+      expect(err).toHaveProperty('success', false);
+      expect(err).toHaveProperty('error');
+      expect((err.error as Record<string, unknown>)).toHaveProperty('code', 'INVALID_MESSAGE');
+      expect((err.error as Record<string, unknown>)).toHaveProperty('message');
+      expect(((err.error as Record<string, unknown>)).message as string).toContain('2000');
     });
   });
 
@@ -281,7 +288,9 @@ describe('Chat Events Integration', () => {
 
       expect(errors).toHaveLength(1);
       const err = errors[0] as Record<string, unknown>;
-      expect(err).toHaveProperty('code', 'NOT_IN_ROOM');
+      expect(err).toHaveProperty('success', false);
+      expect(err).toHaveProperty('error');
+      expect((err.error as Record<string, unknown>)).toHaveProperty('code', 'NOT_IN_ROOM');
     });
   });
 });

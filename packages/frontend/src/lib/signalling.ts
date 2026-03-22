@@ -139,10 +139,15 @@ class SignallingClient {
       });
 
       // Handle TURN credentials
-      this.socket.on('turn:credentials', (credentials: TurnCredentials) => {
+      this.socket.on('turn:credentials', (response: { success: boolean; data?: TurnCredentials; error?: { code: string; message: string } }) => {
         console.log('Received TURN credentials');
-        if (credentials.username && credentials.password && credentials.urls.length > 0) {
-          peerManager.setTurnServers(credentials);
+        if (response.success && response.data) {
+          const credentials = response.data;
+          if (credentials.username && credentials.password && credentials.urls.length > 0) {
+            peerManager.setTurnServers(credentials);
+          }
+        } else if (response.error) {
+          console.error('TURN credentials error:', response.error);
         }
       });
 
@@ -175,8 +180,8 @@ class SignallingClient {
       });
 
       // Handle chat errors
-      this.socket.on('chat:error', (error: { code: string; message: string }) => {
-        console.error('Chat error:', error);
+      this.socket.on('chat:error', (error: { success: boolean; error: { code: string; message: string } }) => {
+        console.error('Chat error:', error.error);
       });
     });
   }

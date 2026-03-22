@@ -124,6 +124,19 @@ export interface ApiError {
   details?: Record<string, unknown>;
 }
 
+/**
+ * Standardized Socket.IO response format for all event handlers
+ * Used by frontend to parse responses consistently
+ */
+export interface SocketResponse<T> {
+  success: boolean;
+  data?: T;
+  error?: {
+    code: string;
+    message: string;
+  };
+}
+
 export interface HealthStatus {
   status: 'ok' | 'degraded' | 'down';
   uptime: number;

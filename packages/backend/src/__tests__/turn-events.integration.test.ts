@@ -105,7 +105,11 @@ describe('TURN Events Integration', () => {
       await new Promise(resolve => setTimeout(resolve, 100));
 
       expect(receivedCredentials).toHaveLength(1);
-      const credentials = receivedCredentials[0] as Record<string, unknown>;
+      const response = receivedCredentials[0] as Record<string, unknown>;
+      expect(response).toHaveProperty('success', true);
+      expect(response).toHaveProperty('data');
+
+      const credentials = response.data as Record<string, unknown>;
       expect(credentials).toHaveProperty('username');
       expect(credentials).toHaveProperty('password');
       expect(credentials).toHaveProperty('urls');
@@ -136,7 +140,8 @@ describe('TURN Events Integration', () => {
 
       await new Promise(resolve => setTimeout(resolve, 100));
 
-      const credentials = receivedCredentials[0] as Record<string, unknown>;
+      const response = receivedCredentials[0] as Record<string, unknown>;
+      const credentials = response.data as Record<string, unknown>;
 
       // Verify username format: timestamp:realm
       expect(credentials.username).toMatch(/^\d+:peer$/);
@@ -172,7 +177,8 @@ describe('TURN Events Integration', () => {
 
       await new Promise(resolve => setTimeout(resolve, 100));
 
-      const credentials = receivedCredentials[0] as Record<string, unknown>;
+      const response = receivedCredentials[0] as Record<string, unknown>;
+      const credentials = response.data as Record<string, unknown>;
       expect(credentials.username).toBeDefined();
       expect(credentials.password).toBeDefined();
       expect(credentials.urls).toBeDefined();
@@ -199,7 +205,9 @@ describe('TURN Events Integration', () => {
 
       await new Promise(resolve => setTimeout(resolve, 100));
 
-      const urls = (receivedCredentials[0] as Record<string, string[]>).urls;
+      const response = receivedCredentials[0] as Record<string, unknown>;
+      const credentials = response.data as Record<string, unknown>;
+      const urls = credentials.urls as string[];
       expect(urls.length).toBe(4);
       expect(urls[0]).toMatch(/^turn:localhost:3478$/);
       expect(urls[1]).toMatch(/^turn:localhost:3478\/tcp$/);
@@ -227,7 +235,9 @@ describe('TURN Events Integration', () => {
 
       await new Promise(resolve => setTimeout(resolve, 100));
 
-      expect((receivedCredentials[0] as Record<string, number>).ttl).toBe(3600);
+      const response = receivedCredentials[0] as Record<string, unknown>;
+      const credentials = response.data as Record<string, unknown>;
+      expect(credentials.ttl).toBe(3600);
     });
   });
 
