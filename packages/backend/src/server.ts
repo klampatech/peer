@@ -3,7 +3,7 @@ import http from 'http';
 import { Server as SocketIOServer } from 'socket.io';
 import type { Server as HttpServer } from 'http';
 import { securityMiddleware, corsMiddleware } from './middleware/security.js';
-import { rateLimitMiddleware } from './middleware/rate-limit.js';
+import { rateLimitMiddleware, setupSocketRateLimiter } from './middleware/rate-limit.js';
 import healthRoutes from './routes/health.js';
 import { setupRoomEvents } from './events/room-events.js';
 import { setupTurnEvents } from './events/turn-events.js';
@@ -42,6 +42,9 @@ export async function createServer(): Promise<AppServer> {
     pingTimeout: 60000,
     pingInterval: 25000,
   });
+
+  // Setup Socket.IO rate limiting
+  setupSocketRateLimiter(io);
 
   // Middleware
   app.use(securityMiddleware);

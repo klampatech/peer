@@ -2,7 +2,8 @@ import type { Server, Socket } from 'socket.io';
 import { v4 as uuidv4 } from 'uuid';
 import { generateTurnCredentials } from '../services/turn-credentials.js';
 import { logger } from '../utils/logger.js';
-import { TurnRequestSchema, validatePayload, type TurnRequestInput } from '@peer/shared';
+import { isPeerInRoom } from '../rooms.js';
+import { TurnRequestSchema, validatePayload, createRoomToken, type TurnRequestInput } from '@peer/shared';
 
 interface TurnCredentials {
   username: string;
@@ -41,6 +42,27 @@ export function setupTurnEvents(io: Server): void {
             error: {
               code: validation.error!.code,
               message: validation.error!.message,
+            },
+          };
+
+          if (typeof callback === 'function') {
+            callback(errorResponse);
+          } else {
+            socket.emit('turn:credentials', errorResponse);
+          }
+          return;
+        }
+
+        // Verify room membership if roomToken is provided
+        const roomToken = validation.data?.roomToken ? createRoomToken(validation.data.roomToken) : undefined;
+        const peerId = socket.data.peerId;
+
+        if (roomToken && !isPeerInRoom(roomToken, peerId)) {
+          const errorResponse = {
+            success: false,
+            error: {
+              code: 'NOT_IN_ROOM',
+              message: 'You must be in the room to request TURN credentials',
             },
           };
 

@@ -189,7 +189,15 @@ export function setupRoomEvents(io: Server): void {
         logger.warn({ traceId: socket.data.traceId, error: validation.error }, 'Invalid SDP offer');
         return;
       }
+
       const { targetPeerId, sdp } = validation.data!;
+
+      // Authorization: verify sender is in a room and target is in same room
+      if (!socket.data.peerId || !socket.rooms.has(targetPeerId)) {
+        logger.warn({ traceId: socket.data.traceId, targetPeerId }, 'Unauthorized SDP offer - peers not in same room');
+        return;
+      }
+
       socket.to(targetPeerId).emit('sdp:offer', {
         peerId: socket.id,
         sdp,
@@ -203,7 +211,15 @@ export function setupRoomEvents(io: Server): void {
         logger.warn({ traceId: socket.data.traceId, error: validation.error }, 'Invalid SDP answer');
         return;
       }
+
       const { targetPeerId, sdp } = validation.data!;
+
+      // Authorization: verify sender is in a room and target is in same room
+      if (!socket.data.peerId || !socket.rooms.has(targetPeerId)) {
+        logger.warn({ traceId: socket.data.traceId, targetPeerId }, 'Unauthorized SDP answer - peers not in same room');
+        return;
+      }
+
       socket.to(targetPeerId).emit('sdp:answer', {
         peerId: socket.id,
         sdp,
@@ -217,7 +233,15 @@ export function setupRoomEvents(io: Server): void {
         logger.warn({ traceId: socket.data.traceId, error: validation.error }, 'Invalid ICE candidate');
         return;
       }
+
       const { targetPeerId, candidate } = validation.data!;
+
+      // Authorization: verify sender is in a room and target is in same room
+      if (!socket.data.peerId || !socket.rooms.has(targetPeerId)) {
+        logger.warn({ traceId: socket.data.traceId, targetPeerId }, 'Unauthorized ICE candidate - peers not in same room');
+        return;
+      }
+
       socket.to(targetPeerId).emit('ice-candidate', {
         peerId: socket.id,
         candidate,

@@ -265,6 +265,48 @@ These must be fixed before production deployment.
 
 ---
 
+### P5: Remaining Security Issues (Post-Audit)
+
+#### Task P5.1: Wire Socket.IO Rate Limiter (CR-3)
+**Severity:** Critical
+**File:** `packages/backend/src/server.ts`
+
+**Issue:** The `setupSocketRateLimiter()` function is defined in `rate-limit.ts` but is never imported or called in `server.ts`. The HTTP rate limiter is wired but Socket.IO connections are unprotected.
+
+**Status:** COMPLETE
+
+**Completed:**
+- Added import of `setupSocketRateLimiter` in server.ts
+- Called `setupSocketRateLimiter(io)` after Socket.IO instance creation
+
+#### Task P5.2: Add Room Membership Verification to TURN Endpoint (CR-8)
+**Severity:** Critical
+**File:** `packages/backend/src/events/turn-events.ts`
+
+**Issue:** The `turn:request` handler generates credentials for any connected socket without verifying the requester is a member of a room. Any internet user can obtain TURN credentials.
+
+**Status:** COMPLETE
+
+**Completed:**
+- Imported `isPeerInRoom` and `createRoomToken` in turn-events.ts
+- Added room membership check before generating TURN credentials
+- Returns NOT_IN_ROOM error if socket is not in the requested room
+
+#### Task P5.3: Add Authorization to WebRTC Signaling (H-3)
+**Severity:** High
+**File:** `packages/backend/src/events/room-events.ts`
+
+**Issue:** `sdp:offer`, `sdp:answer`, and `ice-candidate` handlers don't verify the sender is in the same room as the target peer. Any socket can send signaling data to any other socket.
+
+**Status:** COMPLETE
+
+**Completed:**
+- Added authorization checks to sdp:offer, sdp:answer, and ice-candidate handlers
+- Verifies sender has peerId (joined a room) and target is in same room via socket.rooms
+- Logs warning for unauthorized attempts
+
+---
+
 ## Test Execution Commands
 
 ```bash
@@ -319,6 +361,11 @@ P3 (Testing)
 
 P4 (Documentation)
 └── P4.1: Update docs ✅ Complete
+
+P5 (Security Post-Audit)
+├── P5.1: Wire Socket.IO rate limiter ✅ Complete
+├── P5.2: TURN endpoint room verification ✅ Complete
+└── P5.3: WebRTC signaling authorization ✅ Complete
 ```
 
 ---
@@ -330,6 +377,9 @@ P4 (Documentation)
 - [x] All P2 tasks complete (Code quality improved)
 - [x] P3.1, P3.2 & P3.3 complete (E2E tests fixed, 168 tests passing)
 - [x] All P4 tasks complete (Documentation updated)
+- [x] P5.1: Wire Socket.IO rate limiter (CR-3)
+- [x] P5.2: Add room membership verification to TURN endpoint (CR-8)
+- [x] P5.3: Add authorization to WebRTC signaling (H-3)
 - [x] All tests pass (104 backend + 115 frontend + 168 E2E = 387 tests)
 - [x] TypeScript compiles without errors
 - [ ] Production deployment verified
