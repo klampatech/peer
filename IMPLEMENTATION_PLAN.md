@@ -9,7 +9,7 @@
 
 This document tracks the gap analysis between specification files in `specs/*` and the current codebase implementation.
 
-**Current Status: v0.7.19** | **Tests: 241+ passing** | **Coverage: 76.05%**
+**Current Status: v0.7.20** | **Tests: 241+ passing** | **Coverage: 76.05%**
 
 ---
 
@@ -126,27 +126,27 @@ Phase 6: Testing + Hardening █████████████████
 
 ### 1. Development docker-compose exposes plaintext TURN port (Priority: Medium)
 
-**Location:** `docker-compose.yml:58-62`
+**Location:** `docker-compose.yml:59-60`
 
-The development docker-compose still exposes port 3478 (plaintext TURN/STUN), which is inconsistent with the production configuration that only exposes port 5349 (TLS).
+The development docker-compose exposes port 3478 (plaintext TURN/STUN) to the host, which is inconsistent with the production configuration that only exposes port 5349 (TLS).
 
 **Spec Requirement:** Section 2.3 specifies TLS-only TURN in production. Port 3478 should be internal-only or removed from dev config.
 
-**Action:** Update `docker-compose.yml` to only expose port 5349 for TURN in development, similar to production.
+**Action:** Remove host port bindings for 3478 in `docker-compose.yml`. Keep internal networking but remove `"3478:3478"` and `"3478:3478/udp"` port mappings.
 
 ---
 
-### 2. CSP contains unsafe-inline and unsafe-eval (Priority: Medium)
+### 2. CSP contains unsafe-eval (Priority: Medium)
 
 **Locations:**
 - `nginx.conf:78`
 - `nginx-frontend.conf:32`
 
-Both nginx configuration files contain `'unsafe-inline'` and `'unsafe-eval'` in the Content-Security-Policy header, which weakens XSS protection.
+Both nginx configuration files contain `'unsafe-eval'` in the Content-Security-Policy header, which weakens XSS protection by allowing eval()-based attacks.
 
-**Spec Requirement:** Section 8.4 specifies strict CSP that blocks inline scripts.
+**Spec Requirement:** Section 8.4 (SECURITY_STANDARDS.md) specifies strict CSP that blocks inline scripts and eval.
 
-**Action:** Remove `'unsafe-eval'` from both configurations. The `'unsafe-inline'` for scripts is required for React but should be addressed via nonce-based approach in a future iteration.
+**Action:** Remove `'unsafe-eval'` from both nginx configurations. Keep `'unsafe-inline'` for React compatibility (can be addressed via nonce-based approach in future).
 
 ---
 
@@ -154,21 +154,29 @@ Both nginx configuration files contain `'unsafe-inline'` and `'unsafe-eval'` in 
 
 **Location:** `nginx-frontend.conf`
 
-The `nginx.conf` has HSTS header configured (line 69), but the separate `nginx-frontend.conf` (used for frontend-only serving) does not include it.
+The `nginx.conf` has HSTS header configured (line 69), but `nginx-frontend.conf` (used for frontend-only serving) does not include it.
 
 **Spec Requirement:** Section 8.4 and 8.3 specify HSTS header with `max-age=31536000` and `includeSubDomains`.
 
-**Action:** Add HSTS header to `nginx-frontend.conf`.
+**Action:** Add HSTS header to `nginx-frontend.conf`:
+```
+add_header Strict-Transport-Security "max-age=31536000; includeSubDomains" always;
+```
 
 ---
 
-### 4. coturn image tag not pinned in docker-compose.yml (Priority: Low)
+### 4. Permissions-Policy header missing in nginx-frontend.conf (Priority: Low)
 
-**Location:** `docker-compose.yml:56`
+**Location:** `nginx-frontend.conf`
 
-The development docker-compose uses `coturn/coturn:4.6.2-alpine`, but this should be verified to match production's pinned version.
+The `nginx.conf` has Permissions-Policy configured (line 76), but `nginx-frontend.conf` does not include it.
 
-**Action:** Verify both compose files use the same pinned version.
+**Spec Requirement:** Section 8.4 (SECURITY_STANDARDS.md) specifies `Permissions-Policy` to scope camera/mic to app origin.
+
+**Action:** Add Permissions-Policy header to `nginx-frontend.conf`:
+```
+add_header Permissions-Policy "camera=(), microphone=(), display-capture=(), geolocation=(), gyroscope=(), magnetometer=()" always;
+```
 
 ---
 
@@ -181,18 +189,18 @@ The development docker-compose uses `coturn/coturn:4.6.2-alpine`, but this shoul
 - [x] Zod validation for all Socket.IO payloads
 - [x] Metrics endpoint available (`/metrics`)
 - [x] Plaintext TURN port not exposed in production (TLS-only 5349)
-- [ ] Development docker-compose consistency with production (remove 3478 host port)
-- [ ] CSP hardened in nginx configs (remove unsafe-eval)
-- [ ] HSTS header in all nginx configs (nginx-frontend.conf missing)
-- [ ] Permissions-Policy header in nginx-frontend.conf
+- [ ] Development docker-compose consistency with production (remove 3478 host port) - **Pending**
+- [ ] CSP hardened in nginx configs (remove unsafe-eval) - **Pending**
+- [ ] HSTS header in all nginx configs (nginx-frontend.conf missing) - **Pending**
+- [ ] Permissions-Policy header in nginx-frontend.conf - **Pending**
 
 ---
 
-## v0.7.19 Tasks
+## v0.7.20 Tasks
 
 | Task | Priority | Status |
 |------|----------|--------|
-| Remove plaintext TURN port 3478 from docker-compose.yml | Medium | **Pending** - dev docker-compose.yml lines 59-60 still expose ports 3478 (TCP/UDP) to host. Production only exposes 5349 (TLS). |
+| Remove plaintext TURN port 3478 from docker-compose.yml | Medium | **Pending** - dev docker-compose.yml lines 59-60 expose ports 3478 (TCP/UDP) to host. Production only exposes 5349 (TLS). |
 | Remove unsafe-eval from nginx CSP | Medium | **Pending** - nginx.conf:78 and nginx-frontend.conf:32 contain unsafe-eval |
 | Add HSTS header to nginx-frontend.conf | Low | **Pending** - HSTS absent from nginx-frontend.conf (only in nginx.conf:69) |
 | Add Permissions-Policy to nginx-frontend.conf | Low | **Pending** - Referrer-Policy present (line 31) but Permissions-Policy missing |
@@ -215,7 +223,7 @@ The development docker-compose uses `coturn/coturn:4.6.2-alpine`, but this shoul
 
 | Header | nginx.conf | nginx-frontend.conf | Status |
 |--------|------------|---------------------|--------|
-| Content-Security-Policy | ✓ (has unsafe-eval) | ✓ (has unsafe-eval) | Partial |
+| Content-Security-Policy | ✓ (has unsafe-eval) | ✓ (has unsafe-eval) | Partial (needs unsafe-eval removal) |
 | Strict-Transport-Security | ✓ (line 69) | ✗ Missing | Fix needed |
 | X-Frame-Options | ✓ DENY | ✓ DENY | Complete |
 | X-Content-Type-Options | ✓ nosniff | ✓ nosniff | Complete |
@@ -228,6 +236,7 @@ The development docker-compose uses `coturn/coturn:4.6.2-alpine`, but this shoul
 
 | Version | Date | Changes |
 |---------|------|---------|
+| 0.7.20 | 2026-03-22 | Gap analysis refreshed - 4 infrastructure tasks still pending |
 | 0.7.19 | 2026-03-22 | Gap analysis refreshed - 4 infrastructure tasks pending (added Permissions-Policy gap) |
 | 0.7.18 | 2026-03-22 | Gap analysis refreshed - 3 tasks still pending (verified current state) |
 | 0.7.17 | 2026-03-22 | Gap analysis refreshed - 3 tasks remaining (TURN port, CSP, HSTS) |
