@@ -66,7 +66,7 @@ Most specification requirements from `specs/Peer_System_Design.md`, `specs/Testi
 | CR-3: Rate limiter never wired | Critical | **Fixed v0.6.11** - properly wired |
 | CR-4: HTTPS server commented out | Critical | **Fixed v0.6.15** - HTTPS enabled |
 | CR-5: coturn auth misconfigured | Critical | **Fixed v0.6.15** - static-auth-secret |
-| CR-6: Plaintext TURN port exposed | Critical | **PENDING** - port 3478 still exposed in production |
+| CR-6: Plaintext TURN port exposed | Critical | **Fixed v0.7.16** - TLS-only port 5349 exposed, plaintext 3478 removed |
 | All other critical/high findings | - | **Fixed** |
 
 ---
@@ -139,16 +139,9 @@ Phase 6: Testing + Hardening █████████████████
 
 ## Remaining Tasks (Actionable)
 
-### Task 1: Add Metrics Endpoint
-**File:** `packages/backend/src/routes/metrics.ts`
-- Add `/metrics` endpoint returning request rate, error rate, latency in Prometheus format
-- Reference: specs/Peer_System_Design.md Section 9 "Observability"
-
-### Task 2: Remove Plaintext TURN Port 3478 from Production
-**File:** `docker-compose.production.yml`
-- Remove ports `"3478:3478/udp"` and `"3478:3478/tcp"` from coturn service
-- Keep only `"5349:5349/udp"` and `"5349:5349/tcp"` for TLS
-- Reference: specs/SECURITY_AUDIT.md CR-6
+All tasks completed in v0.7.16:
+- Metrics endpoint at `/metrics` (Prometheus format)
+- Plaintext TURN port 3478 removed from production (TLS-only 5349)
 
 ---
 
@@ -168,6 +161,7 @@ Phase 6: Testing + Hardening █████████████████
 
 | Version | Date | Changes |
 |---------|------|---------|
+| 0.7.16 | 2026-03-22 | All exit criteria complete: metrics endpoint, no plaintext TURN |
 | 0.7.15 | 2026-03-22 | Added /metrics endpoint, removed plaintext TURN port 3478 |
 | 0.7.13 | 2026-03-22 | Gap analysis refreshed - 2 remaining tasks confirmed |
 | 0.7.12 | 2026-03-22 | Updated implementation plan (Zod validation confirmed complete) |
