@@ -8,7 +8,7 @@ services:
     environment:
       - NODE_ENV=production
       - PORT=3000
-      - TURN_SECRET=${TURN_SECRET:-change-me-in-production}
+      - TURN_SECRET=${TURN_SECRET}
       - TURN_REALM=peer
       - COTURN_PORT=3478
       - RATE_LIMIT_MAX_POINTS=100
@@ -62,7 +62,7 @@ services:
       - "5349:5349/udp"
       - "5349:5349/tcp"
     environment:
-      - TURN_SECRET=${TURN_SECRET:-change-me-in-production}
+      - TURN_SECRET=${TURN_SECRET}
       - REALM=peer
     volumes:
       - coturn-data:/var/lib/coturn

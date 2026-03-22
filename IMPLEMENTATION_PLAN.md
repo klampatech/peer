@@ -156,17 +156,19 @@ These must be fixed before production deployment.
 3. Add runtime validation before processing
 4. Commit with message: `feat: add Zod validation for Socket.IO payloads`
 
-#### Task P2.4: Fail Fast on Missing TURN_SECRET
+#### Task P2.4: Fail Fast on Missing TURN_SECRET ✅ COMPLETE
 **Severity:** High
-**File:** `packages/backend/src/services/turn-credentials.ts` (line 3)
+**File:** `packages/backend/src/services/turn-credentials.ts` (line 3-8)
 
-**Current State:** `const TURN_SECRET = process.env.TURN_SECRET || 'change-me-in-production'`
-
-**Steps:**
-1. Remove the fallback default
-2. Throw error at startup if TURN_SECRET is not set
-3. Update docker-compose.production.yml to require TURN_SECRET
-4. Commit with message: `fix: fail fast on missing TURN_SECRET`
+**Completed:**
+- Removed fallback default `'change-me-in-production'`
+- Added startup validation that throws error if TURN_SECRET is not set
+- Updated docker-compose.production.yml to require TURN_SECRET (removed fallback)
+- Updated docker-compose.yml to require TURN_SECRET (removed fallback)
+- Added socket.io-client and supertest devDependencies to fix build
+- Added exclude for test files in tsconfig.json to fix build
+- Verified all 98 tests pass with TURN_SECRET set
+- Verified fail-fast behavior works correctly
 
 #### Task P2.5: Add Trace IDs to All Requests
 **Severity:** High
@@ -261,7 +263,7 @@ P2 (Medium - Code Quality)
 ├── P2.1: Structured logging
 ├── P2.2: Response shapes
 ├── P2.3: Zod validation
-├── P2.4: TURN_SECRET fail-fast
+├── P2.4: TURN_SECRET fail-fast ✅ Complete
 └── P2.5: Trace IDs
 
 P3 (Testing)

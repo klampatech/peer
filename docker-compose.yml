@@ -13,7 +13,7 @@ services:
       - NODE_ENV=production
       - PORT=3000
       - CORS_ORIGIN=https://localhost
-      - TURN_SECRET=${TURN_SECRET:-change-me-in-production}
+      - TURN_SECRET=${TURN_SECRET}
       - COTURN_PORT=3478
       - TURN_REALM=peer
       - RATE_LIMIT_MAX_POINTS=100
@@ -50,7 +50,7 @@ services:
       - "5349:5349"
       - "5349:5349/udp"
     environment:
-      - TURN_SECRET=${TURN_SECRET:-change-me-in-production}
+      - TURN_SECRET=${TURN_SECRET}
       - REALM=peer
     volumes:
       - ./turnserver.conf:/etc/coturn/turnserver.conf:ro

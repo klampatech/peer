@@ -1,6 +1,11 @@
 import crypto from 'crypto';
 
-const TURN_SECRET = process.env.TURN_SECRET || 'change-me-in-production';
+const TURN_SECRET = process.env.TURN_SECRET;
+if (!TURN_SECRET) {
+  throw new Error('TURN_SECRET environment variable is required');
+}
+// TypeScript doesn't narrow type after throw at module level, so we assert it's defined
+const turnSecret: string = TURN_SECRET;
 const TURN_REALM = process.env.TURN_REALM || 'peer';
 const TURN_TTL_SECONDS = 3600; // 1 hour
 
@@ -21,7 +26,7 @@ export function generateTurnCredentials(): TurnCredentials {
   const username = `${timestamp}:${TURN_REALM}`;
 
   // Generate HMAC-SHA1 password
-  const hmac = crypto.createHmac('sha1', TURN_SECRET);
+  const hmac = crypto.createHmac('sha1', turnSecret);
   hmac.update(username);
   const password = hmac.digest('base64');
 
@@ -55,7 +60,7 @@ export function validateTurnCredentials(username: string, password: string): boo
     if (timestamp < now) return false;
 
     // Verify HMAC
-    const hmac = crypto.createHmac('sha1', TURN_SECRET);
+    const hmac = crypto.createHmac('sha1', turnSecret);
     hmac.update(username);
     const expectedPassword = hmac.digest('base64');
 
