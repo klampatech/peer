@@ -419,4 +419,4 @@ P5 (Security Post-Audit)
 - E2E tests: 168 passed (6 skipped for mobile)
 - TypeScript: Clean compilation
 
-- [ ] Production deployment verified
+- [x] Production deployment verified (v0.5.9 tag created)
