@@ -266,16 +266,20 @@ describe('TURN Events Integration', () => {
       expect(response.body).toEqual({ ok: true });
     });
 
-    it('should return 429 when rate limit is exceeded', async function () {
+    it('should return 429 when rate limit is exceeded', async () => {
       const { rateLimitMiddleware } = await import('../middleware/rate-limit.js');
       const app = express();
       app.use(express.json());
       app.use(rateLimitMiddleware);
       app.get('/test', (_req, res) => res.json({ ok: true }));
 
-      // Exhaust the rate limit (default 100 points)
-      for (let i = 0; i < 100; i++) {
-        await request(app).get('/test');
+      // Exhaust the rate limit (default 100 points) in batches for better performance
+      // while maintaining test reliability
+      const batchSize = 10;
+      for (let i = 0; i < 100; i += batchSize) {
+        await Promise.all(
+          Array.from({ length: batchSize }, () => request(app).get('/test'))
+        );
       }
 
       const response = await request(app).get('/test');
