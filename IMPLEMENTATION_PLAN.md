@@ -9,7 +9,7 @@
 
 This document tracks the gap analysis between specification files in `specs/*` and the current codebase implementation.
 
-**Current Status: v0.7.16** | **Tests: 241+ passing** | **Coverage: 76.05%**
+**Current Status: v0.7.17** | **Tests: 241+ passing** | **Coverage: 76.05%**
 
 ---
 
@@ -190,14 +190,29 @@ The development docker-compose uses `coturn/coturn:4.6.2-alpine`, but this shoul
 
 | Task | Priority | Status |
 |------|----------|--------|
-| Remove plaintext TURN port 3478 from docker-compose.yml | Medium | **Pending** - port 3478 still exposed |
-| Remove unsafe-eval from nginx CSP | Medium | **Pending** - both nginx.conf:78 and nginx-frontend.conf:32 still contain unsafe-eval |
-| Add HSTS header to nginx-frontend.conf | Low | **Pending** - header not present |
+| Remove plaintext TURN port 3478 from docker-compose.yml | Medium | **Pending** - dev docker-compose.yml ports 58-61 still expose 3478 |
+| Remove unsafe-eval from nginx CSP | Medium | **Pending** - both nginx.conf:78 and nginx-frontend.conf:32 contain unsafe-eval |
+| Add HSTS header to nginx-frontend.conf | Low | **Pending** - HSTS absent from nginx-frontend.conf (only in nginx.conf:69) |
 | Verify coturn image tag alignment | Low | **Completed** - both configs use coturn:4.6.2-alpine |
 
 ---
 
-## Gap Analysis Summary
+## v0.7.18 Tasks (Identified in Current Gap Analysis)
+
+| Task | Priority | Status |
+|------|----------|--------|
+| Additional HSTS/frontend isolation | Low | **Identified** - spec requires HSTS in all nginx configs |
+| Security header completeness | Low | **Identified** - Referrer-Policy, Permissions-Policy missing from some configs |
+
+---
+
+## Version History
+
+| Version | Date | Changes |
+|---------|------|---------|
+| 0.7.18 | 2026-03-22 | Gap analysis refreshed - 3 tasks still pending |
+| 0.7.17 | 2026-03-22 | Gap analysis refreshed - 3 tasks remaining (TURN port, CSP, HSTS) |
+| 0.7.16 | 2026-03-22 | All exit criteria complete: metrics endpoint, no plaintext TURN |
 
 ### Specification Coverage Status
 
