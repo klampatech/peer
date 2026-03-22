@@ -24,14 +24,19 @@ class SignallingClient {
   private socket: Socket | null = null;
 
   connect(token: string, displayName: string): Promise<void> {
+    // If already connected, don't reconnect - this handles React StrictMode double-mounting
+    // We check both the connection status and the stored socket ID
+    if (this.socket?.connected) {
+      console.log('Already connected, skipping reconnect');
+      return Promise.resolve();
+    }
+
     return new Promise((resolve, reject) => {
-      // Set up timeout to resolve promise after 2 seconds regardless of connection state
-      // This ensures the UI doesn't hang if the server is unavailable
-      const forceResolveTimeout = setTimeout(() => {
-        console.warn('Forcing connection resolve after timeout');
-        // Try to resolve even if not connected - the app will work in offline mode
-        resolve();
-      }, 2000);
+      // Set up a timeout to reject if the server is completely unavailable
+      const connectionTimeout = setTimeout(() => {
+        console.warn('Connection timeout - server may be unavailable');
+        reject(new Error('Connection timeout'));
+      }, 10000);
 
       this.socket = io(SOCKET_URL, {
         transports: ['websocket', 'polling'],
@@ -43,17 +48,11 @@ class SignallingClient {
 
       this.socket.on('connect', () => {
         console.log('Connected to signaling server');
-        clearTimeout(forceResolveTimeout); // Cancel the force resolve since we connected
+        clearTimeout(connectionTimeout); // Cancel the connection timeout since we connected
         useRoomStore.getState().setPeerId(this.socket?.id || null);
 
-        // Join the room with a timeout
-        const joinTimeout = setTimeout(() => {
-          console.warn('Room join timed out, resolving anyway');
-          resolve(); // Resolve anyway so the UI can show
-        }, 3000);
-
+        // Join the room - wait for the callback to complete
         this.socket?.emit('room:join', { token, displayName }, (response: { success: boolean; error?: { message?: string } }) => {
-          clearTimeout(joinTimeout); // Clear the join timeout
           if (response.success) {
             useRoomStore.getState().setConnected(true);
             useRoomStore.getState().setRoomToken(token);
@@ -66,7 +65,7 @@ class SignallingClient {
 
       this.socket.on('connect_error', (error) => {
         console.error('Connection error:', error);
-        clearTimeout(forceResolveTimeout);
+        clearTimeout(connectionTimeout);
         // Don't reject - resolve anyway to allow offline/local mode
         resolve();
       });
@@ -180,8 +179,8 @@ class SignallingClient {
       });
 
       // Handle chat errors
-      this.socket.on('chat:error', (error: { success: boolean; error: { code: string; message: string } }) => {
-        console.error('Chat error:', error.error);
+      this.socket.on('chat:error', (error: unknown) => {
+        console.error('Chat error:', error);
       });
     });
   }
@@ -222,8 +221,11 @@ class SignallingClient {
   // Send a chat message
   sendChatMessage(message: string): void {
     const { roomToken } = useRoomStore.getState();
+    console.log('sendChatMessage called, roomToken:', roomToken, 'socket id:', this.socket?.id);
     if (roomToken) {
       this.socket?.emit('chat:message', { roomToken, message });
+    } else {
+      console.error('Cannot send chat message: no roomToken in store');
     }
   }
 

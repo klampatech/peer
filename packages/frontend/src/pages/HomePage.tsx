@@ -1,6 +1,9 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Video, Copy, Check } from 'lucide-react';
+import { io } from 'socket.io-client';
+
+const SOCKET_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 
 interface HomePageProps {
   displayName: string;
@@ -21,20 +24,53 @@ export default function HomePage({ displayName, onDisplayNameChange }: HomePageP
 
     setIsCreating(true);
     try {
-      // Socket connection will be established in RoomPage
-      // For now, we'll generate a placeholder that will be replaced
+      // Check if backend is available
       const response = await fetch(`${import.meta.env.VITE_API_URL || ''}/health`);
-      if (response.ok) {
-        // Navigate to a new room - the room will be created on the server
-        const token = crypto.randomUUID();
-        navigate(`/room/${token}`);
-      } else {
+      if (!response.ok) {
         alert('Server is not available. Please try again later.');
+        setIsCreating(false);
+        return;
       }
-    } catch {
-      // For development without backend, allow navigation
-      const token = crypto.randomUUID();
+
+      // Connect to Socket.IO and create the room on the server
+      const socket = io(SOCKET_URL, {
+        transports: ['websocket', 'polling'],
+        timeout: 5000,
+      });
+
+      // Wait for connection
+      await new Promise<void>((resolve, reject) => {
+        socket.on('connect', () => {
+          resolve();
+        });
+        socket.on('connect_error', () => {
+          reject(new Error('Failed to connect'));
+        });
+        // Timeout after 5 seconds
+        setTimeout(() => reject(new Error('Connection timeout')), 5000);
+      });
+
+      // Create the room
+      const token = await new Promise<string>((resolve, reject) => {
+        socket.emit('room:create', { displayName }, (response: { success: boolean; data?: { token: string }; error?: { message: string } }) => {
+          if (response.success && response.data?.token) {
+            resolve(response.data.token);
+          } else {
+            reject(new Error(response.error?.message || 'Failed to create room'));
+          }
+        });
+        // Timeout after 5 seconds
+        setTimeout(() => reject(new Error('Room creation timeout')), 5000);
+      });
+
+      // Disconnect the temporary socket - RoomPage will create its own connection
+      socket.disconnect();
+
+      // Navigate to the room
       navigate(`/room/${token}`);
+    } catch (error) {
+      console.error('Failed to create room:', error);
+      alert(error instanceof Error ? error.message : 'Failed to create room. Please try again.');
     } finally {
       setIsCreating(false);
     }

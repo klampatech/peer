@@ -39,8 +39,10 @@ export default function RoomPage({ displayName }: RoomPageProps) {
 
     connectToRoom();
 
+    // Don't disconnect on cleanup - this handles React StrictMode double-mounting
+    // The socket will be reused if already connected
     return () => {
-      disconnect();
+      // Intentionally empty - let the socket persist across remounts
     };
   }, [token, displayName, navigate]);
 
