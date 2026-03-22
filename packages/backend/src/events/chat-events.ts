@@ -6,6 +6,7 @@ import { Server as SocketIOServer, Socket } from 'socket.io';
 import type { RoomToken, ChatMessagePayload } from '@peer/shared';
 import { createMessage, getMessagesByRoom, validateMessage } from '../repositories/message-repository';
 import { isPeerInRoom } from '../rooms';
+import { logger } from '../utils/logger.js';
 
 interface SocketData {
   peerId: string;
@@ -59,7 +60,7 @@ export function setupChatEvents(io: SocketIOServer): void {
         // Broadcast message to all peers in the room
         io.to(roomToken).emit('chat:message', chatMessage);
       } catch (error) {
-        console.error('Error handling chat:message:', error);
+        logger.error({ err: error }, 'Error handling chat:message');
         socket.emit('chat:error', {
           code: 'SERVER_ERROR',
           message: 'Failed to send message',
@@ -89,7 +90,7 @@ export function setupChatEvents(io: SocketIOServer): void {
 
         socket.emit('chat:history', messages);
       } catch (error) {
-        console.error('Error handling chat:history:', error);
+        logger.error({ err: error }, 'Error handling chat:history');
         socket.emit('chat:error', {
           code: 'SERVER_ERROR',
           message: 'Failed to retrieve message history',

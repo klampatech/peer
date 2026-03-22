@@ -120,27 +120,21 @@ These must be fixed before production deployment.
 
 ### P2: Backend Code Quality Issues
 
-#### Task P2.1: Replace console.* with Structured Logging
+#### Task P2.1: Replace console.* with Structured Logging ✅ COMPLETE
 **Severity:** High
 **Files:** Multiple backend files (24 console usages found)
 
-**Current State:** Code uses `console.log`, `console.error` directly
-
-**Affected Files:**
-| File | Usages |
-|------|--------|
-| packages/backend/src/index.ts | 6 |
-| packages/backend/src/events/room-events.ts | 9 |
-| packages/backend/src/services/cleanup.ts | 5 |
-| packages/backend/src/events/chat-events.ts | 2 |
-| packages/backend/src/events/turn-events.ts | 2 |
-
-**Steps:**
-1. Install pino for structured logging
-2. Create logger utility in `packages/backend/src/utils/logger.ts`
-3. Replace all console.log/warn/error with logger
-4. Run tests to verify
-5. Commit with message: `refactor: replace console with structured logging`
+**Completed:**
+- Added pino and pino-pretty dependencies
+- Created logger utility in `packages/backend/src/utils/logger.ts`
+- Replaced all console.log/warn/error with structured logger in:
+  - `packages/backend/src/index.ts` (6 usages)
+  - `packages/backend/src/events/room-events.ts` (9 usages)
+  - `packages/backend/src/services/cleanup.ts` (5 usages)
+  - `packages/backend/src/events/chat-events.ts` (2 usages)
+  - `packages/backend/src/events/turn-events.ts` (2 usages)
+- TypeScript compiles cleanly (excluding pre-existing test file issues)
+- 59 tests pass
 
 #### Task P2.2: Standardize Socket.IO Response Shapes
 **Severity:** Medium

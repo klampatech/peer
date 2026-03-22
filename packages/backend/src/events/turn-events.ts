@@ -1,5 +1,6 @@
 import type { Server, Socket } from 'socket.io';
 import { generateTurnCredentials } from '../services/turn-credentials.js';
+import { logger } from '../utils/logger.js';
 
 /**
  * Sets up TURN-related Socket.IO event handlers
@@ -15,7 +16,7 @@ export function setupTurnEvents(io: Server): void {
      * Socket.IO v4 acknowledgement: callback is the THIRD argument (after payload).
      * We also emit 'turn:credentials' as a fallback event for non-acknowledge clients.
      */
-    socket.on('turn:request', (payload: unknown, callback?: (credentials: {
+    socket.on('turn:request', (_payload: unknown, callback?: (credentials: {
       username: string;
       password: string;
       urls: string[];
@@ -24,8 +25,7 @@ export function setupTurnEvents(io: Server): void {
       try {
         const credentials = generateTurnCredentials();
 
-        // eslint-disable-next-line no-console
-        console.log(`TURN credentials generated for socket ${socket.id}`);
+        logger.info({ socketId: socket.id }, 'TURN credentials generated');
 
         // Prefer acknowledgement callback if the client sent one
         if (typeof callback === 'function') {
@@ -35,8 +35,7 @@ export function setupTurnEvents(io: Server): void {
           socket.emit('turn:credentials', credentials);
         }
       } catch (error) {
-        // eslint-disable-next-line no-console
-        console.error('Error generating TURN credentials:', error);
+        logger.error({ err: error, socketId: socket.id }, 'Error generating TURN credentials');
 
         if (typeof callback === 'function') {
           callback({
