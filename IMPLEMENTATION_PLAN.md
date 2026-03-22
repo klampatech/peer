@@ -714,6 +714,245 @@ Phase 6 (Testing + Deploy)
 
 ---
 
+## Remaining Work (Post-MVP)
+
+Based on code review findings and testing strategy comparison, the following items remain:
+
+### Priority 1: CI Pipeline - Add Load Tests (AC-18)
+
+The Testing_Strategy.md section 6.3 explicitly documents how to add load tests to CI, but this is not currently in `.github/workflows/ci.yml`.
+
+**Files to modify:**
+- `.github/workflows/ci.yml` - Add load-test job
+
+**Step 1: Add load test job**
+
+Add the following job to the CI workflow:
+
+```yaml
+load-test:
+  name: Load Test (k6)
+  runs-on: ubuntu-latest
+  steps:
+    - uses: actions/checkout@v4
+    - name: Setup pnpm
+      uses: pnpm/action-setup@v2
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '22'
+        cache: 'pnpm'
+    - name: Install dependencies
+      run: pnpm install --frozen-lockfile
+    - name: Install k6
+      run: brew install k6 || (curl -sL https://github.com/grafana/k6/releases/download/v0.55.0/k6-v0.55.0-linux-amd64.tar.gz | tar xz --strip-components=1 -C /usr/local/bin)
+    - name: Build packages
+      run: pnpm build
+    - name: Start backend
+      run: |
+        cd packages/backend
+        pnpm dev &
+      env:
+        NODE_ENV: test
+    - name: Wait for backend
+      run: sleep 5
+    - name: Run k6 load test
+      run: k6 run tests/load/signalling-server.js
+      env:
+        BASE_URL: http://localhost:3000
+    - name: Upload load test summary
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: load-test-summary
+        path: tests/load/signalling-server-summary.json
+```
+
+**Step 2: Run load test locally to verify**
+
+```bash
+k6 run tests/load/signalling-server.js
+```
+
+Expected: Avg join latency < 200ms, p95 < 500ms, error rate < 5%
+
+---
+
+### Priority 2: Backend Code Quality - Response Shape Standardization
+
+**Issue:** Inconsistent Socket.IO response shapes across events (code-review-findings.md Issue 1.1)
+
+**Files to modify:**
+- `packages/backend/src/events/room-events.ts`
+- `packages/backend/src/events/chat-events.ts`
+- `packages/backend/src/events/turn-events.ts`
+
+**Step 1: Create ApiResponse type**
+
+Check if @peer/shared already has ApiResponse<T> defined. If not, add to `packages/shared/src/index.ts`:
+
+```typescript
+export interface ApiResponse<T> {
+  success: boolean;
+  data?: T;
+  error?: {
+    code: string;
+    message: string;
+  };
+}
+```
+
+**Step 2: Update all event handlers to use consistent response shape**
+
+For each Socket.IO event, wrap responses in the ApiResponse format:
+
+```typescript
+// Before (inconsistent)
+socket.emit('chat:message', message);
+
+// After (consistent)
+socket.emit('chat:message', {
+  success: true,
+  data: message
+});
+```
+
+---
+
+### Priority 3: Structured Logging
+
+**Issue:** Direct console.* usage instead of structured logging (code-review-findings.md Issue 2.1)
+
+**Files to modify:**
+- `packages/backend/src/events/room-events.ts`
+- `packages/backend/src/events/chat-events.ts`
+- `packages/backend/src/events/turn-events.ts`
+- `packages/backend/src/services/cleanup.ts`
+
+**Step 1: Install pino for structured logging**
+
+```bash
+cd packages/backend
+pnpm add pino
+```
+
+**Step 2: Create logger instance**
+
+Create `packages/backend/src/logger.ts`:
+
+```typescript
+import pino from 'pino';
+
+export const logger = pino({
+  level: process.env.LOG_LEVEL || 'info',
+  transport: process.env.NODE_ENV !== 'production'
+    ? { target: 'pino-pretty' }
+    : undefined,
+});
+```
+
+**Step 3: Replace console.* calls**
+
+Replace all `console.log/error/warn` with `logger.info/error/warn`:
+
+```typescript
+// Before
+console.log('Peer joined:', peerId);
+
+// After
+logger.info({ peerId, roomId }, 'Peer joined room');
+```
+
+---
+
+### Priority 4: Zod Validation for Socket.IO Payloads
+
+**Issue:** No runtime validation of payload structure (code-review-findings.md Issue 1.2)
+
+**Files to modify:**
+- `packages/backend/src/events/room-events.ts`
+- `packages/backend/src/events/chat-events.ts`
+- `packages/backend/src/events/turn-events.ts`
+
+**Step 1: Install Zod**
+
+```bash
+cd packages/backend
+pnpm add zod
+```
+
+**Step 2: Define schemas in @peer/shared**
+
+Add to `packages/shared/src/index.ts`:
+
+```typescript
+import { z } from 'zod';
+
+export const JoinRoomSchema = z.object({
+  token: z.string().uuid(),
+  displayName: z.string().min(1).max(50),
+});
+
+export const ChatMessageSchema = z.object({
+  roomToken: z.string().uuid(),
+  message: z.string().min(1).max(2000),
+  displayName: z.string().min(1).max(50),
+});
+
+export type JoinRoomPayload = z.infer<typeof JoinRoomSchema>;
+export type ChatMessagePayload = z.infer<typeof ChatMessageSchema>;
+```
+
+**Step 3: Add validation in event handlers**
+
+```typescript
+// In room-events.ts
+import { JoinRoomSchema } from '@peer/shared';
+
+socket.on('room:join', (payload) => {
+  const result = JoinRoomSchema.safeParse(payload);
+  if (!result.success) {
+    socket.emit('room:error', {
+      code: 'INVALID_PAYLOAD',
+      message: 'Invalid join payload'
+    });
+    return;
+  }
+  // ... proceed with validated payload
+});
+```
+
+---
+
+### Priority 5: E2E Test Coverage Verification
+
+**Verify all acceptance criteria have corresponding E2E tests:**
+
+| AC | Test File | Status |
+|----|-----------|--------|
+| AC-01 Room Creation | e2e/rooms.spec.ts | ✓ |
+| AC-02 Room Join | e2e/rooms.spec.ts | ✓ |
+| AC-03 Voice Call | e2e/call.spec.ts | ✓ |
+| AC-04 Video Call | e2e/call.spec.ts | ✓ |
+| AC-05 Mute Toggle | e2e/call.spec.ts | ✓ |
+| AC-06 Camera Toggle | e2e/call.spec.ts | ✓ |
+| AC-07 Screen Share | e2e/call.spec.ts | ✓ |
+| AC-08 Screen Share Stop | e2e/call.spec.ts | ✓ |
+| AC-09 Text Chat | e2e/chat.spec.ts | ✓ |
+| AC-10 Chat Persistence | e2e/chat.spec.ts | ✓ |
+| AC-11 Ephemeral Room | e2e/rooms.spec.ts | ✓ |
+| AC-12 NAT Traversal | e2e/nat-traversal.spec.ts | ✓ |
+| AC-13 Performance | Not automated | Manual |
+| AC-14 OWASP ZAP | tests/security/owasp-zap-baseline.js | ✓ |
+| AC-15 Security Headers | tests/security/http-headers.js | ✓ |
+| AC-16 Cross-browser | playwright.config.ts | ✓ |
+| AC-17 Mobile | Not automated | Manual |
+| AC-18 Load | tests/load/signalling-server.js | ✓ (needs CI) |
+| AC-19 Accessibility | e2e/accessibility.spec.ts | ✓ |
+| AC-20 Permission Denied | e2e/permission-denied.spec.ts | ✓ |
+
+---
+
 ## Quick Start Priority
 
 If minimizing time to first call, prioritize in this order:
