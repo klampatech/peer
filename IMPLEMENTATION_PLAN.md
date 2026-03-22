@@ -51,22 +51,13 @@
 
 These must be fixed before production deployment.
 
-#### Task P0.1: Fix TURN Server Running as Root
+#### Task P0.1: Fix TURN Server Running as Root ✅ COMPLETE
 **Severity:** Critical
-**File:** `docker-compose.production.yml` (line 38-52)
+**File:** `docker-compose.production.yml` (line 56-82)
 
-**Current State:** coturn service has no security context defined
-
-**Steps:**
-1. Read current docker-compose.production.yml
-2. Add security context to coturn service:
-```yaml
-coturn:
-  user: "1001:1001"
-  security_opt:
-    - no-new-privileges:true
-```
-3. Commit with message: `fix: run coturn as non-root user`
+**Completed:** Added security context to coturn service:
+- user: "1001:1001"
+- security_opt: no-new-privileges:true
 
 #### Task P0.2: Enable Production HTTPS
 **Severity:** Critical
@@ -81,46 +72,31 @@ coturn:
 4. Ensure ssl_certificate paths are correct
 5. Commit with message: `fix: enable production HTTPS in nginx`
 
-#### Task P0.3: Pin Coturn Image Version
+#### Task P0.3: Pin Coturn Image Version ✅ COMPLETE
 **Severity:** Critical
-**File:** `docker-compose.production.yml` (line 39)
+**File:** `docker-compose.production.yml` (line 57)
 
-**Current State:** `coturn/coturn:latest`
-
-**Steps:**
-1. Change `coturn/coturn:latest` to `coturn/coturn:4.6.2`
-2. Commit with message: `fix: pin coturn to specific version`
+**Completed:** Changed `coturn/coturn:latest` to `coturn/coturn:4.6.2`
 
 ---
 
 ### P1: High Priority Infrastructure Issues
 
-#### Task P1.1: Add Container Resource Limits
+#### Task P1.1: Add Container Resource Limits ✅ COMPLETE
 **Severity:** High
 **File:** `docker-compose.production.yml`
 
-**Steps:**
-1. Add deploy.resources.limits to all services:
-```yaml
-deploy:
-  resources:
-    limits:
-      cpus: '0.5'
-      memory: 512M
-    reservations:
-      cpus: '0.25'
-      memory: 256M
-```
-2. Commit with message: `fix: add container resource limits`
+**Completed:** Added deploy.resources.limits to all services:
+- backend: 0.5 CPU, 512M memory (limit), 0.25 CPU, 256M (reservation)
+- frontend: 0.25 CPU, 256M memory (limit), 0.1 CPU, 128M (reservation)
+- coturn: 0.5 CPU, 512M memory (limit), 0.25 CPU, 256M (reservation)
+- nginx: 0.25 CPU, 256M memory (limit), 0.1 CPU, 128M (reservation)
 
-#### Task P1.2: Enable Read-Only Filesystems
+#### Task P1.2: Enable Read-Only Filesystems ✅ COMPLETE
 **Severity:** High
 **File:** `docker-compose.production.yml`
 
-**Steps:**
-1. Add read_only: true to services where possible
-2. Use :ro volume flags for config files
-3. Commit with message: `fix: enable read-only filesystems`
+**Completed:** Added read_only: true to all services
 
 #### Task P1.3: Configure TURN Server TLS
 **Severity:** High
