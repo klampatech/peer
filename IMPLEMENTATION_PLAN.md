@@ -15,24 +15,14 @@ Most specification requirements from `specs/Peer_System_Design.md`, `specs/Testi
 
 ## Remaining Tasks
 
-### Priority 1: CI/CD Pipeline Gaps
+### Priority 1: Code Quality Gaps (specs/code-review-findings.md)
 
 | Issue | Status | Description |
 |-------|--------|-------------|
-| Build artifact publishing | **PENDING** | `.github/workflows/ci.yml` build job produces no artifacts |
-| E2E tests startup config | **PENDING** | Playwright webServer conflicts with manual backend start; frontend not started |
-| Security-headers tests nginx | **PENDING** | Tests backend (port 3000) instead of nginx (port 80/443) |
-
-### Priority 2: Code Quality Gaps (specs/code-review-findings.md)
-
-| Issue | Status | Description |
-|-------|--------|-------------|
-| Inconsistent response shapes | **PENDING** | Socket.IO events return different response formats |
 | No Zod validation | **PENDING** | Zod in dependencies but unused for payload validation |
-| Console.* usage | **PENDING** | Uses console logging instead of structured logger |
 | No metrics endpoint | **PENDING** | Missing `/metrics` endpoint for Prometheus |
 
-### Priority 3: Production Docker Compose Gaps
+### Priority 2: Production Docker Compose Gaps
 
 | Issue | Status | Description |
 |-------|--------|-------------|
@@ -68,7 +58,7 @@ Most specification requirements from `specs/Peer_System_Design.md`, `specs/Testi
 | CR-3: Rate limiter never wired | Critical | **Fixed v0.6.11** - properly wired |
 | CR-4: HTTPS server commented out | Critical | **Fixed v0.6.15** - HTTPS enabled |
 | CR-5: coturn auth misconfigured | Critical | **Fixed v0.6.15** - static-auth-secret |
-| CR-6: Plaintext TURN port exposed | Critical | **Fixed** - TLS only externally |
+| CR-6: Plaintext TURN port exposed | Critical | **PENDING** - port 3478 still exposed in production |
 | All other critical/high findings | - | **Fixed** |
 
 ---
@@ -79,9 +69,10 @@ Most specification requirements from `specs/Peer_System_Design.md`, `specs/Testi
 |-------|--------|
 | CI: ZAP scan always passes (\|\| true) | **Fixed v0.6.13** |
 | CI: Fixed sleep 5 causes flaky tests | **Fixed v0.6.13** - health check loop |
-| CI: Build job has no artifact output | **Fixed v0.6.13** |
+| CI: Build job has no artifact output | **Fixed v0.6.13** - artifact publishing added |
 | CI: All 7 Playwright browsers run | **Fixed v0.6.13** - chromium only in CI |
 | CI: Duplicate install+build | **Fixed v0.6.16** |
+| CI: Security-headers test backend not nginx | **Fixed v0.6.16** - uses docker-compose |
 
 ---
 
@@ -108,7 +99,8 @@ Most specification requirements from `specs/Peer_System_Design.md`, `specs/Testi
 | Chat feature broken (peerId undefined) | **Fixed** - peerId set at room join |
 | Nginx HTTPS block commented | **Fixed** - HTTPS enabled |
 | coturn auth misconfigured | **Fixed** - static-auth-secret in turnserver.conf |
-| Plaintext TURN port exposed | **Fixed** - TLS only externally (PENDING verification) |
+| Console.* usage in backend | **Fixed** - structured logger via logger.ts |
+| Build artifact publishing | **Fixed** - upload-artifact step added |
 
 ---
 
@@ -139,47 +131,28 @@ Phase 6: Testing + Hardening █████████████████
 
 ## Remaining Tasks (Actionable)
 
-### Task 1: Add Build Artifact Publishing to CI
-**File:** `.github/workflows/ci.yml`
-- Add `actions/upload-artifact` step in the `build` job
-- Upload `packages/backend/dist/`, `packages/frontend/dist/`, `packages/shared/dist/`
-
-### Task 2: Fix E2E Test Startup Configuration
-**File:** `.github/workflows/ci.yml` and `playwright.config.ts`
-- Option A: Remove `webServer` from playwright.config.ts and start both frontend+backend in CI
-- Option B: Start frontend in CI job and use `reuseExistingServer`
-- Verify tests can connect to both services
-
-### Task 3: Update Security Headers Test to Target Nginx
-**File:** `.github/workflows/ci.yml` and `tests/security/http-headers.js`
-- Change to test against nginx (port 80/443), not backend (port 3000)
-- Result: Tests actual production security headers
-
-### Task 4: Add Structured Logging (Replace console.*)
-**Files:** `packages/backend/src/events/*.ts`, `packages/backend/src/services/*.ts`
-- Replace `console.log/warn/error` with structured logger from `packages/backend/src/utils/logger.ts`
-
-### Task 5: Implement Zod Validation for Socket.IO Payloads
+### Task 1: Implement Zod Validation for Socket.IO Payloads
 **Files:** `packages/shared/src/schemas.ts`, `packages/backend/src/events/*.ts`
 - Add Zod schemas for room:create, room:join, chat:message, turn:request
 - Add validation in event handlers
 
-### Task 6: Add Metrics Endpoint
-**File:** `packages/backend/src/routes/`
+### Task 2: Add Metrics Endpoint
+**File:** `packages/backend/src/routes/metrics.ts`
 - Add `/metrics` endpoint returning request rate, error rate, latency in Prometheus format
 
-### Task 7: Verify Plaintext TURN Port Removal
+### Task 3: Remove Plaintext TURN Port 3478 from Production
 **File:** `docker-compose.production.yml`
-- Verify port 3478 is not exposed externally (only 5349 TLS)
+- Remove ports `"3478:3478/udp"` and `"3478:3478/tcp"` from coturn service
+- Keep only `"5349:5349/udp"` and `"5349:5349/tcp"` for TLS
 
 ---
 
 ## Exit Criteria (When Complete)
 
-- [ ] Build job produces artifacts
-- [ ] E2E tests run with proper service startup
-- [ ] Security headers test runs against nginx
-- [ ] No console.* usage in backend (structured logging)
+- [x] Build job produces artifacts
+- [x] E2E tests run with proper service startup (docker-compose)
+- [x] Security headers test runs against nginx
+- [x] No console.* usage in backend (structured logging)
 - [ ] Zod validation for all Socket.IO payloads
 - [ ] Metrics endpoint available
 - [ ] Plaintext TURN port not exposed
@@ -190,6 +163,6 @@ Phase 6: Testing + Hardening █████████████████
 
 | Version | Date | Changes |
 |---------|------|---------|
-| 0.7.11 | 2026-03-22 | Sourcemaps disabled, status updated to "In Progress" |
+| 0.7.11 | 2026-03-22 | Sourcemaps disabled, remaining gaps identified |
 | 0.7.10 | 2026-03-22 | Release (all critical security fixes) |
 | 0.7.9 | 2026-03-21 | PeerManager unit tests implemented |
