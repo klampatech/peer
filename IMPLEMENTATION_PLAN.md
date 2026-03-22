@@ -30,6 +30,7 @@
 | ZAP CI scans nginx not backend | Fixed v0.6.16 - scan nginx (port 80) |
 | Duplicate install+build in CI jobs | Fixed v0.6.16 - combined into single step |
 | Permissions-Policy missing in nginx | Fixed v0.6.16 - added to nginx.conf |
+| Docker network isolation (flat network + nginx root) | Fixed v0.6.17 - segmented networks (proxy-network, turn-network), nginx runs as non-root user |
 
 ---
 
@@ -48,8 +49,8 @@ The following gaps were identified between the spec and implementation:
 | HIGH | Duplicate install+build in CI jobs | ci.yml | **FIXED v0.6.16** - combined into single step |
 | MEDIUM | CSP has unsafe-inline/unsafe-eval | nginx.conf:76 | Not Fixed (required for Vite HMR in dev) |
 | MEDIUM | Permissions-Policy not in nginx | nginx.conf | **FIXED v0.6.16** - added to nginx.conf |
-| MEDIUM | Single flat Docker network | docker-compose.production.yml | Not Fixed |
-| LOW | nginx runs as root | packages/frontend/Dockerfile | Not Fixed |
+| MEDIUM | Single flat Docker network | docker-compose.production.yml | **FIXED v0.6.17** - segmented networks: proxy-network (nginx→backend/frontend), turn-network (backend→coturn), nginx isolated from coturn |
+| LOW | nginx runs as root | docker-compose.production.yml | **FIXED v0.6.17** - added user: nginx to run as non-root |
 
 ---
 

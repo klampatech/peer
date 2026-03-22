@@ -23,7 +23,8 @@ services:
       timeout: 10s
       retries: 3
     networks:
-      - peer-network
+      - proxy-network
+      - turn-network
     deploy:
       resources:
         limits:
@@ -40,7 +41,7 @@ services:
       dockerfile: Dockerfile
     restart: unless-stopped
     networks:
-      - peer-network
+      - proxy-network
     deploy:
       resources:
         limits:
@@ -73,7 +74,7 @@ services:
     command: ["turnserver", "-c", "/etc/coturn/turnserver.conf", "-n"]
     restart: unless-stopped
     networks:
-      - peer-network
+      - turn-network
     deploy:
       resources:
         limits:
@@ -86,6 +87,7 @@ services:
 
   nginx:
     image: nginx:alpine
+    user: nginx
     ports:
       - "80:80"
       - "443:443"
@@ -100,7 +102,7 @@ services:
       - frontend
     restart: unless-stopped
     networks:
-      - peer-network
+      - proxy-network
     deploy:
       resources:
         limits:
@@ -121,7 +123,7 @@ services:
     # Update DOMAIN and CERTBOT_EMAIL in your environment before running
     command: certonly --webroot --webroot-path=/var/www/certbot --email ${CERTBOT_EMAIL:-admin@example.com} --agree-tos --no-eff-email -d ${DOMAIN:-peer}
     networks:
-      - peer-network
+      - proxy-network
 
 volumes:
   backend-data:
@@ -131,5 +133,10 @@ volumes:
   certbot-var:
 
 networks:
-  peer-network:
+  # nginx -> frontend, nginx -> backend
+  proxy-network:
+    driver: bridge
+  # backend -> coturn (for TURN credential validation)
+  # nginx CANNOT reach coturn (isolation)
+  turn-network:
     driver: bridge
