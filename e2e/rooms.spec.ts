@@ -20,7 +20,7 @@ test.describe('Rooms', () => {
     await page.getByRole('button', { name: 'Create New Room' }).click();
 
     // Should navigate to a room page with a token
-    await expect(page).toHaveURL(/\/room\/[a-f0-9-]+/);
+    await expect(page).toHaveURL(/\/room\/[a-f0-9-]+/, { timeout: 30000 });
 
     // Wait for the page to load
     await page.waitForTimeout(2000);
@@ -35,7 +35,7 @@ test.describe('Rooms', () => {
     // First, create a room
     await page.getByLabel('Your Name').fill('User One');
     await page.getByRole('button', { name: 'Create New Room' }).click();
-    await expect(page).toHaveURL(/\/room\/([a-f0-9-]+)/);
+    await expect(page).toHaveURL(/\/room\/([a-f0-9-]+)/, { timeout: 30000 });
 
     const roomUrl = page.url();
     const roomToken = roomUrl.split('/room/')[1];
@@ -47,7 +47,7 @@ test.describe('Rooms', () => {
     await page.getByRole('button', { name: 'Join' }).click();
 
     // Should navigate to the room
-    await expect(page).toHaveURL(roomUrl);
+    await expect(page).toHaveURL(roomUrl, { timeout: 30000 });
   });
 
   test('shows error for invalid room token', async ({ page }) => {

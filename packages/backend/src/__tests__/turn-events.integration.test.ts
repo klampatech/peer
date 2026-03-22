@@ -266,7 +266,7 @@ describe('TURN Events Integration', () => {
       expect(response.body).toEqual({ ok: true });
     });
 
-    it('should return 429 when rate limit is exceeded', async () => {
+    it('should return 429 when rate limit is exceeded', async function () {
       const { rateLimitMiddleware } = await import('../middleware/rate-limit.js');
       const app = express();
       app.use(express.json());

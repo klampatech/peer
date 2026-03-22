@@ -11,7 +11,7 @@
 |-------|--------|
 | HomePage health check uses wrong default URL | Fixed in v0.6.1 |
 | E2E test runner Vitest conflict workaround | Documented in AGENTS.md |
-| E2E "peer connection state updates correctly" test flaky | Fixed (use expect.toHaveURL with 30s timeout instead of page.waitForURL) |
+| E2E "peer connection state updates correctly" test flaky | Fixed (use expect.toHaveURL with 30s timeout instead of page.waitForURL) - applied to ALL room navigation tests |
 | TurnCredentialsPayload type inconsistency (credential vs password) | Fixed in v0.6.5 |
 | TURN server URLs hardcoded to localhost (would fail in production) | Fixed v0.6.11 - use TURN_HOST env var, add TLS URLs |
 | Permissions-Policy security header missing (required by spec) | Fixed v0.6.11 |

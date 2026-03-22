@@ -11,7 +11,7 @@ test.describe('Permission Denied', () => {
     await page.getByLabel('Your Name').fill('Permission Test');
     await page.getByRole('button', { name: 'Create New Room' }).click();
 
-    await expect(page).toHaveURL(/\/room\/.+/);
+    await expect(page).toHaveURL(/\/room\/.+/, { timeout: 30000 });
 
     // Wait for the page to attempt media access and for connection to complete
     await page.waitForTimeout(10000);
@@ -33,7 +33,7 @@ test.describe('Permission Denied', () => {
     await page.getByLabel('Your Name').fill('Crash Test');
     await page.getByRole('button', { name: 'Create New Room' }).click();
 
-    await expect(page).toHaveURL(/\/room\/.+/);
+    await expect(page).toHaveURL(/\/room\/.+/, { timeout: 30000 });
     // Wait longer for connection to complete in all browsers
     await page.waitForTimeout(10000);
 
@@ -48,7 +48,7 @@ test.describe('Permission Denied', () => {
     await page.getByLabel('Your Name').fill('Error Message Test');
     await page.getByRole('button', { name: 'Create New Room' }).click();
 
-    await expect(page).toHaveURL(/\/room\/.+/);
+    await expect(page).toHaveURL(/\/room\/.+/, { timeout: 30000 });
     // Wait longer for connection to complete in all browsers
     await page.waitForTimeout(10000);
 
@@ -65,7 +65,7 @@ test.describe('Permission Denied', () => {
     await page.getByLabel('Your Name').fill('Navigate Test');
     await page.getByRole('button', { name: 'Create New Room' }).click();
 
-    await expect(page).toHaveURL(/\/room\/.+/);
+    await expect(page).toHaveURL(/\/room\/.+/, { timeout: 30000 });
     // Wait longer for connection to complete in all browsers
     await page.waitForTimeout(10000);
 

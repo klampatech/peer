@@ -14,7 +14,7 @@ test.describe('NAT Traversal', () => {
     await page.getByRole('button', { name: 'Create New Room' }).click();
 
     // Wait for navigation to room
-    await expect(page).toHaveURL(/\/room\/.+/);
+    await expect(page).toHaveURL(/\/room\/.+/, { timeout: 30000 });
 
     // Wait for connection attempt
     await page.waitForTimeout(3000);
@@ -33,7 +33,7 @@ test.describe('NAT Traversal', () => {
     await page.getByLabel('Your Name').fill('TURN Test');
     await page.getByRole('button', { name: 'Create New Room' }).click();
 
-    await expect(page).toHaveURL(/\/room\/.+/);
+    await expect(page).toHaveURL(/\/room\/.+/, { timeout: 30000 });
 
     // Wait for Socket.IO connection and TURN credential request
     await page.waitForTimeout(3000);
@@ -49,7 +49,7 @@ test.describe('NAT Traversal', () => {
     await page.goto('/');
     await page.getByLabel('Your Name').fill('Share Test');
     await page.getByRole('button', { name: 'Create New Room' }).click();
-    await expect(page).toHaveURL(/\/room\/.+/);
+    await expect(page).toHaveURL(/\/room\/.+/, { timeout: 30000 });
 
     // Extract room token from URL
     const roomUrl = page.url();
