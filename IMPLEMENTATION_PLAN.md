@@ -59,18 +59,17 @@ These must be fixed before production deployment.
 - user: "1001:1001"
 - security_opt: no-new-privileges:true
 
-#### Task P0.2: Enable Production HTTPS
+#### Task P0.2: Enable Production HTTPS ✅ COMPLETE
 **Severity:** Critical
-**File:** `nginx.conf` (lines 85-133)
+**File:** `nginx.conf` (lines 40-108)
 
-**Current State:** HTTPS server block is commented out (line 50: `# return 301`)
-
-**Steps:**
-1. Read current nginx.conf
-2. Uncomment and configure HTTPS server block with TLS 1.2/1.3
-3. Enable HSTS header
-4. Ensure ssl_certificate paths are correct
-5. Commit with message: `fix: enable production HTTPS in nginx`
+**Completed:**
+- Enabled HTTP to HTTPS redirect (line 51)
+- Configured HTTPS server block with TLS 1.2/1.3 (lines 54-108)
+- Added HSTS header with 1-year max-age (line 69)
+- Configured SSL certificate paths to `/etc/letsencrypt/live/peer/`
+- Updated `.env.example` with DOMAIN and CERTBOT_EMAIL variables
+- Updated docker-compose.production.yml with proper certificate path
 
 #### Task P0.3: Pin Coturn Image Version ✅ COMPLETE
 **Severity:** Critical

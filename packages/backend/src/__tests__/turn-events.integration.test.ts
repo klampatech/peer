@@ -137,9 +137,19 @@ describe('TURN Events Integration', () => {
       await new Promise(resolve => setTimeout(resolve, 100));
 
       const credentials = receivedCredentials[0] as Record<string, unknown>;
-      const expected = generateTurnCredentials();
-      expect(credentials.password).toBe(expected.password);
-      expect(credentials.username).toBe(expected.username);
+
+      // Verify username format: timestamp:realm
+      expect(credentials.username).toMatch(/^\d+:peer$/);
+
+      // Verify password is valid base64
+      expect(credentials.password).toMatch(/^[A-Za-z0-9+/=]+$/);
+
+      // Verify HMAC-SHA1 calculation is correct by recalculating with the received username
+      const crypto = await import('crypto');
+      const hmac = crypto.createHmac('sha1', process.env.TURN_SECRET || 'change-me-in-production');
+      hmac.update(credentials.username as string);
+      const expectedPassword = hmac.digest('base64');
+      expect(credentials.password).toBe(expectedPassword);
     });
 
     it('should generate credentials with all required fields', async () => {
