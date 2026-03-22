@@ -382,4 +382,21 @@ P5 (Security Post-Audit)
 - [x] P5.3: Add authorization to WebRTC signaling (H-3)
 - [x] All tests pass (104 backend + 115 frontend + 168 E2E = 387 tests)
 - [x] TypeScript compiles without errors
+- [x] Module resolution fix for dev server (tsx + @peer/shared)
+
+### Fix: Module Resolution for Dev Server
+
+**Issue:** The dev server (tsx) failed to resolve `@peer/shared` at runtime, causing "SyntaxError: The requested module '@peer/shared' does not provide an export named 'IceCandidateSchema'" errors.
+
+**Solution:**
+1. Added `@peer/shared` as a workspace dependency in `packages/backend/package.json`
+2. Added `tsconfig-paths` dependency for runtime path resolution
+3. Updated `packages/backend/tsconfig.json` paths to point to `.js` files (not `.d.ts`)
+4. Modified dev script to use `NODE_OPTIONS='-r tsconfig-paths/register'`
+
+**Files Modified:**
+- `packages/backend/package.json`: Added `@peer/shared` and `tsconfig-paths` dependencies
+- `packages/backend/tsconfig.json`: Fixed paths to use `.js` files
+- `package.json`: Added `tsconfig-paths` to root devDependencies
+
 - [ ] Production deployment verified

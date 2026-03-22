@@ -5,7 +5,7 @@
     "rootDir": "./src",
     "types": ["node"],
     "paths": {
-      "@peer/shared": ["../shared/dist/index.d.ts"],
+      "@peer/shared": ["../shared/dist/index.js"],
       "@peer/shared/*": ["../shared/dist/*"]
     }
   },
