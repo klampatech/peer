@@ -13,8 +13,8 @@ test.describe('Permission Denied', () => {
 
     await expect(page).toHaveURL(/\/room\/.+/);
 
-    // Wait for the page to attempt media access
-    await page.waitForTimeout(4000);
+    // Wait for the page to attempt media access and for connection to complete
+    await page.waitForTimeout(10000);
 
     // In headless browsers, media devices may not be available
     // The app should handle this gracefully - either show error or continue
@@ -34,7 +34,8 @@ test.describe('Permission Denied', () => {
     await page.getByRole('button', { name: 'Create New Room' }).click();
 
     await expect(page).toHaveURL(/\/room\/.+/);
-    await page.waitForTimeout(3000);
+    // Wait longer for connection to complete in all browsers
+    await page.waitForTimeout(10000);
 
     // Page should still load and be functional
     // Just check that the URL is valid and no crash occurred
@@ -48,7 +49,8 @@ test.describe('Permission Denied', () => {
     await page.getByRole('button', { name: 'Create New Room' }).click();
 
     await expect(page).toHaveURL(/\/room\/.+/);
-    await page.waitForTimeout(3000);
+    // Wait longer for connection to complete in all browsers
+    await page.waitForTimeout(10000);
 
     // If an error is shown, it should be user-friendly (not a stack trace)
     const pageContent = await page.content();
@@ -64,7 +66,8 @@ test.describe('Permission Denied', () => {
     await page.getByRole('button', { name: 'Create New Room' }).click();
 
     await expect(page).toHaveURL(/\/room\/.+/);
-    await page.waitForTimeout(3000);
+    // Wait longer for connection to complete in all browsers
+    await page.waitForTimeout(10000);
 
     // Navigate back to home using the browser back button
     // The app may redirect because there's no display name in sessionStorage

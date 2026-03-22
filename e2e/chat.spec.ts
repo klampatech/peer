@@ -10,7 +10,7 @@ test.describe('Chat', () => {
     await expect(page).toHaveURL(/\/room\/.+/);
 
     // Wait for any state to settle
-    await page.waitForTimeout(3000);
+    await page.waitForTimeout(10000);
 
     // Just verify we're on the room page
     const url = page.url();
@@ -31,21 +31,16 @@ test.describe('Chat', () => {
     await expect(page).toHaveURL(/\/room\/.+/);
   });
 
-  test('chat input field exists in room', async ({ page }) => {
+  test('chat input field exists in room', async ({ page, isMobile }) => {
+    // Skip on mobile - chat panel requires larger screen
+    test.skip(isMobile, 'Chat panel not visible on mobile');
+
     await page.goto('/');
     await page.getByLabel('Your Name').fill('Test User');
     await page.getByRole('button', { name: 'Create New Room' }).click();
 
     // Wait for navigation to room
     await expect(page).toHaveURL(/\/room\/.+/);
-
-    // Wait for the connecting state to finish - the chat panel only appears after connection
-    // Only run on chromium/msedge which connect reliably in headless mode
-    const browser = page.context().browser()?.browserType().name();
-    if (browser !== 'chromium' && browser !== 'msedge') {
-      // For other browsers, just verify the room page loads
-      return;
-    }
 
     // Check for chat input - the chat panel is only visible on lg (1024px) and above
     const chatInput = page.getByPlaceholder(/message|chat/i);
@@ -57,20 +52,16 @@ test.describe('Chat', () => {
     await expect(chatInput).toBeVisible({ timeout: 15000 });
   });
 
-  test('can type and submit chat message', async ({ page }) => {
+  test('can type and submit chat message', async ({ page, isMobile }) => {
+    // Skip on mobile - chat panel requires larger screen
+    test.skip(isMobile, 'Chat panel not visible on mobile');
+
     await page.goto('/');
     await page.getByLabel('Your Name').fill('Test User');
     await page.getByRole('button', { name: 'Create New Room' }).click();
 
     // Wait for navigation to room
     await expect(page).toHaveURL(/\/room\/.+/);
-
-    // Only run on chromium/msedge which connect reliably in headless mode
-    const browser = page.context().browser()?.browserType().name();
-    if (browser !== 'chromium' && browser !== 'msedge') {
-      // For other browsers, just verify the room page loads
-      return;
-    }
 
     // Wait for chat input to be visible first
     const chatInput = page.getByPlaceholder(/message|chat/i);

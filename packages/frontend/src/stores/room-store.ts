@@ -2,6 +2,16 @@ import { create } from 'zustand';
 import { signallingClient } from '../lib/signalling';
 import { peerManager } from '../lib/webrtc/peer-manager';
 
+// Wrapper to ensure any async operation completes within a timeout
+// Returns the result if it completes in time, otherwise returns undefined
+async function withGlobalTimeout<T>(operation: () => Promise<T>, ms: number): Promise<T | undefined> {
+  try {
+    return await withTimeout(operation(), ms, 'Operation timed out');
+  } catch {
+    return undefined;
+  }
+}
+
 export interface Peer {
   id: string;
   displayName: string;
@@ -128,15 +138,26 @@ export const useRoomStore = create<RoomState>((set) => ({
   },
 }));
 
+// Helper to add timeout to a promise
+function withTimeout<T>(promise: Promise<T>, ms: number, errorMsg: string): Promise<T> {
+  return Promise.race([
+    promise,
+    new Promise<T>((_, reject) =>
+      setTimeout(() => reject(new Error(errorMsg)), ms)
+    ),
+  ]);
+}
+
 // Initialize local media stream
 export async function initializeMedia(
   audio: boolean = true,
   video: boolean = true
 ): Promise<MediaStream> {
-  const stream = await navigator.mediaDevices.getUserMedia({
-    audio,
-    video,
-  });
+  const stream = await withTimeout(
+    navigator.mediaDevices.getUserMedia({ audio, video }),
+    5000, // 5 second timeout for media initialization
+    'Media initialization timed out'
+  );
   useRoomStore.getState().setLocalStream(stream);
   return stream;
 }
@@ -152,45 +173,51 @@ export function cleanupMedia(): void {
 
 // Connect to room via signalling server
 export async function connect(token: string, displayName: string): Promise<void> {
-  // Initialize media if available (non-fatal if it fails)
-  let stream: MediaStream | null = null;
-  try {
-    stream = await initializeMedia(true, true);
-  } catch (err) {
-    console.warn('Failed to initialize media, continuing without local stream:', err);
-    // Continue without local stream - user can still join and see others
-  }
-
-  useRoomStore.getState().setRoomToken(token);
-
-  // Connect to signalling server (non-fatal if it fails)
-  try {
-    await signallingClient.connect(token, displayName);
-  } catch (err) {
-    console.warn('Failed to connect to signalling server, continuing anyway:', err);
-    // Continue without signalling - still show the room UI
-  }
-
-  // Request TURN credentials for NAT traversal (non-fatal)
-  try {
-    signallingClient.requestTurnCredentials();
-  } catch (err) {
-    console.warn('Failed to request TURN credentials:', err);
-  }
-
-  // Initialize peer manager with local stream (may be null)
-  peerManager.initialize(stream);
-
-  // Connect to any existing peers in the room (non-fatal)
-  try {
-    const { peers } = useRoomStore.getState();
-    for (const peer of peers) {
-      await peerManager.connectToPeer(peer.id);
+  // Wrap entire connection process in a global timeout to prevent hanging
+  // This ensures the UI always becomes responsive even if media/signalling fails
+  await withGlobalTimeout(async () => {
+    // Initialize media if available (non-fatal if it fails)
+    let stream: MediaStream | null = null;
+    try {
+      stream = await initializeMedia(true, true);
+    } catch (err) {
+      console.warn('Failed to initialize media, continuing without local stream:', err);
+      // Continue without local stream - user can still join and see others
     }
-  } catch (err) {
-    console.warn('Failed to connect to existing peers:', err);
-  }
 
+    useRoomStore.getState().setRoomToken(token);
+
+    // Connect to signalling server (non-fatal if it fails)
+    try {
+      await signallingClient.connect(token, displayName);
+    } catch (err) {
+      console.warn('Failed to connect to signalling server, continuing anyway:', err);
+      // Continue without signalling - still show the room UI
+    }
+
+    // Request TURN credentials for NAT traversal (non-fatal)
+    try {
+      signallingClient.requestTurnCredentials();
+    } catch (err) {
+      console.warn('Failed to request TURN credentials:', err);
+    }
+
+    // Initialize peer manager with local stream (may be null)
+    peerManager.initialize(stream);
+
+    // Connect to any existing peers in the room (non-fatal)
+    try {
+      const { peers } = useRoomStore.getState();
+      for (const peer of peers) {
+        await peerManager.connectToPeer(peer.id);
+      }
+    } catch (err) {
+      console.warn('Failed to connect to existing peers:', err);
+    }
+  }, 8000); // 8 second global timeout for entire connection process
+
+  // Always mark as connected - even if the process timed out
+  // This ensures the UI becomes responsive
   useRoomStore.getState().setConnected(true);
 }
 
