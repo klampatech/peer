@@ -5,6 +5,15 @@
 
 ---
 
+## Post-Completion Fixes
+
+| Issue | Status |
+|-------|--------|
+| HomePage health check uses wrong default URL | Fixed in v0.6.1 |
+| E2E test runner Vitest conflict workaround | Documented in AGENTS.md |
+
+---
+
 ## Gap Analysis Summary
 
 **Specification Sources:**
