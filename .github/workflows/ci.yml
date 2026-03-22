@@ -148,35 +148,34 @@ jobs:
           node-version: '22'
           cache: 'pnpm'
 
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
-
-      - name: Build packages
-        run: pnpm build
-
-      - name: Start backend
+      - name: Install dependencies and build
         run: |
-          cd packages/backend
-          pnpm dev &
-          echo $! > /tmp/backend.pid
-        env:
-          NODE_ENV: test
+          pnpm install --frozen-lockfile
+          pnpm build
 
-      - name: Wait for backend to be ready
+      - name: Start Docker Compose services
+        run: |
+          docker compose -f docker-compose.yml up -d
+          # Give services time to start
+          sleep 10
+
+      - name: Wait for nginx to be ready
         run: |
           for i in $(seq 1 30); do
-            if curl -sf http://localhost:3000/health > /dev/null 2>&1; then
-              echo "Backend ready after ${i} attempts"
+            if curl -sf http://localhost/health > /dev/null 2>&1 || curl -sf http://localhost:80 > /dev/null 2>&1; then
+              echo "nginx ready after ${i} attempts"
               exit 0
             fi
-            echo "Waiting for backend... ($i/30)"
+            echo "Waiting for nginx... ($i/30)"
             sleep 2
           done
-          echo "FAIL: Backend did not become ready within 60 seconds"
+          echo "FAIL: nginx did not become ready within 60 seconds"
           exit 1
 
       - name: Verify security headers
         run: node tests/security/http-headers.js
+        env:
+          BASE_URL: http://localhost
 
   security-scan:
     name: OWASP ZAP Scan
@@ -196,41 +195,38 @@ jobs:
           node-version: '22'
           cache: 'pnpm'
 
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
-
-      - name: Build packages
-        run: pnpm build
-
-      - name: Start backend
+      - name: Install dependencies and build
         run: |
-          cd packages/backend
-          pnpm dev &
-          echo $! > /tmp/backend.pid
-        env:
-          NODE_ENV: test
+          pnpm install --frozen-lockfile
+          pnpm build
 
-      - name: Wait for backend to be ready
+      - name: Start Docker Compose services
+        run: |
+          docker compose -f docker-compose.yml up -d
+          # Give services time to start
+          sleep 10
+
+      - name: Wait for nginx to be ready
         run: |
           for i in $(seq 1 30); do
-            if curl -sf http://localhost:3000/health > /dev/null 2>&1; then
-              echo "Backend ready after ${i} attempts"
+            if curl -sf http://localhost/health > /dev/null 2>&1 || curl -sf http://localhost:80 > /dev/null 2>&1; then
+              echo "nginx ready after ${i} attempts"
               exit 0
             fi
-            echo "Waiting for backend... ($i/30)"
+            echo "Waiting for nginx... ($i/30)"
             sleep 2
           done
-          echo "FAIL: Backend did not become ready within 60 seconds"
+          echo "FAIL: nginx did not become ready within 60 seconds"
           exit 1
 
       - name: Run OWASP ZAP scan
         run: |
-          # Run ZAP baseline scan using Docker
+          # Run ZAP baseline scan using Docker - scan nginx (port 80), not backend
           docker run --rm \
             --network="host" \
             -v "$(pwd):/zap/wrk:rw" \
             -t owasp/zap2docker-stable zap.sh \
-            -cmd -quickurl http://localhost:3000 \
+            -cmd -quickurl http://localhost \
             -quickprogress \
             -timeout 120 \
             -reportfile zap-report.html \

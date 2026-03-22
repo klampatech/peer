@@ -1,6 +1,18 @@
 version: '3.8'
 
 services:
+  # Frontend (React)
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile.frontend
+    container_name: peer-frontend
+    environment:
+      - NODE_ENV=production
+    restart: unless-stopped
+    networks:
+      - peer-network
+
   # Signalling server (Node.js + Socket.IO)
   backend:
     build:
@@ -12,7 +24,7 @@ services:
     environment:
       - NODE_ENV=production
       - PORT=3000
-      - CORS_ORIGIN=https://localhost
+      - CORS_ORIGIN=http://localhost:5173
       - TURN_SECRET=${TURN_SECRET}
       - COTURN_PORT=3478
       - TURN_REALM=peer
@@ -30,17 +42,16 @@ services:
     container_name: peer-nginx
     ports:
       - "80:80"
-      - "443:443"
     volumes:
       - ./nginx.conf:/etc/nginx/nginx.conf:ro
-      - ./certs:/etc/nginx/certs:ro
     depends_on:
       - backend
+      - frontend
     restart: unless-stopped
     networks:
       - peer-network
 
-  # coturn TURN server (placeholder for Sprint 3)
+  # coturn TURN server
   coturn:
     image: coturn/coturn:4.6.2-alpine
     container_name: peer-coturn

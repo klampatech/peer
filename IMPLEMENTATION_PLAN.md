@@ -26,6 +26,10 @@
 | Backend port 3000 exposed bypassing nginx | Fixed v0.6.15 - remove port mapping, backend only accessible via nginx |
 | coturn auth misconfigured (env var not read by coturn) | Fixed v0.6.15 - use static-auth-secret with entrypoint script |
 | certbot --staging flag in production | Fixed v0.6.15 - remove staging flag for production certs |
+| security-headers CI tests nginx not backend | Fixed v0.6.16 - use docker compose, scan nginx |
+| ZAP CI scans nginx not backend | Fixed v0.6.16 - scan nginx (port 80) |
+| Duplicate install+build in CI jobs | Fixed v0.6.16 - combined into single step |
+| Permissions-Policy missing in nginx | Fixed v0.6.16 - added to nginx.conf |
 
 ---
 
@@ -39,11 +43,11 @@ The following gaps were identified between the spec and implementation:
 | CRITICAL | Event listeners accumulate on reconnect | peer-manager.ts | **FIXED v0.6.14** |
 | HIGH | ICE candidates leak private host IPs | peer-manager.ts | **FIXED v0.6.14** |
 | HIGH | SDP content unvalidated (only wrapper) | room-events.ts, shared/src | **FIXED v0.6.14** |
-| HIGH | security-headers CI tests backend not nginx | ci.yml:178 | Not Fixed |
-| HIGH | ZAP CI scans backend only | ci.yml:233 | Not Fixed |
-| HIGH | Duplicate install+build in CI jobs | ci.yml | Not Fixed |
-| MEDIUM | CSP has unsafe-inline/unsafe-eval | nginx.conf:76 | Not Fixed |
-| MEDIUM | Permissions-Policy not in nginx | nginx.conf | Not Fixed |
+| HIGH | security-headers CI tests backend not nginx | ci.yml:178 | **FIXED v0.6.16** - now uses docker compose, scans nginx |
+| HIGH | ZAP CI scans backend only | ci.yml:233 | **FIXED v0.6.16** - now scans nginx (port 80) |
+| HIGH | Duplicate install+build in CI jobs | ci.yml | **FIXED v0.6.16** - combined into single step |
+| MEDIUM | CSP has unsafe-inline/unsafe-eval | nginx.conf:76 | Not Fixed (required for Vite HMR in dev) |
+| MEDIUM | Permissions-Policy not in nginx | nginx.conf | **FIXED v0.6.16** - added to nginx.conf |
 | MEDIUM | Single flat Docker network | docker-compose.production.yml | Not Fixed |
 | LOW | nginx runs as root | packages/frontend/Dockerfile | Not Fixed |
 
