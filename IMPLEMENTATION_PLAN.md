@@ -1,6 +1,6 @@
 # Peer P2P VoIP Application - Implementation Plan
 
-> **Last Updated:** 2026-03-22 (analysis verified)
+> **Last Updated:** 2026-03-22 (gap analysis complete)
 
 ## Gap Analysis Summary
 
@@ -8,6 +8,16 @@
 - `specs/Peer_System_Design.md` - Full system design (444 lines)
 - `specs/Testing_Strategy.md` - Testing requirements (448 lines)
 - `specs/code-review-findings.md` - Code review findings (200 lines)
+
+### Current Implementation Status
+
+| Phase | Status | Details |
+|-------|--------|---------|
+| Phase 1: Foundation | ✅ Complete | Project scaffold, backend signalling, Docker, unit tests (98 tests, 76% coverage) |
+| Phase 2: WebRTC | ✅ Complete | Frontend scaffold, WebRTC integration, media controls, mesh topology |
+| Phase 3: Screen Share + TURN | ✅ Complete | Screen sharing, TURN infrastructure |
+| Phase 4: Chat + Persistence | ✅ Complete | Chat backend/frontend, SQLite persistence, cleanup jobs |
+| Phase 5: UI Polish | ✅ Complete | Layout, components, responsive, typography, accessibility |
 
 ### Current Test Coverage
 
@@ -19,16 +29,6 @@
 | E2E specs | 6 files | 6 files | ✅ |
 | Load test scripts | 3 | 3 | ✅ |
 | Security test scripts | 5+ | 5 | ✅ |
-
-### What's Complete (Baseline)
-
-| Phase | Status | Details |
-|-------|--------|---------|
-| Phase 1: Foundation | ✅ Complete | Project scaffold, backend signalling, Docker, unit tests (98 tests, 76% coverage) |
-| Phase 2: WebRTC | ✅ Complete | Frontend scaffold, WebRTC integration, media controls, mesh topology |
-| Phase 3: Screen Share + TURN | ✅ Complete | Screen sharing, TURN infrastructure |
-| Phase 4: Chat + Persistence | ✅ Complete | Chat backend/frontend, SQLite persistence, cleanup jobs |
-| Phase 5: UI Polish | ✅ Complete | Layout, components, responsive, typography, accessibility |
 
 ### Code Review Findings Summary
 
@@ -42,8 +42,6 @@
 | Performance | 0 | 0 | 1 | 3 | 1 |
 | Security | 0 | 1 | 1 | 2 | 0 |
 | **Total** | **0** | **6** | **11** | **7** | **1** |
-
-### What's Remaining (Gap Analysis)
 
 ---
 
@@ -231,6 +229,17 @@ deploy:
 2. Add any missing test scenarios
 3. Commit with message: `test: complete E2E coverage`
 
+#### Task P3.3: Add Load Test to CI Pipeline
+**Severity:** High
+**File:** `.github/workflows/ci.yml`
+
+**Current State:** Load tests exist but are not in CI
+
+**Steps:**
+1. Add k6 load test job to CI workflow
+2. Configure as non-blocking (warn only) per Testing Strategy spec
+3. Commit with message: `ci: add load test to CI pipeline`
+
 ---
 
 ### P4: Documentation Updates
@@ -292,7 +301,8 @@ P2 (Medium - Code Quality)
 
 P3 (Testing)
 ├── P3.1: Unit test gaps
-└── P3.2: E2E gaps
+├── P3.2: E2E gaps
+└── P3.3: Add load test to CI
 
 P4 (Documentation)
 └── P4.1: Update docs
