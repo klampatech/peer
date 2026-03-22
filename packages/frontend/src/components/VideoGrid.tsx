@@ -14,6 +14,8 @@ interface VideoGridProps {
   peers: Peer[];
   /** Whether local audio is enabled */
   isMuted?: boolean;
+  /** Whether the local user is currently speaking (audio level detection) */
+  isLocalSpeaking?: boolean;
 }
 
 /**
@@ -24,6 +26,7 @@ export default function VideoGrid({
   localStream,
   peers,
   isMuted = false,
+  isLocalSpeaking = false,
 }: VideoGridProps) {
   const participantCount = peers.length + (localStream ? 1 : 0);
 
@@ -57,6 +60,7 @@ export default function VideoGrid({
           isLocal={true}
           isMuted={isMuted}
           audioEnabled={!isMuted}
+          isSpeaking={isLocalSpeaking}
         />
       )}
 

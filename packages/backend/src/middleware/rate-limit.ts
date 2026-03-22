@@ -39,12 +39,14 @@ export function rateLimitMiddleware(
 
 /**
  * Socket.IO rate limiting middleware
- * @param io - Socket.IO instance
+ * Limits connection attempts to prevent abuse
+ * Spec: 10 joins per IP per minute (Section 8.2)
  */
 export function setupSocketRateLimiter(io: ReturnType<typeof require>['socket.io']['Server']): void {
+  // 10 join attempts per minute per IP - matches spec Section 8.2
   const socketRateLimiter = new RateLimiterMemory({
-    points: 30, // 30 events
-    duration: 10, // per 10 seconds
+    points: 10, // 10 events
+    duration: 60, // per 60 seconds (1 minute)
     blockDuration: 0,
   });
 

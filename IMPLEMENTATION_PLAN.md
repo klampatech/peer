@@ -13,6 +13,10 @@
 | E2E test runner Vitest conflict workaround | Documented in AGENTS.md |
 | E2E "peer connection state updates correctly" test flaky | Fixed (use expect.toHaveURL with 30s timeout instead of page.waitForURL) |
 | TurnCredentialsPayload type inconsistency (credential vs password) | Fixed in v0.6.5 |
+| TURN server URLs hardcoded to localhost (would fail in production) | Fixed v0.6.11 - use TURN_HOST env var, add TLS URLs |
+| Permissions-Policy security header missing (required by spec) | Fixed v0.6.11 |
+| Socket.IO rate limiter too permissive (180/min vs spec's 10/min) | Fixed v0.6.11 |
+| Speaking indicator not connected to UI (useAudioLevel hook unused) | Fixed v0.6.11 |
 
 ---
 

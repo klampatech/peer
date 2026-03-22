@@ -30,6 +30,17 @@ export const securityMiddleware = helmet({
   noSniff: true,
   xssFilter: true,
   hidePoweredBy: true,
+  // Permissions-Policy: Restrict camera, microphone, and display-capture to same-origin only
+  // Spec Section 8.4: camera=(), microphone=(), display-capture=()
+  permissionsPolicy: {
+    camera: [],
+    microphone: [],
+    displayCapture: [],
+    // Allow other features by default
+    geolocation: [],
+    gyroscope: [],
+    magnetometer: [],
+  },
 });
 
 /**

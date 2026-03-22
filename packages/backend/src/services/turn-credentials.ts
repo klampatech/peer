@@ -30,14 +30,28 @@ export function generateTurnCredentials(): TurnCredentials {
   hmac.update(username);
   const password = hmac.digest('base64');
 
-  // Build TURN URLs
+  // Build TURN URLs based on environment configuration
   const turnPort = process.env.COTURN_PORT || '3478';
+  const turnTlsPort = process.env.COTURN_TLS_PORT || '5349';
+
+  // TURN_HOST can be set to the public hostname (e.g., your-domain.com)
+  // For local development, defaults to localhost
+  const turnHost = process.env.TURN_HOST || 'localhost';
+
   const turnUrls = [
-    `turn:localhost:${turnPort}`,
-    `turn:localhost:${turnPort}/tcp`,
-    `turn:127.0.0.1:${turnPort}`,
-    `turn:127.0.0.1:${turnPort}/tcp`,
+    `turn:${turnHost}:${turnPort}`,
+    `turn:${turnHost}:${turnPort}/tcp`,
+    // TLS-secured TURN URLs for production (port 5349)
+    `turns:${turnHost}:${turnTlsPort}`,
   ];
+
+  // Only include 127.0.0.1 fallback for localhost to avoid confusing remote peers
+  if (turnHost === 'localhost' || turnHost === '127.0.0.1') {
+    turnUrls.push(
+      `turn:127.0.0.1:${turnPort}`,
+      `turn:127.0.0.1:${turnPort}/tcp`,
+    );
+  }
 
   return {
     username,

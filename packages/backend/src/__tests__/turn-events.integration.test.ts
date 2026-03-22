@@ -207,11 +207,13 @@ describe('TURN Events Integration', () => {
       const response = receivedCredentials[0] as Record<string, unknown>;
       const credentials = response.data as Record<string, unknown>;
       const urls = credentials.urls as string[];
-      expect(urls.length).toBe(4);
+      // Now includes TLS URLs (turns:) in addition to UDP/TCP
+      expect(urls.length).toBe(5);
       expect(urls[0]).toMatch(/^turn:localhost:3478$/);
       expect(urls[1]).toMatch(/^turn:localhost:3478\/tcp$/);
-      expect(urls[2]).toMatch(/^turn:127\.0\.0\.1:3478$/);
-      expect(urls[3]).toMatch(/^turn:127\.0\.0\.1:3478\/tcp$/);
+      expect(urls[2]).toMatch(/^turns:localhost:5349$/);
+      expect(urls[3]).toMatch(/^turn:127\.0\.0\.1:3478$/);
+      expect(urls[4]).toMatch(/^turn:127\.0\.0\.1:3478\/tcp$/);
     });
 
     it('should set correct TTL value', async () => {

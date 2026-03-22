@@ -45,9 +45,11 @@ describe('Turn Credentials', () => {
     it('should generate TURN URLs with correct format', () => {
       const credentials = generateTurnCredentials();
 
-      expect(credentials.urls).toHaveLength(4);
+      // Now includes TLS URLs (turns:) in addition to UDP/TCP
+      expect(credentials.urls).toHaveLength(5);
       expect(credentials.urls[0]).toMatch(/^turn:/);
       expect(credentials.urls[1]).toMatch(/^turn:.*\/tcp$/);
+      expect(credentials.urls[2]).toMatch(/^turns:/);
     });
 
     it('should use COTURN_PORT environment variable', () => {

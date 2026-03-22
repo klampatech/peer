@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useRoomStore, connect, disconnect } from '../stores/room-store';
+import { useAudioLevel } from '../hooks/use-audio-level';
 import Layout from '../components/Layout';
 import VideoGrid from '../components/VideoGrid';
 
@@ -14,6 +15,9 @@ export default function RoomPage({ displayName }: RoomPageProps) {
   const [isConnecting, setIsConnecting] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const { localStream, peers, audioEnabled } = useRoomStore();
+
+  // Audio level detection for speaking indicator
+  const { isSpeaking: isLocalSpeaking } = useAudioLevel();
 
   useEffect(() => {
     if (!token) {
@@ -82,6 +86,7 @@ export default function RoomPage({ displayName }: RoomPageProps) {
         localStream={localStream ?? undefined}
         peers={peers}
         isMuted={!audioEnabled}
+        isLocalSpeaking={isLocalSpeaking}
       />
     </Layout>
   );
