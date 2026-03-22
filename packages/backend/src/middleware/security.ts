@@ -30,18 +30,24 @@ export const securityMiddleware = helmet({
   noSniff: true,
   xssFilter: true,
   hidePoweredBy: true,
-  // Permissions-Policy: Restrict camera, microphone, and display-capture to same-origin only
-  // Spec Section 8.4: camera=(), microphone=(), display-capture=()
-  permissionsPolicy: {
-    camera: [],
-    microphone: [],
-    displayCapture: [],
-    // Allow other features by default
-    geolocation: [],
-    gyroscope: [],
-    magnetometer: [],
-  },
 });
+
+/**
+ * Permissions-Policy middleware
+ * Restricts camera, microphone, and display-capture to same-origin only
+ * Spec Section 8.4: camera=(), microphone=(), display-capture=()
+ */
+export function permissionsPolicyMiddleware(
+  _req: Request,
+  res: Response,
+  next: NextFunction
+): void {
+  res.setHeader(
+    'Permissions-Policy',
+    'camera=(), microphone=(), display-capture=(), geolocation=(), gyroscope=(), magnetometer=()'
+  );
+  next();
+}
 
 /**
  * CORS middleware

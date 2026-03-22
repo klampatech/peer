@@ -2,7 +2,7 @@ import express, { type Express } from 'express';
 import http from 'http';
 import { Server as SocketIOServer } from 'socket.io';
 import type { Server as HttpServer } from 'http';
-import { securityMiddleware, corsMiddleware } from './middleware/security.js';
+import { securityMiddleware, permissionsPolicyMiddleware, corsMiddleware } from './middleware/security.js';
 import { rateLimitMiddleware, setupSocketRateLimiter } from './middleware/rate-limit.js';
 import healthRoutes from './routes/health.js';
 import { setupRoomEvents } from './events/room-events.js';
@@ -48,6 +48,7 @@ export async function createServer(): Promise<AppServer> {
 
   // Middleware
   app.use(securityMiddleware);
+  app.use(permissionsPolicyMiddleware);
   app.use(corsMiddleware);
   app.use(express.json());
   app.use(rateLimitMiddleware);
