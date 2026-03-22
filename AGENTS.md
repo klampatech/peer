@@ -74,8 +74,8 @@ pnpm test:coverage # Run with coverage report
 # Install Playwright browsers (first time)
 pnpm exec playwright install
 
-# Run E2E tests
-pnpm exec playwright test
+# Run E2E tests (must run from /tmp to avoid Vitest conflict)
+cd /tmp && /path/to/peer/node_modules/.bin/playwright test --config=/path/to/peer/playwright.config.ts --project=chromium
 
 # Run E2E tests with UI
 pnpm exec playwright test --ui
@@ -89,6 +89,8 @@ pnpm exec playwright test --headed
 # Generate test report
 pnpm exec playwright show-report
 ```
+
+**Note:** E2E tests must be run from `/tmp` to avoid a conflict between Vitest globals and Playwright. This is a known issue with the test setup.
 
 ### Full Validation Pipeline
 ```bash

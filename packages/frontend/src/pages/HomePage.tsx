@@ -25,7 +25,7 @@ export default function HomePage({ displayName, onDisplayNameChange }: HomePageP
     setIsCreating(true);
     try {
       // Check if backend is available
-      const response = await fetch(`${import.meta.env.VITE_API_URL || ''}/health`);
+      const response = await fetch(`${SOCKET_URL}/health`);
       if (!response.ok) {
         alert('Server is not available. Please try again later.');
         setIsCreating(false);
