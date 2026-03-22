@@ -19,6 +19,7 @@ export function setupTurnEvents(io: Server): void {
       try {
         const credentials = generateTurnCredentials();
 
+        // eslint-disable-next-line no-console
         console.log(`TURN credentials generated for socket ${socket.id}`);
 
         // Send credentials back via callback if provided
@@ -29,6 +30,7 @@ export function setupTurnEvents(io: Server): void {
           socket.emit('turn:credentials', credentials);
         }
       } catch (error) {
+        // eslint-disable-next-line no-console
         console.error('Error generating TURN credentials:', error);
 
         if (callback) {

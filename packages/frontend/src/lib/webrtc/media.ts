@@ -1,3 +1,4 @@
+/* eslint-disable no-console */
 export interface MediaConstraints {
   audio?: boolean | MediaTrackConstraints;
   video?: boolean | MediaTrackConstraints;

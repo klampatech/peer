@@ -9,22 +9,27 @@ async function main(): Promise<void> {
     const { httpServer, io } = await createServer();
 
     httpServer.listen(PORT, HOST, () => {
+      // eslint-disable-next-line no-console
       console.log(`🚀 Server running on http://${HOST}:${PORT}`);
+      // eslint-disable-next-line no-console
       console.log(`📡 Socket.IO ready for connections`);
     });
 
     // Graceful shutdown
     const shutdown = async (): Promise<void> => {
+      // eslint-disable-next-line no-console
       console.log('\n🛑 Shutting down gracefully...');
 
       io.close();
       httpServer.close(() => {
+        // eslint-disable-next-line no-console
         console.log('✅ Server closed');
         process.exit(0);
       });
 
       // Force exit after 10 seconds if graceful shutdown fails
       setTimeout(() => {
+        // eslint-disable-next-line no-console
         console.error('⚠️ Forcing shutdown after timeout');
         process.exit(1);
       }, 10000);

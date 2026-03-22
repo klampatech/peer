@@ -1,3 +1,4 @@
+/* eslint-disable no-console */
 import { signallingClient, type TurnCredentials } from '../signalling';
 import { useRoomStore } from '../../stores/room-store';
 

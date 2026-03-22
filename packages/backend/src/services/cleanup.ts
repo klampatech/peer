@@ -23,9 +23,11 @@ export function performCleanup(): void {
   try {
     const deletedCount = deleteOldMessages(OLD_MESSAGE_THRESHOLD_HOURS);
     if (deletedCount > 0) {
+      // eslint-disable-next-line no-console
       console.log(`[Cleanup] Deleted ${deletedCount} old messages`);
     }
   } catch (error) {
+    // eslint-disable-next-line no-console
     console.error('[Cleanup] Error during cleanup:', error);
   }
 }
@@ -36,6 +38,7 @@ export function performCleanup(): void {
  */
 export function startCleanupScheduler(): void {
   if (cleanupInterval !== null) {
+    // eslint-disable-next-line no-console
     console.log('[Cleanup] Scheduler already running');
     return;
   }
@@ -48,6 +51,7 @@ export function startCleanupScheduler(): void {
     performCleanup();
   }, CLEANUP_INTERVAL_MS);
 
+  // eslint-disable-next-line no-console
   console.log('[Cleanup] Scheduler started - running every hour');
 }
 
@@ -59,6 +63,7 @@ export function stopCleanupScheduler(): void {
   if (cleanupInterval !== null) {
     clearInterval(cleanupInterval);
     cleanupInterval = null;
+    // eslint-disable-next-line no-console
     console.log('[Cleanup] Scheduler stopped');
   }
 }

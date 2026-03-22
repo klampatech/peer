@@ -21,6 +21,7 @@ function isRoomToken(value: string): boolean {
  */
 export function setupRoomEvents(io: Server): void {
   io.on('connection', (socket: Socket) => {
+    // eslint-disable-next-line no-console
     console.log(`Client connected: ${socket.id}`);
 
     // Handle room creation
@@ -52,8 +53,10 @@ export function setupRoomEvents(io: Server): void {
           data: { token: room.token },
         });
 
+        // eslint-disable-next-line no-console
         console.log(`Room created: ${room.token} by ${socket.id}`);
       } catch (error) {
+        // eslint-disable-next-line no-console
         console.error('Error creating room:', error);
         callback({
           success: false,
@@ -121,8 +124,10 @@ export function setupRoomEvents(io: Server): void {
           data: { token, peers: otherPeers.map(p => ({ id: p.id, displayName: p.displayName })) },
         });
 
+        // eslint-disable-next-line no-console
         console.log(`Peer ${socket.id} joined room ${token}`);
       } catch (error) {
+        // eslint-disable-next-line no-console
         console.error('Error joining room:', error);
         callback({
           success: false,
@@ -148,12 +153,14 @@ export function setupRoomEvents(io: Server): void {
         if (room) {
           leaveRoom(token as Room['token'], socket.id);
           socket.to(token).emit('peer-left', { peerId: socket.id });
+          // eslint-disable-next-line no-console
           console.log(`Peer ${socket.id} left room ${token}`);
         }
 
         socket.leave(token);
         callback?.({ success: true });
       } catch (error) {
+        // eslint-disable-next-line no-console
         console.error('Error leaving room:', error);
         callback?.({
           success: false,
@@ -191,6 +198,7 @@ export function setupRoomEvents(io: Server): void {
 
     // Handle disconnection
     socket.on('disconnect', () => {
+      // eslint-disable-next-line no-console
       console.log(`Client disconnected: ${socket.id}`);
 
       // Find and clean up any rooms this socket was in
@@ -202,6 +210,7 @@ export function setupRoomEvents(io: Server): void {
           if (room && room.peers.has(socket.id)) {
             leaveRoom(token as Room['token'], socket.id);
             socket.to(token).emit('peer-left', { peerId: socket.id });
+            // eslint-disable-next-line no-console
             console.log(`Peer ${socket.id} removed from room ${token} (disconnect)`);
           }
         }
