@@ -4,9 +4,10 @@
     "outDir": "./dist",
     "rootDir": "./src",
     "types": ["node"],
+    "baseUrl": ".",
     "paths": {
-      "@peer/shared": ["../shared/dist/index.js"],
-      "@peer/shared/*": ["../shared/dist/*"]
+      "@peer/shared": ["../shared/src/index.ts"],
+      "@peer/shared/*": ["../shared/src/*"]
     }
   },
   "include": ["src/**/*"],

@@ -383,6 +383,7 @@ P5 (Security Post-Audit)
 - [x] All tests pass (104 backend + 115 frontend + 168 E2E = 387 tests)
 - [x] TypeScript compiles without errors
 - [x] Module resolution fix for dev server (tsx + @peer/shared)
+- [x] TypeScript compilation fix for @peer/shared (2026-03-22)
 
 ### Fix: Module Resolution for Dev Server
 
@@ -391,12 +392,17 @@ P5 (Security Post-Audit)
 **Solution:**
 1. Added `@peer/shared` as a workspace dependency in `packages/backend/package.json`
 2. Added `tsconfig-paths` dependency for runtime path resolution
-3. Updated `packages/backend/tsconfig.json` paths to point to `.js` files (not `.d.ts`)
+3. Updated `packages/backend/tsconfig.json` paths to point to `.ts` source files
 4. Modified dev script to use `NODE_OPTIONS='-r tsconfig-paths/register'`
 
 **Files Modified:**
 - `packages/backend/package.json`: Added `@peer/shared` and `tsconfig-paths` dependencies
-- `packages/backend/tsconfig.json`: Fixed paths to use `.js` files
+- `packages/backend/tsconfig.json`: Fixed paths to use `.ts` source files
 - `package.json`: Added `tsconfig-paths` to root devDependencies
+
+**Additional Fix (2026-03-22):**
+- Fixed TypeScript compilation errors by updating paths to point to `.ts` files instead of `.js` files
+- Added `baseUrl` to tsconfig.json for proper path resolution
+- All 104 backend tests and 115 frontend tests now pass with clean typecheck
 
 - [ ] Production deployment verified
