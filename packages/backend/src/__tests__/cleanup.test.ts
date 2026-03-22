@@ -22,11 +22,7 @@ vi.mock('../utils/logger.js', () => ({
 }));
 
 describe('Cleanup Service', () => {
-  // Reset timers for interval tests
-  let timers: ReturnType<typeof setTimeout>[];
-
   beforeEach(async () => {
-    timers = [];
     vi.useFakeTimers();
     vi.clearAllMocks();
 
