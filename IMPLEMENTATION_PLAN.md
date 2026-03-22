@@ -53,7 +53,7 @@ This document tracks the gap analysis between specification files in `specs/*` a
 | CR-3: Rate limiter never wired | Critical | **Fixed v0.6.11** - properly wired |
 | CR-4: HTTPS server commented out | Critical | **Fixed v0.6.15** - HTTPS enabled |
 | CR-5: coturn auth misconfigured | Critical | **Fixed v0.6.15** - static-auth-secret |
-| CR-6: Plaintext TURN port exposed | Critical | **Fixed v0.7.16** - TLS-only port 5349 |
+| CR-6: Plaintext TURN port exposed | Critical | **Fixed v0.7.16 on production** - TLS-only port 5349 |
 | CR-7: certbot --staging flag | Critical | **Fixed v0.6.15** - removed staging |
 | CR-8: TURN credential endpoint unprotected | Critical | **Fixed** - room membership verified |
 | CR-9: Chat broken (peerId undefined) | Critical | **Fixed** - peerId set at join |
@@ -67,8 +67,8 @@ This document tracks the gap analysis between specification files in `specs/*` a
 | H-5: CORS fallback to localhost | High | **Fixed** - explicit env required |
 | H-6: Flat Docker network | High | **Fixed v0.6.17** - network isolation |
 | H-7: Backend port exposed | High | **Fixed v0.6.15** - port removed |
-| H-8: CSP unsafe-inline/eval | High | **Fixed** - CSP hardened |
-| H-9: HSTS missing | High | **Fixed** - HSTS header added |
+| H-8: CSP unsafe-inline/eval | High | **Partially fixed** - production only |
+| H-9: HSTS missing | High | **Fixed in nginx.conf** - missing in frontend config |
 | H-10: No container resource limits | High | **Fixed** - limits added |
 | H-11: No container hardening | High | **Fixed** - security options added |
 | H-12: Display name whitelist | High | **Fixed** - Zod validation |
@@ -90,6 +90,9 @@ This document tracks the gap analysis between specification files in `specs/*` a
 | Build job no artifact output | **Fixed** - artifact publishing added |
 | Duplicate install+build | **Fixed** - optimized pipeline |
 | Security-headers tests backend not nginx | **Fixed** - uses docker-compose |
+| Playwright webServer conflicts | **Fixed** - chromium only for CI |
+| OWASP ZAP timeout | **Fixed** - timeout increased to 120s |
+| ZAP target backend only | **Fixed** - now scans nginx |
 
 ---
 
@@ -118,6 +121,56 @@ Phase 6: Testing + Hardening █████████████████
 
 ---
 
+## Remaining Gaps Identified
+
+### 1. Development docker-compose exposes plaintext TURN port (Priority: Medium)
+
+**Location:** `docker-compose.yml:58-62`
+
+The development docker-compose still exposes port 3478 (plaintext TURN/STUN), which is inconsistent with the production configuration that only exposes port 5349 (TLS).
+
+**Spec Requirement:** Section 2.3 specifies TLS-only TURN in production. Port 3478 should be internal-only or removed from dev config.
+
+**Action:** Update `docker-compose.yml` to only expose port 5349 for TURN in development, similar to production.
+
+---
+
+### 2. CSP contains unsafe-inline and unsafe-eval (Priority: Medium)
+
+**Locations:**
+- `nginx.conf:78`
+- `nginx-frontend.conf:32`
+
+Both nginx configuration files contain `'unsafe-inline'` and `'unsafe-eval'` in the Content-Security-Policy header, which weakens XSS protection.
+
+**Spec Requirement:** Section 8.4 specifies strict CSP that blocks inline scripts.
+
+**Action:** Remove `'unsafe-eval'` from both configurations. The `'unsafe-inline'` for scripts is required for React but should be addressed via nonce-based approach in a future iteration.
+
+---
+
+### 3. HSTS header missing in nginx-frontend.conf (Priority: Low)
+
+**Location:** `nginx-frontend.conf`
+
+The `nginx.conf` has HSTS header configured (line 69), but the separate `nginx-frontend.conf` (used for frontend-only serving) does not include it.
+
+**Spec Requirement:** Section 8.4 and 8.3 specify HSTS header with `max-age=31536000` and `includeSubDomains`.
+
+**Action:** Add HSTS header to `nginx-frontend.conf`.
+
+---
+
+### 4. coturn image tag not pinned in docker-compose.yml (Priority: Low)
+
+**Location:** `docker-compose.yml:56`
+
+The development docker-compose uses `coturn/coturn:4.6.2-alpine`, but this should be verified to match production's pinned version.
+
+**Action:** Verify both compose files use the same pinned version.
+
+---
+
 ## Exit Criteria (v1.0 Release)
 
 - [x] Build job produces artifacts
@@ -126,13 +179,21 @@ Phase 6: Testing + Hardening █████████████████
 - [x] No console.* usage in backend (structured logging)
 - [x] Zod validation for all Socket.IO payloads
 - [x] Metrics endpoint available (`/metrics`)
-- [x] Plaintext TURN port not exposed (TLS-only 5349)
+- [x] Plaintext TURN port not exposed in production (TLS-only 5349)
+- [ ] Development docker-compose consistency with production
+- [ ] CSP hardened in nginx configs
+- [ ] HSTS header in all nginx configs
 
 ---
 
-## v1.0 Remaining Tasks
+## v0.7.17 Tasks
 
-No remaining tasks identified. The application meets all specification requirements.
+| Task | Priority | Status |
+|------|----------|--------|
+| Remove plaintext TURN port 3478 from docker-compose.yml | Medium | Pending |
+| Remove unsafe-eval from nginx CSP | Medium | Pending |
+| Add HSTS header to nginx-frontend.conf | Low | Pending |
+| Verify coturn image tag alignment | Low | Pending |
 
 ---
 
