@@ -1,4 +1,5 @@
 import type { Server, Socket } from 'socket.io';
+import { v4 as uuidv4 } from 'uuid';
 import { generateTurnCredentials } from '../services/turn-credentials.js';
 import { logger } from '../utils/logger.js';
 
@@ -14,6 +15,11 @@ interface TurnCredentials {
  */
 export function setupTurnEvents(io: Server): void {
   io.on('connection', (socket: Socket) => {
+    // Generate traceId if not already set by another handler
+    if (!socket.data.traceId) {
+      socket.data.traceId = uuidv4();
+    }
+
     /**
      * Handle TURN credentials request.
      * Socket.IO v4 acknowledgement: callback is the THIRD argument (after payload).
@@ -27,7 +33,7 @@ export function setupTurnEvents(io: Server): void {
       try {
         const credentials = generateTurnCredentials();
 
-        logger.info({ socketId: socket.id }, 'TURN credentials generated');
+        logger.info({ traceId: socket.data.traceId, socketId: socket.id }, 'TURN credentials generated');
 
         const response = {
           success: true,
@@ -42,7 +48,7 @@ export function setupTurnEvents(io: Server): void {
           socket.emit('turn:credentials', response);
         }
       } catch (error) {
-        logger.error({ err: error, socketId: socket.id }, 'Error generating TURN credentials');
+        logger.error({ traceId: socket.data.traceId, err: error, socketId: socket.id }, 'Error generating TURN credentials');
 
         const errorResponse = {
           success: false,

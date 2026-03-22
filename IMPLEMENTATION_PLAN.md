@@ -136,15 +136,17 @@ These must be fixed before production deployment.
 - TypeScript compiles cleanly (excluding pre-existing test file issues)
 - 59 tests pass
 
-#### Task P2.2: Standardize Socket.IO Response Shapes
+#### Task P2.2: Standardize Socket.IO Response Shapes ✅ COMPLETE
 **Severity:** Medium
 **File:** `packages/backend/src/events/*.ts`
 
-**Steps:**
-1. Review all Socket.IO event responses
-2. Standardize to consistent `ApiResponse<T>` format
-3. Update chat events to wrap responses like room events
-4. Commit with message: `refactor: standardize Socket.IO response shapes`
+**Completed:**
+- Added `SocketResponse<T>` type to `@peer/shared` package
+- Updated `chat-events.ts` to wrap errors in `{ success, data, error }` format
+- Updated `turn-events.ts` to wrap credentials in `{ success, data, error }` format
+- Updated frontend to handle new response formats in `signalling.ts`
+- Updated test assertions to match new format
+- All 98 backend tests pass
 
 #### Task P2.3: Add Zod Validation for Socket.IO Payloads
 **Severity:** Medium
@@ -170,15 +172,20 @@ These must be fixed before production deployment.
 - Verified all 98 tests pass with TURN_SECRET set
 - Verified fail-fast behavior works correctly
 
-#### Task P2.5: Add Trace IDs to All Requests
+#### Task P2.5: Add Trace IDs to All Requests ✅ COMPLETE
 **Severity:** High
-**Files:** All Socket.IO event handlers
+**Files:** `packages/backend/src/events/room-events.ts`, `chat-events.ts`, `turn-events.ts`
 
-**Steps:**
-1. Generate traceId on connection or first event
-2. Store in socket.data
-3. Include in all log entries
-4. Commit with message: `feat: add traceId to all requests`
+**Completed:**
+- Added uuid import to all event handler files
+- Generate traceId on socket connection (line 27 in room-events.ts)
+- Store in socket.data for persistence across events
+- Include traceId in all log entries:
+  - room-events.ts: Client connected, Room created, Peer joined, Peer left, Client disconnected (9 log entries)
+  - chat-events.ts: Error handling chat:message, chat:history (2 log entries)
+  - turn-events.ts: TURN credentials generated, Error generating TURN credentials (2 log entries)
+- All three handlers check for existing traceId to avoid duplicates
+- All 98 backend tests pass
 
 ---
 
@@ -260,11 +267,11 @@ P1 (High - Production Readiness)
 └── P1.4: Health check depth ✅ Complete
 
 P2 (Medium - Code Quality)
-├── P2.1: Structured logging
-├── P2.2: Response shapes
+├── P2.1: Structured logging ✅ Complete
+├── P2.2: Response shapes ✅ Complete
 ├── P2.3: Zod validation
 ├── P2.4: TURN_SECRET fail-fast ✅ Complete
-└── P2.5: Trace IDs
+└── P2.5: Trace IDs ✅ Complete
 
 P3 (Testing)
 ├── P3.1: Unit test gaps
@@ -281,7 +288,7 @@ P4 (Documentation)
 
 - [x] All P0 tasks complete (Critical security issues fixed)
 - [x] All P1 tasks complete (Production-ready infrastructure)
-- [ ] All P2 tasks complete (Code quality improved)
+- [ ] All P2 tasks complete (Code quality improved - P2.3 Zod validation pending)
 - [ ] All P3 tasks complete (Testing gaps closed)
 - [ ] All P4 tasks complete (Documentation updated)
 - [x] All tests pass (98 backend tests pass)

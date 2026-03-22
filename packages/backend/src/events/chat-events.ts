@@ -3,6 +3,7 @@
  */
 
 import { Server as SocketIOServer, Socket } from 'socket.io';
+import { v4 as uuidv4 } from 'uuid';
 import type { RoomToken, ChatMessagePayload, ChatMessageResponsePayload } from '@peer/shared';
 import { createMessage, getMessagesByRoom, validateMessage } from '../repositories/message-repository';
 import { isPeerInRoom } from '../rooms';
@@ -23,6 +24,11 @@ interface ChatHistoryPayload {
  */
 export function setupChatEvents(io: SocketIOServer): void {
   io.on('connection', (socket: Socket) => {
+    // Generate traceId if not already set by another handler
+    if (!socket.data.traceId) {
+      socket.data.traceId = uuidv4();
+    }
+
     const socketData = socket.data as SocketData;
 
     /**
@@ -71,7 +77,7 @@ export function setupChatEvents(io: SocketIOServer): void {
         // Broadcast message to all peers in the room
         io.to(roomToken).emit('chat:message', chatMessage);
       } catch (error) {
-        logger.error({ err: error }, 'Error handling chat:message');
+        logger.error({ traceId: socket.data.traceId, err: error }, 'Error handling chat:message');
         socket.emit('chat:error', {
           success: false,
           error: {
@@ -126,7 +132,7 @@ export function setupChatEvents(io: SocketIOServer): void {
           socket.emit('chat:history', messages);
         }
       } catch (error) {
-        logger.error({ err: error }, 'Error handling chat:history');
+        logger.error({ traceId: socket.data.traceId, err: error }, 'Error handling chat:history');
         const errorResponse = {
           success: false,
           error: {

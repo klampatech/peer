@@ -1,4 +1,5 @@
 import type { Server, Socket } from 'socket.io';
+import { v4 as uuidv4 } from 'uuid';
 import {
   createRoom,
   getRoom,
@@ -22,7 +23,11 @@ function isRoomToken(value: string): boolean {
  */
 export function setupRoomEvents(io: Server): void {
   io.on('connection', (socket: Socket) => {
-    logger.info({ socketId: socket.id }, 'Client connected');
+    // Generate traceId for this connection and store in socket data
+    const traceId = uuidv4();
+    socket.data.traceId = traceId;
+
+    logger.info({ socketId: socket.id, traceId }, 'Client connected');
 
     // Handle room creation
     socket.on('room:create', (data: { displayName: string }, callback) => {
@@ -55,9 +60,9 @@ export function setupRoomEvents(io: Server): void {
           data: { token: room.token },
         });
 
-        logger.info({ roomToken: room.token, socketId: socket.id }, 'Room created');
+        logger.info({ traceId: socket.data.traceId, roomToken: room.token, socketId: socket.id }, 'Room created');
       } catch (error) {
-        logger.error({ err: error, socketId: socket.id }, 'Error creating room');
+        logger.error({ traceId: socket.data.traceId, err: error, socketId: socket.id }, 'Error creating room');
         callback({
           success: false,
           error: { code: 'ROOM_CREATE_FAILED', message: 'Failed to create room' },
@@ -126,9 +131,9 @@ export function setupRoomEvents(io: Server): void {
           data: { token, peers: otherPeers.map(p => ({ id: p.id, displayName: p.displayName })) },
         });
 
-        logger.info({ peerId: socket.id, roomToken: token }, 'Peer joined room');
+        logger.info({ traceId: socket.data.traceId, peerId: socket.id, roomToken: token }, 'Peer joined room');
       } catch (error) {
-        logger.error({ err: error }, 'Error joining room');
+        logger.error({ traceId: socket.data.traceId, err: error }, 'Error joining room');
         callback({
           success: false,
           error: { code: 'ROOM_JOIN_FAILED', message: 'Failed to join room' },
@@ -153,13 +158,13 @@ export function setupRoomEvents(io: Server): void {
         if (room) {
           leaveRoom(token as Room['token'], socket.id);
           socket.to(token).emit('peer-left', { peerId: socket.id });
-          logger.info({ peerId: socket.id, roomToken: token }, 'Peer left room');
+          logger.info({ traceId: socket.data.traceId, peerId: socket.id, roomToken: token }, 'Peer left room');
         }
 
         socket.leave(token);
         callback?.({ success: true });
       } catch (error) {
-        logger.error({ err: error }, 'Error leaving room');
+        logger.error({ traceId: socket.data.traceId, err: error }, 'Error leaving room');
         callback?.({
           success: false,
           error: { code: 'ROOM_LEAVE_FAILED', message: 'Failed to leave room' },
@@ -196,7 +201,7 @@ export function setupRoomEvents(io: Server): void {
 
     // Handle disconnection
     socket.on('disconnect', () => {
-      logger.info({ socketId: socket.id }, 'Client disconnected');
+      logger.info({ traceId: socket.data.traceId, socketId: socket.id }, 'Client disconnected');
 
       // Find and clean up any rooms this socket was in
       const rooms = Array.from(socket.rooms).filter(room => room !== socket.id);
@@ -207,7 +212,7 @@ export function setupRoomEvents(io: Server): void {
           if (room && room.peers.has(socket.id)) {
             leaveRoom(token as Room['token'], socket.id);
             socket.to(token).emit('peer-left', { peerId: socket.id });
-            logger.info({ peerId: socket.id, roomToken: token }, 'Peer removed from room (disconnect)');
+            logger.info({ traceId: socket.data.traceId, peerId: socket.id, roomToken: token }, 'Peer removed from room (disconnect)');
           }
         }
       }
