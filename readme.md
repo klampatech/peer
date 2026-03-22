@@ -1,183 +1,504 @@
-# Peer - P2P VoIP Application
+# Peer — Real-Time P2P VoIP Application
 
-A real-time peer-to-peer voice and video calling application with text chat, screen sharing, and mesh topology for multi-party calls.
+A production-ready peer-to-peer voice and video calling application featuring WebRTC-based mesh topology, persistent text chat, screen sharing, and NAT traversal support. Built with React 19, Express, Socket.IO, and TypeScript.
+
+## Table of Contents
+
+- [Features](#features)
+- [Architecture](#architecture)
+- [Tech Stack](#tech-stack)
+- [Getting Started](#getting-started)
+- [Project Structure](#project-structure)
+- [Environment Configuration](#environment-configuration)
+- [Development](#development)
+- [Testing](#testing)
+- [Deployment](#deployment)
+- [API Reference](#api-reference)
+- [Troubleshooting](#troubleshooting)
+- [Contributing](#contributing)
+- [License](#license)
+
+---
 
 ## Features
 
-- **Voice & Video Calls** - WebRTC-based P2P communication
-- **Screen Sharing** - Share your screen with other participants
-- **Multi-party Mesh** - Support for multiple peers in a call
-- **Text Chat** - Persistent chat messages per room
-- **TURN Support** - NAT traversal via coturn
-- **Mobile Responsive** - Works on desktop and mobile browsers
+| Feature | Description |
+|---------|-------------|
+| **Voice & Video Calls** | WebRTC-based P2P communication with adaptive quality |
+| **Multi-party Mesh** | Support for multiple peers via full mesh topology |
+| **Screen Sharing** | Share your screen with all room participants |
+| **Text Chat** | Persistent chat messages per room (SQLite-backed) |
+| **TURN Support** | NAT traversal via coturn for firewall/NAT scenarios |
+| **Mobile Responsive** | Works on desktop and mobile browsers |
+| **End-to-End Encryption Ready** | Media streams are P2P encrypted |
 
-## Prerequisites
+---
 
-- Node.js 22.x LTS
-- pnpm 9.x
-- Docker 26.x + Docker Compose 2.x
-- Git
+## Architecture
 
-## Quick Start
+### High-Level Overview
 
-### Development
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                         Client Browser                          │
+│  ┌──────────────┐  ┌──────────────┐  ┌────────────────────────┐  │
+│  │    React     │  │   Zustand    │  │   simple-peer (WebRTC) │  │
+│  │    19 UI     │  │    Store     │  │    P2P Connections     │  │
+│  └──────┬───────┘  └──────┬───────┘  └──────────┬─────────────┘  │
+│         │                 │                     │                 │
+│         └─────────────────┼─────────────────────┘                 │
+│                           │                                     │
+│                    ┌──────▼──────┐                              │
+│                    │ Socket.IO   │                              │
+│                    │   Client    │                              │
+│                    └──────┬──────┘                              │
+└───────────────────────────┼─────────────────────────────────────┘
+                            │ WebSocket
+┌───────────────────────────┼─────────────────────────────────────┐
+│                    ┌──────▼──────┐      ┌─────────────────────┐  │
+│                    │  Express +  │      │   SQLite (sql.js)   │  │
+│                    │ Socket.IO   │◄────►│   Chat Persistence │  │
+│                    │   Server    │      └─────────────────────┘  │
+│                    └──────┬──────┘                              │
+│                           │                                     │
+│                    ┌──────▼──────┐                              │
+│                    │   coturn    │                              │
+│                    │  (TURN/     │                              │
+│                    │   STUN)     │                              │
+│                    └─────────────┘                              │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+### WebRTC Mesh Topology
+
+Each peer connects directly to every other peer in the room:
+
+```
+     Peer A
+    /     \
+   /       \
+  Peer B───Peer C
+```
+
+- **Signaling**: All peer discovery and SDP exchange goes through the Socket.IO server
+- **Media**: Peer-to-peer via WebRTC, encrypted by default
+- **TURN Fallback**: When direct connection fails, coturn relays traffic
+
+---
+
+## Tech Stack
+
+| Layer | Technology |
+|-------|------------|
+| **Frontend** | React 19, Vite 5, TypeScript 5 |
+| **State Management** | Zustand 4 |
+| **WebRTC** | simple-peer 9 |
+| **Backend** | Express 4, Socket.IO 4 |
+| **Database** | SQLite (sql.js 1) |
+| **Validation** | Zod 3 |
+| **Styling** | Tailwind CSS 3 |
+| **Testing** | Vitest, Playwright |
+| **Containerization** | Docker, Docker Compose |
+
+---
+
+## Getting Started
+
+### Prerequisites
+
+| Dependency | Version | Notes |
+|------------|---------|-------|
+| Node.js | ≥ 22.0.0 | LTS recommended |
+| pnpm | ≥ 9.0.0 | Fast, disk-efficient package manager |
+| Docker | ≥ 26.0.0 | For containerized deployment |
+| Docker Compose | ≥ 2.0 | Included with Docker Desktop |
+
+### Quick Start
 
 ```bash
-# Install dependencies
+# 1. Clone and install
+git clone <repository-url>
+cd peer
 pnpm install
 
-# Start development servers (backend + frontend)
+# 2. Start development servers
 pnpm dev
+
+# 3. Open in browser
+open http://localhost:5173
 ```
 
-Open http://localhost:5173 in your browser.
+The frontend proxies API requests to the backend, so you only need one command for local development.
 
-### Docker (Production-like)
-
-```bash
-docker compose up -d
-```
-
-Open https://localhost (or configured domain).
+---
 
 ## Project Structure
 
 ```
-packages/
-├── backend/           # Express + Socket.IO server
-│   └── src/
-│       ├── server.ts           # Express + Socket.IO setup
-│       ├── rooms.ts            # Room state management
-│       ├── events/             # Socket.IO event handlers
-│       │   ├── room-events.ts
-│       │   ├── chat-events.ts
-│       │   └── turn-events.ts
-│       ├── services/           # Business logic
-│       │   ├── turn-credentials.ts
-│       │   └── cleanup.ts
-│       └── repositories/      # Data access
-│           └── message-repository.ts
+peer/
+├── packages/
+│   ├── backend/                 # Express + Socket.IO server
+│   │   ├── src/
+│   │   │   ├── index.ts        # Entry point, port 3000
+│   │   │   ├── server.ts       # Express + Socket.IO setup
+│   │   │   ├── rooms.ts        # Room state (Map<token, Room>)
+│   │   │   ├── db/             # SQLite database setup
+│   │   │   │   ├── index.ts
+│   │   │   │   └── schema.ts
+│   │   │   ├── events/         # Socket.IO event handlers
+│   │   │   │   ├── room-events.ts    # room:create, room:join, room:leave
+│   │   │   │   ├── chat-events.ts    # chat:message, chat:history
+│   │   │   │   └── turn-events.ts    # turn:request, turn:credentials
+│   │   │   ├── middleware/     # Express middleware
+│   │   │   │   ├── rate-limit.ts
+│   │   │   │   └── security.ts
+│   │   │   ├── routes/         # HTTP routes
+│   │   │   │   └── health.ts
+│   │   │   ├── services/       # Business logic
+│   │   │   │   ├── turn-credentials.ts
+│   │   │   │   └── cleanup.ts
+│   │   │   ├── repositories/   # Data access layer
+│   │   │   │   └── message-repository.ts
+│   │   │   └── __tests__/      # Vitest unit tests
+│   │   └── package.json
+│   │
+│   ├── frontend/               # React + Vite application
+│   │   ├── src/
+│   │   │   ├── main.tsx        # React entry point
+│   │   │   ├── App.tsx         # Root component + routing
+│   │   │   ├── components/     # UI components
+│   │   │   │   ├── Layout.tsx       # App shell
+│   │   │   │   ├── VideoGrid.tsx    # Video tile container
+│   │   │   │   ├── VideoTile.tsx    # Individual video display
+│   │   │   │   ├── ControlBar.tsx   # Call controls (mute, video, share)
+│   │   │   │   ├── ChatPanel.tsx    # Chat sidebar
+│   │   │   │   ├── Sidebar.tsx      # Room sidebar
+│   │   │   │   ├── MessageList.tsx  # Chat message list
+│   │   │   │   └── MessageInput.tsx # Chat input field
+│   │   │   ├── lib/            # Core libraries
+│   │   │   │   ├── signalling.ts   # Socket.IO client wrapper
+│   │   │   │   └── webrtc/
+│   │   │   │       ├── peer-manager.ts  # WebRTC connection manager
+│   │   │   │       ├── media.ts         # getUserMedia, device management
+│   │   │   │       └── screen-share.ts  # Screen sharing logic
+│   │   │   ├── hooks/          # Custom React hooks
+│   │   │   │   ├── use-webrtc.ts     # Main WebRTC hook
+│   │   │   │   └── use-audio-level.ts
+│   │   │   ├── stores/         # Zustand stores
+│   │   │   │   └── room-store.ts
+│   │   │   ├── pages/          # Route pages
+│   │   │   │   ├── HomePage.tsx
+│   │   │   │   └── RoomPage.tsx
+│   │   │   └── __tests__/      # Vitest unit tests
+│   │   └── package.json
+│   │
+│   └── shared/                 # Shared TypeScript types
+│       ├── src/
+│       │   └── index.ts        # RoomToken, Room, Socket events, etc.
+│       └── package.json
 │
-└── frontend/          # React + Vite frontend
-    └── src/
-        ├── components/         # UI components
-        │   ├── Layout.tsx
-        │   ├── VideoGrid.tsx
-        │   ├── VideoTile.tsx
-        │   ├── ControlBar.tsx
-        │   └── ChatPanel.tsx
-        ├── lib/webrtc/         # WebRTC logic
-        │   ├── peer-manager.ts
-        │   └── media.ts
-        └── hooks/              # React hooks
-            └── use-webrtc.ts
+├── e2e/                        # Playwright E2E tests
+│   ├── rooms.spec.ts
+│   ├── call.spec.ts
+│   └── chat.spec.ts
+│
+├── specs/                      # Specification documents
+│   └── Peer_System_Design.md
+│
+├── tests/                      # Shared test utilities
+│
+├── docker-compose.yml          # Docker services (backend, nginx, coturn)
+├── Dockerfile.backend
+├── Dockerfile.frontend
+├── playwright.config.ts        # E2E test configuration
+├── tsconfig.json               # Root TypeScript configuration
+├── pnpm-workspace.yaml
+├── .env.example
+├── AGENTS.md                   # Agent behavior guidelines
+├── IMPLEMENTATION_PLAN.md      # TDD implementation plan
+└── readme.md
 ```
 
-## Environment Variables
+---
+
+## Environment Configuration
 
 Copy `.env.example` to `.env` and configure:
 
 ```bash
-# Required for production
-TURN_SECRET=<your-secret>
-COTURN_PORT=3478
-
-# Optional
-PORT=3000
-LOG_LEVEL=info
+cp .env.example .env
 ```
 
-## Testing
+### Variables
+
+| Variable | Required | Default | Description |
+|----------|----------|---------|-------------|
+| `PORT` | No | `3000` | Backend server port |
+| `CORS_ORIGIN` | Yes* | — | Allowed CORS origin for production |
+| `TURN_SECRET` | Yes* | — | Secret for TURN credential generation |
+| `COTURN_PORT` | No | `3478` | coturn server port |
+| `LOG_LEVEL` | No | `info` | Logging level (debug, info, warn, error) |
+| `ROOM_MAX_PARTICIPANTS` | No | `10` | Maximum peers per room |
+| `RATE_LIMIT_WINDOW_MS` | No | `60000` | Rate limit window in milliseconds |
+| `RATE_LIMIT_MAX_REQUESTS` | No | `100` | Max requests per window |
+
+*Required for production with TURN support.
+
+---
+
+## Development
+
+### Available Scripts
 
 ```bash
-# Run all tests (unit + integration)
-pnpm test
+# Install all dependencies
+pnpm install
 
-# Run backend tests
-cd packages/backend && pnpm test
+# Start all development servers
+pnpm dev
 
-# Run frontend tests
-cd packages/frontend && pnpm test
-
-# Run E2E tests
-pnpm exec playwright test
-```
-
-### E2E Test Commands
-
-```bash
-# Run specific test file
-pnpm exec playwright test e2e/rooms.spec.ts
-
-# Run with UI
-pnpm exec playwright test --ui
-
-# Run in headed mode (see browser)
-pnpm exec playwright test --headed
-```
-
-## Running the Application
-
-### Development
-
-```bash
-# Terminal 1: Backend
-cd packages/backend && pnpm dev
-
-# Terminal 2: Frontend
-cd packages/frontend && pnpm dev
-
-# Open http://localhost:5173
-```
-
-### Production Build
-
-```bash
 # Typecheck all packages
 pnpm typecheck
 
 # Lint all packages
 pnpm lint
 
-# Build for production
+# Build all packages for production
 pnpm build
+
+# Run all tests (unit + integration)
+pnpm test
+
+# Run E2E tests
+pnpm test:e2e
 ```
 
-## Key Ports
+### Running Services Individually
 
-| Service | Port |
-|---------|------|
-| Frontend (Vite dev) | 5173 |
-| Backend (Express) | 3000 |
-| Nginx (prod) | 80/443 |
-| coturn (STUN/TURN) | 3478 |
+```bash
+# Terminal 1: Backend (http://localhost:3000)
+cd packages/backend && pnpm dev
 
-## Socket.IO Events
+# Terminal 2: Frontend (http://localhost:5173)
+cd packages/frontend && pnpm dev
+```
 
-**Client → Server:**
-- `room:create` - Create new room
-- `room:join` - Join existing room
-- `room:leave` - Leave current room
-- `chat:message` - Send chat message
-- `turn:request` - Request TURN credentials
+### Key Ports
 
-**Server → Client:**
-- `room:created` - Room created confirmation
-- `peer-joined` - New peer joined room
-- `peer-left` - Peer left room
-- `chat:message` - New chat message
-- `chat:history` - Message history on join
-- `turn:credentials` - TURN credential response
-- `sdp:offer` / `sdp:answer` - WebRTC signaling
-- `ice-candidate` - ICE candidate exchange
+| Service | Port | Notes |
+|---------|------|-------|
+| Frontend (Vite) | 5173 | Dev server with API proxy |
+| Backend (Express) | 3000 | REST + Socket.IO |
+| Nginx | 80/443 | Production reverse proxy |
+| coturn | 3478 | STUN/TURN server |
 
-## Architecture
+---
 
-- **Backend**: Express.js + Socket.IO for signaling
-- **Frontend**: React 19 + Zustand for state management
-- **WebRTC**: simple-peer for peer connections
-- **Database**: SQLite (sql.js) for chat persistence
-- **Real-time**: Socket.IO for signaling and chat
+## Testing
+
+### Test Structure
+
+```
+tests/
+├── unit/           # Vitest unit tests
+├── integration/    # API integration tests
+└── e2e/           # Playwright end-to-end tests
+```
+
+### Running Tests
+
+```bash
+# All tests
+pnpm test
+
+# Backend tests only
+cd packages/backend && pnpm test
+
+# Frontend tests only
+cd packages/frontend && pnpm test
+
+# E2E tests only
+pnpm test:e2e
+```
+
+### E2E Test Commands
+
+```bash
+# Run all E2E tests
+pnpm exec playwright test
+
+# Run specific test file
+pnpm exec playwright test e2e/rooms.spec.ts
+
+# Run with Playwright UI
+pnpm exec playwright test --ui
+
+# Run in headed mode (visible browser)
+pnpm exec playwright test --headed
+
+# Debug specific test
+pnpm exec playwright test e2e/call.spec.ts --debug
+```
+
+### Browser Matrix
+
+E2E tests run against:
+
+| Browser | Platform |
+|---------|----------|
+| Chromium | Desktop |
+| Firefox | Desktop |
+| WebKit | Desktop |
+| Microsoft Edge | Desktop |
+| Chrome | Mobile |
+| Safari | Mobile |
+
+---
+
+## Deployment
+
+### Docker Compose (Recommended)
+
+```bash
+# Build and start all services
+docker compose up -d
+
+# View logs
+docker compose logs -f
+
+# Stop services
+docker compose down
+```
+
+### Services
+
+| Service | Description | Port |
+|---------|-------------|------|
+| `backend` | Express + Socket.IO server | 3000 |
+| `nginx` | Reverse proxy with SSL termination | 80/443 |
+| `coturn` | TURN/STUN server for NAT traversal | 3478 |
+
+### Manual Production Build
+
+```bash
+# 1. Build all packages
+pnpm build
+
+# 2. Configure environment
+cp .env.example .env
+# Edit .env with production values
+
+# 3. Start services
+cd packages/backend && node dist/index.js
+```
+
+---
+
+## API Reference
+
+### REST Endpoints
+
+#### `GET /health`
+
+Health check endpoint.
+
+**Response:**
+```json
+{
+  "status": "ok",
+  "uptime": 12345,
+  "rooms": 5,
+  "peers": 12
+}
+```
+
+### Socket.IO Events
+
+#### Client → Server
+
+| Event | Payload | Description |
+|-------|---------|-------------|
+| `room:create` | `{ roomName: string }` | Create a new room |
+| `room:join` | `{ roomToken: string }` | Join existing room |
+| `room:leave` | `{ roomToken: string }` | Leave current room |
+| `chat:message` | `{ roomToken: string, content: string }` | Send chat message |
+| `turn:request` | `{}` | Request TURN credentials |
+| `sdp:offer` | `{ targetPeerId: string, sdp: RTCSessionDescription }` | Send SDP offer |
+| `sdp:answer` | `{ targetPeerId: string, sdp: RTCSessionDescription }` | Send SDP answer |
+| `ice-candidate` | `{ targetPeerId: string, candidate: RTCIceCandidate }` | Send ICE candidate |
+
+#### Server → Client
+
+| Event | Payload | Description |
+|-------|---------|-------------|
+| `room:created` | `{ roomToken: string, roomName: string }` | Room created confirmation |
+| `room:joined` | `{ room: Room, peers: RoomPeer[] }` | Joined room with existing peers |
+| `peer-joined` | `{ peer: RoomPeer }` | New peer joined room |
+| `peer-left` | `{ peerId: string }` | Peer left room |
+| `chat:message` | `{ message: ChatMessage }` | New chat message |
+| `chat:history` | `{ messages: ChatMessage[] }` | Message history on join |
+| `turn:credentials` | `{ username: string, credential: string, ttl: number }` | TURN credentials |
+| `sdp:offer` | `{ peerId: string, sdp: RTCSessionDescription }` | SDP offer from peer |
+| `sdp:answer` | `{ peerId: string, sdp: RTCSessionDescription }` | SDP answer from peer |
+| `ice-candidate` | `{ peerId: string, candidate: RTCIceCandidate }` | ICE candidate from peer |
+| `error` | `{ code: string, message: string }` | Error notification |
+
+---
+
+## Troubleshooting
+
+### WebRTC Connection Issues
+
+**Symptom:** Peers cannot connect directly.
+
+**Solutions:**
+1. Ensure TURN server is configured and accessible
+2. Check firewall rules for UDP/TCP 3478
+3. Verify `TURN_SECRET` is set correctly
+
+### Camera/Microphone Not Working
+
+**Symptom:** Cannot get local media stream.
+
+**Solutions:**
+1. Check browser permissions for camera/microphone
+2. Ensure no other application is using the devices
+3. Try disconnecting and reconnecting devices
+
+### Chat Messages Not Persisting
+
+**Symptom:** Messages disappear after server restart.
+
+**Solutions:**
+1. In production, mount a volume for SQLite persistence
+2. Check `docker-compose.yml` volume configuration
+
+### Rate Limiting Triggered
+
+**Symptom:** Getting rate limit errors.
+
+**Solutions:**
+1. Adjust `RATE_LIMIT_WINDOW_MS` and `RATE_LIMIT_MAX_REQUESTS`
+2. Check for misbehaving clients or excessive reconnection attempts
+
+---
+
+## Contributing
+
+1. Fork the repository
+2. Create a feature branch: `git checkout -b feat/your-feature`
+3. Commit changes: `git commit -m 'feat(scope): add your feature'`
+4. Push to branch: `git push origin feat/your-feature`
+5. Open a Pull Request
+
+### Code Standards
+
+- TypeScript strict mode enabled
+- Run `pnpm typecheck` and `pnpm lint` before committing
+- Write tests for new features
+- Follow existing code patterns
+
+---
 
 ## License
 
