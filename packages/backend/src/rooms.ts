@@ -153,3 +153,11 @@ export function isPeerInRoom(token: RoomToken, peerId: string | undefined): bool
   }
   return room.peers.has(peerId);
 }
+
+/**
+ * Gets the number of active rooms
+ * @returns Number of rooms
+ */
+export function getRoomCount(): number {
+  return rooms.size;
+}

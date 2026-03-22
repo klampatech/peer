@@ -58,8 +58,6 @@ services:
     security_opt:
       - no-new-privileges:true
     ports:
-      - "3478:3478/udp"
-      - "3478:3478/tcp"
       - "5349:5349/udp"
       - "5349:5349/tcp"
     environment:

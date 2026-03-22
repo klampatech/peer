@@ -6,9 +6,11 @@ import {
   joinRoom,
   leaveRoom,
   getPeersInRoom,
+  getRoomCount,
   type Room,
 } from '../rooms.js';
 import { logger } from '../utils/logger.js';
+import { updateActiveRooms, updateConnectedPeers, incrementSocketConnections, incrementSocketDisconnections } from '../routes/metrics.js';
 import {
   RoomCreateSchema,
   RoomJoinSchema,
@@ -37,6 +39,11 @@ export function setupRoomEvents(io: Server): void {
     socket.data.traceId = traceId;
 
     logger.info({ socketId: socket.id, traceId }, 'Client connected');
+
+    // Update metrics
+    incrementSocketConnections();
+    updateActiveRooms(getRoomCount());
+    updateConnectedPeers(io.sockets.sockets.size);
 
     // Handle room creation
     socket.on('room:create', (data: unknown, callback) => {
@@ -266,6 +273,10 @@ export function setupRoomEvents(io: Server): void {
     // Handle disconnection
     socket.on('disconnect', () => {
       logger.info({ traceId: socket.data.traceId, socketId: socket.id }, 'Client disconnected');
+
+      // Update metrics
+      incrementSocketDisconnections();
+      updateConnectedPeers(io.sockets.sockets.size);
 
       // Find and clean up any rooms this socket was in
       const rooms = Array.from(socket.rooms).filter(room => room !== socket.id);

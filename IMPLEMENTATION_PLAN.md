@@ -1,7 +1,7 @@
 # Peer P2P VoIP Application - Implementation Plan
 
-> **Status:** In Progress - 2 remaining tasks
-> **Last Updated:** 2026-03-22 (gap analysis refreshed)
+> **Status:** Complete - All tasks finished
+> **Last Updated:** 2026-03-22 (both remaining tasks completed)
 
 ---
 
@@ -9,7 +9,7 @@
 
 Most specification requirements from `specs/Peer_System_Design.md`, `specs/Testing_Strategy.md`, `specs/SECURITY_AUDIT.md`, and `specs/CI_CD_ANALYSIS.md` have been implemented. This document tracks remaining gaps and their priority.
 
-**Current Status: v0.7.14** | **Tests: 241+ passing** | **Coverage: 76.05%**
+**Current Status: v0.7.15** | **Tests: 241+ passing** | **Coverage: 76.05%**
 
 ---
 
@@ -19,13 +19,13 @@ Most specification requirements from `specs/Peer_System_Design.md`, `specs/Testi
 
 | Issue | Status | Description |
 |-------|--------|-------------|
-| No metrics endpoint | **PENDING** | Missing `/metrics` endpoint for Prometheus |
+| No metrics endpoint | **COMPLETE** | `/metrics` endpoint returns Prometheus format metrics |
 
 ### Priority 2: Production Docker Compose Gaps
 
 | Issue | Status | Description |
 |-------|--------|-------------|
-| Port 3478 exposed plaintext | **PENDING** | TURN port 3478 exposed (should be 5349 TLS only) |
+| Port 3478 exposed plaintext | **COMPLETE** | Plaintext port removed, TLS-only port 5349 exposed |
 
 ---
 
@@ -159,8 +159,8 @@ Phase 6: Testing + Hardening █████████████████
 - [x] Security headers test runs against nginx
 - [x] No console.* usage in backend (structured logging)
 - [x] Zod validation for all Socket.IO payloads
-- [ ] Metrics endpoint available
-- [ ] Plaintext TURN port not exposed
+- [x] Metrics endpoint available
+- [x] Plaintext TURN port not exposed
 
 ---
 
@@ -168,6 +168,7 @@ Phase 6: Testing + Hardening █████████████████
 
 | Version | Date | Changes |
 |---------|------|---------|
+| 0.7.15 | 2026-03-22 | Added /metrics endpoint, removed plaintext TURN port 3478 |
 | 0.7.13 | 2026-03-22 | Gap analysis refreshed - 2 remaining tasks confirmed |
 | 0.7.12 | 2026-03-22 | Updated implementation plan (Zod validation confirmed complete) |
 | 0.7.11 | 2026-03-22 | Sourcemaps disabled, remaining gaps identified |

@@ -5,6 +5,7 @@ import type { Server as HttpServer } from 'http';
 import { securityMiddleware, permissionsPolicyMiddleware, corsMiddleware } from './middleware/security.js';
 import { rateLimitMiddleware, setupSocketRateLimiter } from './middleware/rate-limit.js';
 import healthRoutes from './routes/health.js';
+import metricsRoutes, { metricsMiddleware } from './routes/metrics.js';
 import { setupRoomEvents } from './events/room-events.js';
 import { setupTurnEvents } from './events/turn-events.js';
 import { setupChatEvents } from './events/chat-events.js';
@@ -55,6 +56,8 @@ export async function createServer(): Promise<AppServer> {
 
   // Routes
   app.use('/health', healthRoutes);
+  app.use('/metrics', metricsRoutes);
+  app.use(metricsMiddleware);
 
   // Socket.IO events
   setupRoomEvents(io);

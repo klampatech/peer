@@ -8,6 +8,7 @@ import type { RoomToken, ChatMessageResponsePayload } from '@peer/shared';
 import { createMessage, getMessagesByRoom, validateMessage } from '../repositories/message-repository';
 import { isPeerInRoom } from '../rooms';
 import { logger } from '../utils/logger.js';
+import { incrementChatMessages } from '../routes/metrics.js';
 import {
   ChatMessageSchema,
   ChatHistorySchema,
@@ -91,6 +92,9 @@ export function setupChatEvents(io: SocketIOServer): void {
           displayName,
           message: message.trim(),
         });
+
+        // Update metrics
+        incrementChatMessages();
 
         // Broadcast message to all peers in the room
         io.to(roomTokenTyped).emit('chat:message', chatMessage);
