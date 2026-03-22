@@ -9,7 +9,7 @@
 
 This document tracks the gap analysis between specification files in `specs/*` and the current codebase implementation.
 
-**Current Status: v0.7.18** | **Tests: 241+ passing** | **Coverage: 76.05%**
+**Current Status: v0.7.19** | **Tests: 241+ passing** | **Coverage: 76.05%**
 
 ---
 
@@ -181,29 +181,46 @@ The development docker-compose uses `coturn/coturn:4.6.2-alpine`, but this shoul
 - [x] Zod validation for all Socket.IO payloads
 - [x] Metrics endpoint available (`/metrics`)
 - [x] Plaintext TURN port not exposed in production (TLS-only 5349)
-- [ ] Development docker-compose consistency with production (remove 3478 port)
+- [ ] Development docker-compose consistency with production (remove 3478 host port)
 - [ ] CSP hardened in nginx configs (remove unsafe-eval)
 - [ ] HSTS header in all nginx configs (nginx-frontend.conf missing)
+- [ ] Permissions-Policy header in nginx-frontend.conf
 
 ---
 
-## v0.7.18 Tasks
+## v0.7.19 Tasks
 
 | Task | Priority | Status |
 |------|----------|--------|
-| Remove plaintext TURN port 3478 from docker-compose.yml | Medium | **Pending** - dev docker-compose.yml lines 58-60 still expose ports 3478 (TCP/UDP) |
+| Remove plaintext TURN port 3478 from docker-compose.yml | Medium | **Pending** - dev docker-compose.yml lines 59-60 still expose ports 3478 (TCP/UDP) to host. Production only exposes 5349 (TLS). |
 | Remove unsafe-eval from nginx CSP | Medium | **Pending** - nginx.conf:78 and nginx-frontend.conf:32 contain unsafe-eval |
 | Add HSTS header to nginx-frontend.conf | Low | **Pending** - HSTS absent from nginx-frontend.conf (only in nginx.conf:69) |
+| Add Permissions-Policy to nginx-frontend.conf | Low | **Pending** - Referrer-Policy present (line 31) but Permissions-Policy missing |
 | Verify coturn image tag alignment | Low | **Completed** - both configs use coturn:4.6.2-alpine |
 
 ---
 
-## v0.7.18 Tasks (Identified in Current Gap Analysis)
+## Gap Analysis Summary (v0.7.19)
 
-| Task | Priority | Status |
-|------|----------|--------|
-| Additional HSTS/frontend isolation | Low | **Identified** - spec requires HSTS in all nginx configs |
-| Security header completeness | Low | **Identified** - Referrer-Policy, Permissions-Policy missing from some configs |
+### Infrastructure Gaps
+
+| Gap | Location | Spec Requirement | Priority |
+|-----|----------|-----------------|----------|
+| Port 3478 exposed in dev | docker-compose.yml:59-60 | Production only exposes 5349 (TLS) | Medium |
+| unsafe-eval in CSP | nginx.conf:78, nginx-frontend.conf:32 | Section 8.4: strict CSP | Medium |
+| HSTS missing | nginx-frontend.conf | Section 8.4: HSTS max-age=31536000 | Low |
+| Permissions-Policy missing | nginx-frontend.conf | Section 8.4: camera/mic scoped to app origin | Low |
+
+### Security Headers Status
+
+| Header | nginx.conf | nginx-frontend.conf | Status |
+|--------|------------|---------------------|--------|
+| Content-Security-Policy | ✓ (has unsafe-eval) | ✓ (has unsafe-eval) | Partial |
+| Strict-Transport-Security | ✓ (line 69) | ✗ Missing | Fix needed |
+| X-Frame-Options | ✓ DENY | ✓ DENY | Complete |
+| X-Content-Type-Options | ✓ nosniff | ✓ nosniff | Complete |
+| Referrer-Policy | ✓ (line 75) | ✓ (line 31) | Complete |
+| Permissions-Policy | ✓ (line 76) | ✗ Missing | Fix needed |
 
 ---
 
@@ -211,6 +228,7 @@ The development docker-compose uses `coturn/coturn:4.6.2-alpine`, but this shoul
 
 | Version | Date | Changes |
 |---------|------|---------|
+| 0.7.19 | 2026-03-22 | Gap analysis refreshed - 4 infrastructure tasks pending (added Permissions-Policy gap) |
 | 0.7.18 | 2026-03-22 | Gap analysis refreshed - 3 tasks still pending (verified current state) |
 | 0.7.17 | 2026-03-22 | Gap analysis refreshed - 3 tasks remaining (TURN port, CSP, HSTS) |
 | 0.7.16 | 2026-03-22 | All exit criteria complete: metrics endpoint, no plaintext TURN |
