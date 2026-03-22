@@ -211,11 +211,20 @@ These must be fixed before production deployment.
 - All 104 backend tests pass
 - All 115 frontend tests pass
 
-#### Task P3.2: Add Missing E2E Tests
-**Steps:**
-1. Verify E2E tests cover all AC criteria
-2. Add any missing test scenarios
-3. Commit with message: `test: complete E2E coverage`
+#### Task P3.2: Add Missing E2E Tests ✅ IN PROGRESS
+**Severity:** Medium
+
+**Progress:**
+- Added chat message tests (AC-10):
+  - `chat input field exists in room`
+  - `can type and submit chat message`
+- Added screen share button test (AC-08):
+  - `screen share button exists in room`
+
+**Remaining gaps:**
+- AC-03: Two-peer call establishment (requires real WebRTC)
+- AC-13: 8-stream stability (requires multi-browser setup)
+- AC-12: Full NAT traversal (requires 2 peers on different networks)
 
 #### Task P3.3: Add Load Test to CI Pipeline ✅ COMPLETE
 **Severity:** High
@@ -290,7 +299,7 @@ P2 (Medium - Code Quality)
 
 P3 (Testing)
 ├── P3.1: Unit test gaps ✅ Complete
-├── P3.2: E2E gaps
+├── P3.2: E2E gaps ✅ Partially complete
 └── P3.3: Add load test to CI ✅ Complete
 
 P4 (Documentation)

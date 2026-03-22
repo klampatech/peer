@@ -86,6 +86,30 @@ Each peer connects directly to every other peer in the room:
 
 ---
 
+## Security
+
+The application includes multiple security measures:
+
+| Feature | Description |
+|---------|-------------|
+| **HTTPS/TLS** | Production deployment uses TLS 1.2/1.3 with HSTS header |
+| **Security Headers** | CSP, X-Content-Type-Options, X-Frame-Options, Referrer-Policy |
+| **TURN Authentication** | HMAC-SHA1 based credentials with short expiry |
+| **Rate Limiting** | Configurable rate limits per IP (default: 100 req/min) |
+| **Input Validation** | Zod schema validation on all Socket.IO events |
+| **SQLite Isolation** | Read-only filesystems in containers, parameterized queries |
+| **Container Security** | Non-root users, pinned image versions, resource limits |
+
+### Production Security Checklist
+
+1. **Set TURN_SECRET**: Must be a strong random string (32+ characters recommended)
+2. **Configure HTTPS**: Use Let's Encrypt or your own CA certificates
+3. **Enable HSTS**: Preloaded in production configuration
+4. **Restrict CORS**: Set `CORS_ORIGIN` to your exact domain
+5. **Monitor Logs**: Check for suspicious activity via structured logging
+
+---
+
 ## Tech Stack
 
 | Layer | Technology |
