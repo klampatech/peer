@@ -53,6 +53,8 @@ export function useWebRTC(options: UseWebRTCOptions = {}): UseWebRTCReturn {
 
   const errorRef = useRef<Error | null>(null);
   const stopScreenShareRef = useRef<() => void>(() => {});
+  // Store previous stream to properly clean up tracks
+  const previousStreamRef = useRef<MediaStream | null>(null);
 
   const {
     localStream,
@@ -154,6 +156,11 @@ export function useWebRTC(options: UseWebRTCOptions = {}): UseWebRTCReturn {
     if (screenSharing) return;
 
     try {
+      // Store current stream to stop its tracks when screen share ends
+      if (localStream) {
+        previousStreamRef.current = localStream;
+      }
+
       const displayStream = await getDisplayMedia();
 
       // Replace video track in all peer connections
@@ -174,13 +181,25 @@ export function useWebRTC(options: UseWebRTCOptions = {}): UseWebRTCReturn {
       console.error('Failed to start screen share:', err);
       throw err;
     }
-  }, [screenSharing, setLocalStream, setScreenSharing]);
+  }, [screenSharing, localStream, setLocalStream, setScreenSharing]);
 
   /**
    * Stop screen sharing
    */
   const stopScreenShare = useCallback(async () => {
     if (!screenSharing) return;
+
+    // Stop the display stream tracks to release resources
+    // localStream is the display stream when screenSharing is true
+    if (localStream) {
+      localStream.getTracks().forEach((track) => track.stop());
+    }
+
+    // Also stop the previous camera stream if it exists
+    if (previousStreamRef.current) {
+      previousStreamRef.current.getTracks().forEach((track) => track.stop());
+      previousStreamRef.current = null;
+    }
 
     // Get camera stream again
     const cameraStream = await getUserMedia({
@@ -197,7 +216,7 @@ export function useWebRTC(options: UseWebRTCOptions = {}): UseWebRTCReturn {
     // Update local store
     setLocalStream(cameraStream);
     setScreenSharing(false);
-  }, [screenSharing, setLocalStream, setScreenSharing]);
+  }, [screenSharing, localStream, setLocalStream, setScreenSharing]);
 
   // Update ref for stopScreenShare
   // eslint-disable-next-line react-hooks/exhaustive-deps

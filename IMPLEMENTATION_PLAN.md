@@ -35,7 +35,7 @@ The following gaps were identified between the spec and implementation:
 | CRITICAL | coturn auth misconfigured (env var not read by coturn) | turnserver.conf, docker-compose | Not Fixed |
 | CRITICAL | certbot --staging flag in production | docker-compose.production.yml:119 | Not Fixed |
 | CRITICAL | Backend port 3000 exposed bypassing nginx | docker-compose.production.yml:6-7 | Not Fixed |
-| CRITICAL | Camera stream tracks leak after screen share | use-webrtc.ts:182-200 | Not Fixed |
+| CRITICAL | Camera stream tracks leak after screen share | use-webrtc.ts | **FIXED v0.6.14** |
 | CRITICAL | Event listeners accumulate on reconnect | peer-manager.ts | **FIXED v0.6.14** |
 | HIGH | ICE candidates leak private host IPs | peer-manager.ts:83-86 | Not Fixed |
 | HIGH | SDP content unvalidated (only wrapper) | room-events.ts | Not Fixed |
