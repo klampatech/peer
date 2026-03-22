@@ -32,6 +32,7 @@
 | Permissions-Policy missing in nginx | Fixed v0.6.16 - added to nginx.conf |
 | Docker network isolation (flat network + nginx root) | Fixed v0.6.17 - segmented networks (proxy-network, turn-network), nginx runs as non-root user |
 | Backend rate limit test flaky (100 sequential requests timing out) | Fixed v0.7.7 - use Promise.all batches for faster execution while maintaining test reliability |
+| ICE transport policy forced relay only (no STUN fallback) | Fixed v0.7.8 - use 'all' policy for STUN-first, TURN-fallback |
 
 ---
 
