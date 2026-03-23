@@ -244,11 +244,22 @@ class SignallingClient {
   }
 
   // Request chat history
-  requestChatHistory(): void {
-    const { roomToken } = useRoomStore.getState();
-    if (roomToken) {
-      this.socket?.emit('chat:history', { roomToken });
-    }
+  // Returns a promise that resolves when history is received
+  requestChatHistory(roomToken: string): Promise<void> {
+    return new Promise((resolve, reject) => {
+      const timeout = setTimeout(() => {
+        reject(new Error('Chat history request timed out'));
+      }, 5000);
+
+      this.socket?.emit('chat:history', { roomToken }, (response: { success: boolean; error?: { code: string; message: string } }) => {
+        clearTimeout(timeout);
+        if (response.success) {
+          resolve();
+        } else {
+          reject(new Error(response.error?.message || 'Chat history failed'));
+        }
+      });
+    });
   }
 }
 

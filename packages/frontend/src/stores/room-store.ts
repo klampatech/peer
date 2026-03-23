@@ -204,6 +204,13 @@ export async function connect(token: string, displayName: string): Promise<void>
       } catch (err) {
         console.warn('Failed to request TURN credentials:', err);
       }
+
+      // Request chat history (non-fatal)
+      try {
+        await signallingClient.requestChatHistory(token);
+      } catch (err) {
+        console.warn('Failed to request chat history:', err);
+      }
     }
 
     // Initialize peer manager with local stream (may be null)

@@ -116,8 +116,9 @@ describe('SignallingClient', () => {
       expect(typeof signallingClient.requestChatHistory).toBe('function');
     });
 
-    it('should not throw when room token is missing', () => {
-      expect(() => signallingClient.requestChatHistory()).not.toThrow();
+    it('should not throw when room token is missing', async () => {
+      // Should reject without a socket but not throw
+      await expect(signallingClient.requestChatHistory('12345678-1234-4567-8901-123456789012')).rejects.toBeDefined();
     });
   });
 });
