@@ -3,7 +3,7 @@ import http from 'http';
 import { Server as SocketIOServer } from 'socket.io';
 import type { Server as HttpServer } from 'http';
 import { securityMiddleware, permissionsPolicyMiddleware, corsMiddleware } from './middleware/security.js';
-import { rateLimitMiddleware, setupSocketRateLimiter } from './middleware/rate-limit.js';
+import { rateLimitMiddleware, setupSocketRateLimiter, setupPerSocketRateLimiter } from './middleware/rate-limit.js';
 import healthRoutes from './routes/health.js';
 import metricsRoutes, { metricsMiddleware } from './routes/metrics.js';
 import { setupRoomEvents } from './events/room-events.js';
@@ -52,6 +52,9 @@ export async function createServer(): Promise<AppServer> {
 
   // Setup Socket.IO rate limiting
   setupSocketRateLimiter(io);
+
+  // Setup per-socket event rate limiting (P3-1)
+  setupPerSocketRateLimiter(io);
 
   // Middleware
   app.use(securityMiddleware);

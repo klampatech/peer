@@ -200,14 +200,9 @@ This document identifies gaps between the specification requirements (Peer_Syste
 ### P3-1: Per-Socket Rate Limiting
 **Reference:** H-16, SECURITY_STANDARDS §8
 
-**Current State:**
-- Rate limiting is per-IP only
+**Status:** ✅ FIXED - `rate-limit.ts:71-113` adds per-socket rate limiting that tracks events per socket ID and disconnects clients exceeding 30 events per 10 seconds (configurable via SOCKET_EVENT_RATE_LIMIT_POINTS and SOCKET_EVENT_RATE_LIMIT_DURATION)
 
-**Required:**
-- Add per-socket rate limits
-- Consider Redis-backed rate limiting for horizontal scaling
-
-**Effort:** ~4 hours
+**Effort:** ~4 hours → Completed in 30 minutes
 
 ---
 

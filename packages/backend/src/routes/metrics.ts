@@ -163,27 +163,30 @@ function formatPrometheusMetrics(): string {
     lines.push(`# TYPE ${metric.name} ${metric.type}`);
 
     if (metric.type === 'histogram') {
-      const buckets = metric.buckets || [0.005, 0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1, 2.5, 5, 10];
+      const buckets: number[] = metric.buckets || [0.005, 0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1, 2.5, 5, 10];
       const observations = metric.observations || [];
 
       // Count observations in each bucket
       const bucketCounts = new Array(buckets.length + 1).fill(0);
+      const maxBucket = buckets[buckets.length - 1] ?? 0;
       for (const obs of observations) {
         for (let i = 0; i < buckets.length; i++) {
-          if (obs <= buckets[i]) {
+          const bucketValue = buckets[i];
+          if (bucketValue !== undefined && obs <= bucketValue) {
             bucketCounts[i]++;
             break;
           }
         }
         // If > max bucket, count in +Inf bucket
-        if (obs > buckets[buckets.length - 1]) {
+        if (obs > maxBucket) {
           bucketCounts[buckets.length]++;
         }
       }
 
       // Output bucket lines
       for (let i = 0; i < buckets.length; i++) {
-        const le = String(buckets[i]);
+        const bucketValue = buckets[i];
+        const le = bucketValue !== undefined ? String(bucketValue) : '0';
         lines.push(`${metric.name}_bucket{le="${le}"} ${bucketCounts[i]}`);
       }
       // +Inf bucket
