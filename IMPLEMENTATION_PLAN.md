@@ -9,7 +9,7 @@
 
 This document tracks the gap analysis between specification files in `specs/*` and the current codebase implementation.
 
-**Current Status: v0.7.27** | **Tests: 359 passing (104 backend + 137 frontend + 118 E2E)** | **Coverage: 76.05%**
+**Current Status: v0.7.28** | **Tests: 359 passing (104 backend + 137 frontend + 118 E2E)** | **Coverage: 76.05%**
 
 ---
 
@@ -180,6 +180,28 @@ add_header Permissions-Policy "camera=(), microphone=(), display-capture=(), geo
 
 ---
 
+### 5. GAP-4: TURN Credentials Generated Without Room Membership Check (Priority: High)
+
+**Location:** `packages/backend/src/events/turn-events.ts:56-77`
+
+When no `roomToken` is provided in the `turn:request` payload, credentials are generated without verifying room membership. This allows any authenticated socket connection to obtain TURN credentials without being in a room.
+
+**Spec Requirement:** Section 8.3 requires credentials to be fetched via authenticated Socket.IO event requiring active room session.
+
+**Action:** Require `roomToken` in the `turn:request` payload or verify socket is in a room before generating credentials.
+
+---
+
+### 6. GAP-6: Multi-Peer Scenarios Insufficiently Tested (Priority: Medium)
+
+**Location:** E2E tests only test single-peer scenarios.
+
+**Spec Requirement:** Section 7.3 requires testing with multiple peers in same room.
+
+**Action:** Add E2E tests for: 2-peer voice/video call, peer disconnect/rejoin, mesh connection verification.
+
+---
+
 ## Exit Criteria (v1.0 Release)
 
 - [x] Build job produces artifacts
@@ -235,6 +257,7 @@ add_header Permissions-Policy "camera=(), microphone=(), display-capture=(), geo
 
 | Version | Date | Changes |
 |---------|------|---------|
+| 0.7.28 | 2026-03-22 | Added GAP-4 (TURN credential room binding) and GAP-6 (multi-peer testing) from INTEGRATION_TESTING_GAPS.md |
 | 0.7.27 | 2026-03-22 | Test counts verified: 104 backend + 137 frontend + 118 E2E = 359 total; All 4 infrastructure gaps verified complete |
 | 0.7.26 | 2026-03-22 | Test counts verified: 104 backend + 162 E2E passing; 6 mobile Chrome tests skip (known mobile layout issue) |
 | 0.7.25 | 2026-03-22 | All 4 infrastructure gaps fixed: removed 3478 port from docker-compose.yml, removed unsafe-eval from CSP, added HSTS and Permissions-Policy to nginx-frontend.conf |
