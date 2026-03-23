@@ -214,7 +214,7 @@ add_header Permissions-Policy "camera=(), microphone=(), display-capture=(), geo
 
 | Gap ID | Description | Location | Status |
 |--------|------------|----------|--------|
-| GAP-1 | WebRTC signaling events untested (sdp:offer/answer, ice-candidate) | `room-events.ts:194-271` | ❌ Not started |
+| GAP-1 | WebRTC signaling events untested (sdp:offer/answer, ice-candidate) | `room-events.ts:194-271` | ✅ RESOLVED v0.7.33 |
 | GAP-12 | Peer connection lifecycle untested | `peer-manager.ts:94-150` | ✅ RESOLVED v0.7.35 |
 | GAP-17 | Multi-peer E2E scenarios untested | `e2e/*.spec.ts` | ✅ RESOLVED v0.7.35 |
 | GAP-29 | SQL injection not tested | `message-repository.ts` | ✅ Resolved v0.7.32 - added 4 SQL injection tests |
@@ -234,7 +234,7 @@ add_header Permissions-Policy "camera=(), microphone=(), display-capture=(), geo
 | Gap ID | Description | Location | Status |
 |--------|------------|----------|--------|
 | GAP-5 | UUID version enforcement | `packages/shared/src/index.ts:190-192` | ✅ VERIFIED - Regex correctly enforces v4 |
-| GAP-8 | Socket event rate limiting | Backend | ❌ Not started |
+| GAP-8 | Socket event rate limiting | Backend | ✅ RESOLVED v0.7.39 |
 | GAP-13 | ICE failure handling | Frontend | ✅ RESOLVED - 6 tests verify ICE failure handling at `peer-manager.test.ts` |
 | GAP-20 | Invite/share flow | E2E | ✅ RESOLVED v0.7.38 - Copy invite link button tested |
 | GAP-21 | Media controls (mute/camera) | E2E | ✅ RESOLVED v0.7.38 - Media control buttons tested |
