@@ -759,7 +759,7 @@ describe('Room Events Integration', () => {
 
       // Peer 3 in different room
       const clientSocket3 = ioc(`http://localhost:${testPort}`, { forceNew: true });
-      const createResponseB = await new Promise<Record<string, unknown>>((resolve, reject) => {
+      await new Promise<Record<string, unknown>>((resolve, reject) => {
         clientSocket3.emit('room:create', { displayName: 'Peer 3' }, (res: unknown) => {
           if (res) resolve(res as Record<string, unknown>);
           else reject(new Error('No response'));

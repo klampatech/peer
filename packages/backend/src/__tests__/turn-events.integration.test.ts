@@ -87,7 +87,7 @@ describe('TURN Events Integration', () => {
     it('should generate TURN credentials on request when in a room', async () => {
       // First create a room
       const createRoomSocket = ioc(`http://localhost:${testPort}`, { forceNew: true });
-      await new Promise<void>((resolve, reject) => {
+      await new Promise<void>((resolve) => {
         const t = setTimeout(() => reject(new Error('Connect timeout')), 5000);
         createRoomSocket.on('connect', () => {
           clearTimeout(t);
@@ -96,7 +96,7 @@ describe('TURN Events Integration', () => {
       });
 
       const room: { token?: string } = {};
-      await new Promise<void>((resolve, reject) => {
+      await new Promise<void>((resolve) => {
         createRoomSocket.emit('room:create', { displayName: 'Host' }, (res: unknown) => {
           const response = res as Record<string, unknown>;
           if (response.success && response.data) {
@@ -109,7 +109,7 @@ describe('TURN Events Integration', () => {
       // Client socket joins the room
       clientSocket = ioc(`http://localhost:${testPort}`, { forceNew: true });
 
-      await new Promise<void>((resolve, reject) => {
+      await new Promise<void>((resolve) => {
         const t = setTimeout(() => reject(new Error('Connect timeout')), 5000);
         clientSocket.on('connect', () => {
           clearTimeout(t);
@@ -154,7 +154,7 @@ describe('TURN Events Integration', () => {
     it('should generate credentials with valid HMAC-SHA1 password when in a room', async () => {
       // First create a room
       const createRoomSocket = ioc(`http://localhost:${testPort}`, { forceNew: true });
-      await new Promise<void>((resolve, reject) => {
+      await new Promise<void>((resolve) => {
         const t = setTimeout(() => reject(new Error('Connect timeout')), 5000);
         createRoomSocket.on('connect', () => {
           clearTimeout(t);
@@ -176,7 +176,7 @@ describe('TURN Events Integration', () => {
       // Client socket joins the room
       clientSocket = ioc(`http://localhost:${testPort}`, { forceNew: true });
 
-      await new Promise<void>((resolve, reject) => {
+      await new Promise<void>((resolve) => {
         const t = setTimeout(() => reject(new Error('Connect timeout')), 5000);
         clientSocket.on('connect', () => {
           clearTimeout(t);
@@ -221,7 +221,7 @@ describe('TURN Events Integration', () => {
     it('should generate credentials with all required fields when in a room', async () => {
       // First create a room
       const createRoomSocket = ioc(`http://localhost:${testPort}`, { forceNew: true });
-      await new Promise<void>((resolve, reject) => {
+      await new Promise<void>((resolve) => {
         const t = setTimeout(() => reject(new Error('Connect timeout')), 5000);
         createRoomSocket.on('connect', () => {
           clearTimeout(t);
@@ -243,7 +243,7 @@ describe('TURN Events Integration', () => {
       // Client socket joins the room
       clientSocket = ioc(`http://localhost:${testPort}`, { forceNew: true });
 
-      await new Promise<void>((resolve, reject) => {
+      await new Promise<void>((resolve) => {
         const t = setTimeout(() => reject(new Error('Connect timeout')), 5000);
         clientSocket.on('connect', () => {
           clearTimeout(t);
@@ -279,7 +279,7 @@ describe('TURN Events Integration', () => {
     it('should include TURN/STUN URLs with correct format when in a room', async () => {
       // First create a room
       const createRoomSocket = ioc(`http://localhost:${testPort}`, { forceNew: true });
-      await new Promise<void>((resolve, reject) => {
+      await new Promise<void>((resolve) => {
         const t = setTimeout(() => reject(new Error('Connect timeout')), 5000);
         createRoomSocket.on('connect', () => {
           clearTimeout(t);
@@ -301,7 +301,7 @@ describe('TURN Events Integration', () => {
       // Client socket joins the room
       clientSocket = ioc(`http://localhost:${testPort}`, { forceNew: true });
 
-      await new Promise<void>((resolve, reject) => {
+      await new Promise<void>((resolve) => {
         const t = setTimeout(() => reject(new Error('Connect timeout')), 5000);
         clientSocket.on('connect', () => {
           clearTimeout(t);
@@ -341,7 +341,7 @@ describe('TURN Events Integration', () => {
     it('should set correct TTL value when in a room', async () => {
       // First create a room
       const createRoomSocket = ioc(`http://localhost:${testPort}`, { forceNew: true });
-      await new Promise<void>((resolve, reject) => {
+      await new Promise<void>((resolve) => {
         const t = setTimeout(() => reject(new Error('Connect timeout')), 5000);
         createRoomSocket.on('connect', () => {
           clearTimeout(t);
@@ -363,7 +363,7 @@ describe('TURN Events Integration', () => {
       // Client socket joins the room
       clientSocket = ioc(`http://localhost:${testPort}`, { forceNew: true });
 
-      await new Promise<void>((resolve, reject) => {
+      await new Promise<void>((resolve) => {
         const t = setTimeout(() => reject(new Error('Connect timeout')), 5000);
         clientSocket.on('connect', () => {
           clearTimeout(t);
@@ -397,7 +397,7 @@ describe('TURN Events Integration', () => {
       // Socket connects but doesn't join any room
       clientSocket = ioc(`http://localhost:${testPort}`, { forceNew: true });
 
-      await new Promise<void>((resolve, reject) => {
+      await new Promise<void>((resolve) => {
         const t = setTimeout(() => reject(new Error('Connect timeout')), 5000);
         clientSocket.on('connect', () => {
           clearTimeout(t);
@@ -424,7 +424,7 @@ describe('TURN Events Integration', () => {
     it('should allow TURN request when socket is in a room', async () => {
       // First create a room
       const createRoomSocket = ioc(`http://localhost:${testPort}`, { forceNew: true });
-      await new Promise<void>((resolve, reject) => {
+      await new Promise<void>((resolve) => {
         const t = setTimeout(() => reject(new Error('Connect timeout')), 5000);
         createRoomSocket.on('connect', () => {
           clearTimeout(t);
@@ -433,7 +433,7 @@ describe('TURN Events Integration', () => {
       });
 
       const room: { token?: string } = {};
-      await new Promise<void>((resolve, reject) => {
+      await new Promise<void>((resolve) => {
         createRoomSocket.emit('room:create', { displayName: 'Host' }, (res: unknown) => {
           const response = res as Record<string, unknown>;
           if (response.success && response.data) {
@@ -445,7 +445,7 @@ describe('TURN Events Integration', () => {
 
       // Second socket joins the room
       clientSocket = ioc(`http://localhost:${testPort}`, { forceNew: true });
-      await new Promise<void>((resolve, reject) => {
+      await new Promise<void>((resolve) => {
         const t = setTimeout(() => reject(new Error('Connect timeout')), 5000);
         clientSocket.on('connect', () => {
           clearTimeout(t);
@@ -480,7 +480,7 @@ describe('TURN Events Integration', () => {
     it('should reject TURN request when roomToken provided but socket not in that room', async () => {
       // Create two rooms
       const createRoomSocket = ioc(`http://localhost:${testPort}`, { forceNew: true });
-      await new Promise<void>((resolve, reject) => {
+      await new Promise<void>((resolve) => {
         const t = setTimeout(() => reject(new Error('Connect timeout')), 5000);
         createRoomSocket.on('connect', () => {
           clearTimeout(t);
@@ -491,7 +491,7 @@ describe('TURN Events Integration', () => {
       const roomA: { token?: string } = {};
       const roomB: { token?: string } = {};
 
-      await new Promise<void>((resolve, reject) => {
+      await new Promise<void>((resolve) => {
         createRoomSocket.emit('room:create', { displayName: 'Host A' }, (res: unknown) => {
           const response = res as Record<string, unknown>;
           if (response.success && response.data) {
@@ -501,7 +501,7 @@ describe('TURN Events Integration', () => {
         });
       });
 
-      await new Promise<void>((resolve, reject) => {
+      await new Promise<void>((resolve) => {
         createRoomSocket.emit('room:create', { displayName: 'Host B' }, (res: unknown) => {
           const response = res as Record<string, unknown>;
           if (response.success && response.data) {
@@ -513,7 +513,7 @@ describe('TURN Events Integration', () => {
 
       // Socket joins roomA
       clientSocket = ioc(`http://localhost:${testPort}`, { forceNew: true });
-      await new Promise<void>((resolve, reject) => {
+      await new Promise<void>((resolve) => {
         const t = setTimeout(() => reject(new Error('Connect timeout')), 5000);
         clientSocket.on('connect', () => {
           clearTimeout(t);
