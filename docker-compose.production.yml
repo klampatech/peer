@@ -46,6 +46,8 @@ services:
     restart: unless-stopped
     networks:
       - proxy-network
+    volumes:
+      - frontend-cache:/var/cache/nginx
     deploy:
       resources:
         limits:
@@ -54,7 +56,6 @@ services:
         reservations:
           cpus: '0.1'
           memory: 128M
-    read_only: true
 
   coturn:
     image: coturn/coturn:4.6.2
@@ -133,6 +134,7 @@ volumes:
   coturn-data:
   nginx-data:
   nginx-cache:
+  frontend-cache:
   certbot-etc:
   certbot-var:
 
