@@ -133,6 +133,7 @@ jobs:
           echo $! > /tmp/frontend.pid
         env:
           NODE_ENV: test
+          TURN_SECRET: test-secret-for-ci
 
       - name: Wait for services to be ready
         run: |
@@ -201,6 +202,7 @@ jobs:
         env:
           NODE_ENV: test
           CORS_ORIGIN: http://localhost:5173
+          TURN_SECRET: test-secret-for-ci
 
       - name: Wait for backend to be ready
         run: |
@@ -261,6 +263,7 @@ jobs:
         env:
           NODE_ENV: test
           CORS_ORIGIN: http://localhost:5173
+          TURN_SECRET: test-secret-for-ci
 
       - name: Start nginx
         run: |
