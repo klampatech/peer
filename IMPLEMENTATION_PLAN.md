@@ -1,6 +1,6 @@
 # Peer P2P VoIP Application - Implementation Plan
 
-> **Status:** Ready for v1.0 Release
+> **Status:** Ready for v1.0 Release + UI Enhancements
 > **Last Updated:** 2026-03-22
 
 ---
@@ -9,20 +9,21 @@
 
 This document tracks the gap analysis between specification files in `specs/*` and the current codebase implementation.
 
-**Current Status: v0.7.40** | **Tests: 133 passing (133 backend + 152 frontend)** | **Coverage: ~76%**
+**Current Status: v0.7.40** | **Tests: 403 passing (133 backend + 146 frontend + 124 E2E)** | **Coverage: ~76%**
 
 ---
 
 ## Specification Files Analyzed
 
-| File | Purpose |
-|------|---------|
-| `specs/Peer_System_Design.md` | Core system requirements and architecture |
-| `specs/Testing_Strategy.md` | Testing layers, coverage targets, CI/CD integration |
-| `specs/SECURITY_AUDIT.md` | 69 security findings (12 Critical, 19 High, 19 Medium, 19 Low) |
-| `specs/code-review-findings.md` | Backend code quality review |
-| `specs/CI_CD_ANALYSIS.md` | CI pipeline issues and remediation |
-| `specs/SECURITY_STANDARDS.md` | Industry security standards reference (OWASP, NIST, CIS, IETF) |
+| File | Purpose | Status |
+|------|---------|--------|
+| `specs/Peer_System_Design.md` | Core system requirements and architecture | ✓ Implemented |
+| `specs/Testing_Strategy.md` | Testing layers, coverage targets, CI/CD integration | ✓ Implemented |
+| `specs/SECURITY_AUDIT.md` | 69 security findings (12 Critical, 19 High, 19 Medium, 19 Low) | ✓ Fixed |
+| `specs/code-review-findings.md` | Backend code quality review | ✓ Resolved |
+| `specs/CI_CD_ANALYSIS.md` | CI pipeline issues and remediation | ✓ Fixed |
+| `specs/SECURITY_STANDARDS.md` | Industry security standards reference (OWASP, NIST, CIS, IETF) | ✓ Compliant |
+| `specs/UI_ENHANCEMENTS.md` | UI aesthetic enhancements (typography, glassmorphism, animations) | **NOT STARTED** |
 
 ---
 
@@ -208,6 +209,84 @@ add_header Permissions-Policy "camera=(), microphone=(), display-capture=(), geo
 
 ---
 
+### 7. Chat Messages Not Displaying from Same Browser Tab (Priority: High)
+
+**Location:** Frontend chat component / `message-events.ts`
+
+**Issue:** When connected to a room from two browser tabs (same browser, different tabs), messages sent from either tab are not displayed in either tab's chat view. Messages persist in the database but are not rendered for the sender in the same tab.
+
+**Spec Requirement:** Section 5.1.5 specifies text chat should display message history and new messages in real-time.
+
+**Status:** 🆕 NEW - Bug identified, not yet investigated.
+
+**Action:** Investigate message event handling - likely missing `message:received` event handler in the sending tab, or the Socket.IO event is not being broadcast back to the sender.
+
+---
+
+### 8. Copy Invite Link Does Not Pre-fill Room ID in Join Input (Priority: Medium)
+
+**Location:** Frontend - invite/share flow
+
+**Issue:** When a user clicks "Copy invite link" and then pastes the link into a new browser window, they are taken to the landing page instead of being redirected directly to the room with the room ID pre-filled in the join input. The user must manually copy the room ID from the URL and paste it into the join input.
+
+**Spec Requirement:** Section 5.1.1 requires seamless room joining via invite links.
+
+**Status:** 🆕 NEW - Bug identified, not yet investigated.
+
+**Action:** Parse room ID from URL query parameters (`?room=<id>`) on landing page load and auto-populate the join input field, or redirect directly to the room join flow.
+
+---
+
+### 9. Video Reconnect After Toggle Off Does Not Resume Camera Feed (Priority: High)
+
+**Location:** Frontend - `peer-manager.ts` or media controls
+
+**Issue:** When a user disconnects their video using the toggle button and then reconnects it, the camera feed does not resume. The video track appears to remain disabled or is not properly re-added to the peer connection.
+
+**Spec Requirement:** Section 5.1.3 specifies video toggle should enable/disable camera without disrupting the call.
+
+**Status:** 🆕 NEW - Bug identified, not yet investigated.
+
+**Action:** Investigate track re-enabling logic - likely the `enabled` property is being set but the track is not being re-added to the peer connection or the `replaceTrack` method is not being called.
+
+---
+
+## UI Enhancements (from specs/UI_ENHANCEMENTS.md)
+
+### Gap Analysis
+
+| Enhancement | Location | Current State | Spec Requirement | Priority |
+|-------------|----------|---------------|------------------|----------|
+| Typography | `tailwind.config.js:29` | Inter font | Outfit font | Medium |
+| VideoTile Avatar | `VideoTile.tsx:73` | Solid blue `#1A73E8` | Gradient `from-primary to-purple-500` | High |
+| Speaking Indicator | `VideoTile.tsx:57,102` | Green ring + bottom bar | Animated glowing ring | High |
+| Name Label | `VideoTile.tsx:81` | `bg-black/50` | Frosted glass `bg-white/10 backdrop-blur-sm` | Medium |
+| ControlBar Glass | `ControlBar.tsx` | No glassmorphism | `backdrop-blur-xl bg-surface/80` | High |
+| ControlBar Hover | `ControlBar.tsx` | Color change only | Scale + glow effects | Medium |
+| VideoGrid Background | `VideoGrid.tsx` | Flat surface | Gradient mesh background | High |
+| Empty State | `VideoGrid.tsx` | Plain text | Animated waiting indicator | Medium |
+| HomePage Background | `HomePage.tsx` | Solid dark | Animated gradient | Medium |
+| HomePage Logo | `HomePage.tsx` | Basic icon | Animated pulsing ring | Medium |
+| Micro-interactions | various | Minimal | Scale, glow, spring animations | Medium |
+
+### Implementation Tasks
+
+| Task | Priority | Status | Notes |
+|------|----------|--------|-------|
+| Replace Inter with Outfit font | Medium | **Not Started** | Update tailwind.config.js fontFamily |
+| VideoTile avatar gradient | High | **Not Started** | `bg-gradient-to-br from-primary to-purple-500` |
+| Speaking indicator glow ring | High | **Not Started** | Replace ring + bottom bar with animated shadow |
+| VideoTile name label glassmorphism | Medium | **Not Started** | `bg-white/10 backdrop-blur-sm border border-white/10` |
+| ControlBar glassmorphism background | High | **Not Started** | Add `backdrop-blur-xl bg-surface/80` |
+| ControlBar hover effects (scale + glow) | Medium | **Not Started** | `hover:scale-110 hover:shadow-lg` |
+| VideoGrid gradient mesh background | High | **Not Started** | Radial gradients in CSS |
+| VideoGrid enhanced empty state | Medium | **Not Started** | Animated ring spinner + waiting text |
+| HomePage animated gradient background | Medium | **Not Started** | CSS animation with radial gradients |
+| HomePage logo animation | Medium | **Not Started** | Pulsing ring behind logo |
+| Micro-interactions (buttons, panels) | Medium | **Not Started** | Spring animations, focus rings |
+
+---
+
 ## Critical Testing Gaps (from specs/INTEGRATION_TESTING_GAPS.md)
 
 ### P0 - Critical (Address Before Production)
@@ -357,6 +436,7 @@ add_header Permissions-Policy "camera=(), microphone=(), display-capture=(), geo
 
 | Version | Date | Changes |
 |---------|------|---------|
+| 0.7.41 | 2026-03-22 | Added UI_ENHANCEMENTS.md gap analysis - 11 enhancement tasks identified (typography, VideoTile, ControlBar, VideoGrid, HomePage, micro-interactions) |
 | 0.7.40 | 2026-03-22 | GAP-13 RESOLVED: 6 tests verify ICE failure handling (connection failed, disconnected, connecting, connected states, callback invocation) at `peer-manager.test.ts` |
 | 0.7.39 | 2026-03-22 | GAP-8 RESOLVED: 3 socket rate limit integration tests verify connection limiting (5 connections per 2 seconds, blocking excess connections, resetting after duration expires) at `socket-rate-limit.integration.test.ts` |
 | 0.7.38 | 2026-03-22 | GAP-20 RESOLVED: "Copy invite link" button tested; GAP-21 RESOLVED: Media control buttons tested; GAP-22 RESOLVED: Leave room flow tested |
