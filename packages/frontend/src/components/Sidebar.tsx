@@ -7,7 +7,11 @@ export default function Sidebar() {
   const { peers, isConnected } = useRoomStore();
 
   const handleCopyLink = async () => {
-    const link = window.location.href;
+    // Extract room token from URL path and create query param format
+    // This ensures invite links work when pasted on the landing page
+    const pathParts = window.location.pathname.split('/');
+    const roomToken = pathParts[pathParts.length - 1];
+    const link = `${window.location.origin}/?room=${roomToken}`;
     await navigator.clipboard.writeText(link);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);

@@ -9,7 +9,7 @@
 
 This document tracks the gap analysis between specification files in `specs/*` and the current codebase implementation.
 
-**Current Status: v0.7.45** | **Tests: 403 passing (133 backend + 146 frontend + 124 E2E)** | **Coverage: ~76%**
+**Current Status: v0.7.46** | **Tests: 403 passing (133 backend + 146 frontend + 124 E2E)** | **Coverage: ~76%**
 
 ---
 
@@ -122,7 +122,7 @@ Phase 4: Chat + Persistence  █████████████████
 Phase 5: UI Polish           ████████████████████ 100%
 Phase 6: Testing + Hardening ████████████████████ 100%
 Phase 7: UI Enhancements     ████████████░░░░░░░░ 40%
-Phase 8: Bug Fixes           ███░░░░░░░░░░░░░░░░░░ 10%
+Phase 8: Bug Fixes           ██████░░░░░░░░░░░░░░░░ 25%
 ```
 
 ---
@@ -163,15 +163,15 @@ Phase 8: Bug Fixes           ███░░░░░░░░░░░░░░
 
 #### 3. Copy Invite Link Does Not Pre-fill Room ID in Join Input (Priority: Medium)
 
-**Location:** Frontend - invite/share flow
+**Location:** Frontend - `HomePage.tsx`, `Sidebar.tsx`
 
 **Issue:** When a user clicks "Copy invite link" and then pastes the link into a new browser window, they are taken to the landing page instead of being redirected directly to the room with the room ID pre-filled in the join input. The user must manually copy the room ID from the URL and paste it into the join input.
 
 **Spec Requirement:** Section 5.1.1 requires seamless room joining via invite links.
 
-**Status:** 🆕 NEW - Bug identified, not yet investigated.
+**Status:** ✅ RESOLVED v0.7.46 - Added ?room= query parameter parsing and auto-redirect
 
-**Action:** Parse room ID from URL query parameters (`?room=<id>`) on landing page load and auto-populate the join input field, or redirect directly to the room join flow.
+**Action:** Updated HomePage.tsx to parse `?room=` query parameter and auto-redirect to `/room/{token}`. Updated Sidebar.tsx and HomePage.tsx handleShareLink to use query parameter format (`/?room={token}`) instead of path format for consistent invite link behavior.
 
 ---
 
@@ -287,7 +287,7 @@ Phase 8: Bug Fixes           ███░░░░░░░░░░░░░░
 | GAP-14: Event-based signaling tested | ✅ RESOLVED | window event dispatch tests |
 | Video Reconnect After Toggle Off | ✅ RESOLVED | Fixed in ControlBar.tsx with track re-enabling logic |
 | Chat Messages Same Browser Tab | ❌ NOT STARTED | Critical bug - needs investigation |
-| Invite Link Pre-fill Room ID | ❌ NOT STARTED | Medium priority bug |
+| Invite Link Pre-fill Room ID | ✅ RESOLVED | Added ?room= query param parsing and auto-redirect |
 | GAP-24: TURN server load testing | ❌ NOT STARTED | Test coverage gap |
 
 ---
@@ -296,6 +296,7 @@ Phase 8: Bug Fixes           ███░░░░░░░░░░░░░░
 
 | Version | Date | Changes |
 |---------|------|---------|
+| 0.7.46 | 2026-03-22 | Invite Link Fix: Added ?room= query parameter parsing on HomePage for auto-redirect to room; Updated Sidebar and HomePage share link to use query param format |
 | 0.7.45 | 2026-03-22 | Video Reconnect Fix: Fixed video toggle off/on bug - track.enabled is now propagated to peer connections via replaceTrack() |
 | 0.7.44 | 2026-03-22 | Confirmed all 9 spec files analyzed - consolidated INTEGRATION_TESTING_GAPS, AUTOMATION_TESTING_ANALYSIS status matches current implementation |
 | 0.7.43 | 2026-03-22 | Consolidated gap analysis from all 9 spec files - added INTEGRATION_TESTING_GAPS and AUTOMATION_TESTING_ANALYSIS status |

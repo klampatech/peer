@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Video, Copy, Check } from 'lucide-react';
 import { io } from 'socket.io-client';
 
@@ -12,9 +12,19 @@ interface HomePageProps {
 
 export default function HomePage({ displayName, onDisplayNameChange }: HomePageProps) {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const [isCreating, setIsCreating] = useState(false);
   const [joinToken, setJoinToken] = useState('');
   const [copied, setCopied] = useState(false);
+
+  // Check for ?room= query parameter and auto-redirect to room
+  useEffect(() => {
+    const roomParam = searchParams.get('room');
+    if (roomParam && roomParam.trim()) {
+      // Auto-redirect to the room
+      navigate(`/room/${roomParam.trim()}`);
+    }
+  }, [searchParams, navigate]);
 
   const handleCreateRoom = async () => {
     if (!displayName.trim()) {
@@ -90,7 +100,8 @@ export default function HomePage({ displayName, onDisplayNameChange }: HomePageP
 
   const handleShareLink = async () => {
     const token = crypto.randomUUID();
-    const link = `${window.location.origin}/room/${token}`;
+    // Use query param format so landing page can parse and redirect
+    const link = `${window.location.origin}/?room=${token}`;
     await navigator.clipboard.writeText(link);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
