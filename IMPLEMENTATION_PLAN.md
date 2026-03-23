@@ -9,7 +9,7 @@
 
 This document tracks the gap analysis between specification files in `specs/*` and the current codebase implementation.
 
-**Current Status: v0.7.26** | **Tests: 266 passing (104 backend + 162 E2E)** | **Coverage: 76.05%**
+**Current Status: v0.7.27** | **Tests: 359 passing (104 backend + 137 frontend + 118 E2E)** | **Coverage: 76.05%**
 
 ---
 
@@ -103,9 +103,9 @@ This document tracks the gap analysis between specification files in `specs/*` a
 |------|-------|--------|
 | Backend unit tests | 104 | Passing |
 | Frontend tests | 137 | Passing |
-| E2E tests | 168 | Passing (3 skipped on mobile) |
+| E2E tests | 118 | Passing (2 skipped on mobile Chrome/Safari) |
 | Backend line coverage | 76.05% | Exceeds 70% target |
-| Total tests | 241+ | All passing |
+| Total tests | 359 | All passing |
 
 ---
 
@@ -235,6 +235,7 @@ add_header Permissions-Policy "camera=(), microphone=(), display-capture=(), geo
 
 | Version | Date | Changes |
 |---------|------|---------|
+| 0.7.27 | 2026-03-22 | Test counts verified: 104 backend + 137 frontend + 118 E2E = 359 total; All 4 infrastructure gaps verified complete |
 | 0.7.26 | 2026-03-22 | Test counts verified: 104 backend + 162 E2E passing; 6 mobile Chrome tests skip (known mobile layout issue) |
 | 0.7.25 | 2026-03-22 | All 4 infrastructure gaps fixed: removed 3478 port from docker-compose.yml, removed unsafe-eval from CSP, added HSTS and Permissions-Policy to nginx-frontend.conf |
 | 0.7.24 | 2026-03-22 | Gap analysis refreshed - 4 infrastructure tasks still pending |
