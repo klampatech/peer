@@ -42,6 +42,23 @@ export default function ControlBar({ onLeave, onToggleChat }: ControlBarProps) {
   };
 
   const handleToggleVideo = async () => {
+    const newVideoState = !videoEnabled;
+
+    // If enabling video and we have an existing stream without video, we need to re-enable the track
+    if (newVideoState && localStream) {
+      // Get the video track from the current stream
+      const videoTrack = localStream.getVideoTracks()[0];
+      if (videoTrack && !videoTrack.enabled) {
+        // Enable the track and update all peer connections
+        videoTrack.enabled = true;
+        // Replace the track in all peer connections to ensure remote peers receive it
+        await peerManager.replaceVideoTrack(videoTrack);
+      }
+      setVideoEnabled(true);
+      return;
+    }
+
+    // If no stream exists, try to initialize media
     if (!localStream) {
       try {
         await initializeMedia(audioEnabled, true);
@@ -49,7 +66,8 @@ export default function ControlBar({ onLeave, onToggleChat }: ControlBarProps) {
         console.error('Failed to get video:', err);
       }
     }
-    setVideoEnabled(!videoEnabled);
+
+    setVideoEnabled(newVideoState);
   };
 
   const cameraStreamRef = useRef<MediaStream | null>(null);

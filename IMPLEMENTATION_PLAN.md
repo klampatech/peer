@@ -9,7 +9,7 @@
 
 This document tracks the gap analysis between specification files in `specs/*` and the current codebase implementation.
 
-**Current Status: v0.7.44** | **Tests: 403 passing (133 backend + 146 frontend + 124 E2E)** | **Coverage: ~76%**
+**Current Status: v0.7.45** | **Tests: 403 passing (133 backend + 146 frontend + 124 E2E)** | **Coverage: ~76%**
 
 ---
 
@@ -133,15 +133,15 @@ Phase 8: Bug Fixes           ███░░░░░░░░░░░░░░
 
 #### 1. Video Reconnect After Toggle Off Does Not Resume Camera Feed (Priority: High)
 
-**Location:** Frontend - `peer-manager.ts` or media controls
+**Location:** Frontend - `ControlBar.tsx`
 
-**Issue:** When a user disconnects their video using the toggle button and then reconnects it, the camera feed does not resume. The video track appears to remain disabled or is not properly re-added to the peer connection.
+**Issue:** When a user disconnects their video using the toggle button and then reconnects it, the camera feed does not resume. The track.enabled property was being set, but the track was not re-propagated to peer connections via replaceTrack().
 
 **Spec Requirement:** Section 5.1.3 specifies video toggle should enable/disable camera without disrupting the call.
 
-**Status:** 🆕 NEW - Bug identified, not yet investigated.
+**Status:** ✅ RESOLVED v0.7.45 - Added track re-enabling logic with peer connection update
 
-**Action:** Investigate track re-enabling logic - likely the `enabled` property is being set but the track is not being re-added to the peer connection or the `replaceTrack` method is not being called.
+**Action:** Fixed by updating `handleToggleVideo` in ControlBar.tsx to check if the video track needs to be re-enabled and call `peerManager.replaceVideoTrack()` to propagate the enabled track to all peer connections.
 
 ---
 
@@ -285,7 +285,7 @@ Phase 8: Bug Fixes           ███░░░░░░░░░░░░░░
 | GAP-12: Peer connection lifecycle tested | ✅ RESOLVED | 9 peer-manager tests |
 | GAP-2: Disconnect scenarios tested | ✅ RESOLVED | 3 disconnect tests |
 | GAP-14: Event-based signaling tested | ✅ RESOLVED | window event dispatch tests |
-| Video Reconnect After Toggle Off | ❌ NOT STARTED | Critical bug - needs investigation |
+| Video Reconnect After Toggle Off | ✅ RESOLVED | Fixed in ControlBar.tsx with track re-enabling logic |
 | Chat Messages Same Browser Tab | ❌ NOT STARTED | Critical bug - needs investigation |
 | Invite Link Pre-fill Room ID | ❌ NOT STARTED | Medium priority bug |
 | GAP-24: TURN server load testing | ❌ NOT STARTED | Test coverage gap |
@@ -296,6 +296,7 @@ Phase 8: Bug Fixes           ███░░░░░░░░░░░░░░
 
 | Version | Date | Changes |
 |---------|------|---------|
+| 0.7.45 | 2026-03-22 | Video Reconnect Fix: Fixed video toggle off/on bug - track.enabled is now propagated to peer connections via replaceTrack() |
 | 0.7.44 | 2026-03-22 | Confirmed all 9 spec files analyzed - consolidated INTEGRATION_TESTING_GAPS, AUTOMATION_TESTING_ANALYSIS status matches current implementation |
 | 0.7.43 | 2026-03-22 | Consolidated gap analysis from all 9 spec files - added INTEGRATION_TESTING_GAPS and AUTOMATION_TESTING_ANALYSIS status |
 | 0.7.42 | 2026-03-22 | Consolidated remaining gaps: 3 bugs not started (video reconnect, chat same-tab, invite pre-fill), GAP-24 TURN load untested, UI enhancements not started |
