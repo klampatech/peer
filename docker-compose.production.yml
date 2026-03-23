@@ -64,7 +64,6 @@ services:
       - no-new-privileges:true
     ports:
       - "5349:5349/udp"
-      - "5349:5349/tcp"
     environment:
       - TURN_SECRET=${TURN_SECRET}
       - REALM=peer
@@ -120,7 +119,7 @@ services:
     read_only: true
 
   certbot:
-    image: certbot/certbot:latest
+    image: certbot/certbot:v3.0.1
     volumes:
       - certbot-etc:/etc/letsencrypt
       - certbot-var:/var/lib/letsencrypt

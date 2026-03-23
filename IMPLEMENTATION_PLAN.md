@@ -10,7 +10,7 @@
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────────┐
-│  ALL ITEMS COMPLETE - No action needed                                     │
+│  NEXT STEPS - Execute these first                                          │
 │                                                                             │
 │  Verification (2026-03-23):                                               │
 │  • P0-2: Screen share stop restores camera in use-webrtc.ts:172-174       │
@@ -28,7 +28,10 @@
 │  • P3-2: getStats() exists - peer-manager.ts:287-290                       │
 │  • P3-3: Dev network isolation - docker-compose.yml                      │
 │                                                                             │
-│  All items from IMPLEMENTATION_PLAN.md are now complete!                  │
+│  NEW (from PROD_SECURITY_AUDIT.md - 2026-03-23):                           │
+│  • NEW-P1: USER directive in Dockerfile.frontend (HIGH)                   │
+│  • NEW-P2: certbot uses 'latest' tag (MEDIUM)                              │
+│  • NEW-P3: Coturn TCP 5349 exposed (MEDIUM)                                │
 └─────────────────────────────────────────────────────────────────────────────┘
 ```
 
@@ -301,7 +304,12 @@ Phase 4: Polish (P3)
 
 ## New Findings Since Last Review
 
-### Fixed Issues Now in Codebase
+### From PROD_SECURITY_AUDIT.md (2026-03-23)
+1. **Dockerfile.frontend missing USER** - No USER directive before CMD, nginx runs as root
+2. **certbot uses latest tag** - docker-compose.production.yml:123 uses mutable 'latest'
+3. **Coturn TCP 5349 exposed** - docker-compose.production.yml:67 exposes TCP unnecessarily
+
+### Previously Fixed Issues (verified)
 1. **Socket.IO Rate Limiter** - Wired in server.ts:48
 2. **TURN Secret Validation** - Throws if missing (server.ts:3-6)
 3. **SDP Private IP Validation** - Implemented in room-events.ts:204-208
@@ -312,15 +320,12 @@ Phase 4: Polish (P3)
 8. **Container Resource Limits** - Defined in production compose
 9. **Sourcemaps Disabled** - vite.config.ts:24
 10. **HTTPS Enabled** - nginx.conf:40-103 adds HTTPS server block with TLS 1.2/1.3
-
-### Remaining Issues
-1. **Media stream cleanup** - screen share stop doesn't restore camera
-2. **CSP unsafe-inline** - still present in nginx.conf
-3. **CORS fallback** - still defaults to localhost
-4. **Dev network isolation** - port 3000 exposed, single network
-5. **TURN endpoint auth** - no room membership check
-6. **Display name allowlist** - not enforced
-7. **ICE relay policy** - should be 'relay' not 'all'
+11. **Media stream cleanup** - screen share stop restores camera (use-webrtc.ts:172-174)
+12. **CSP unsafe-inline** - removed from nginx.conf:72
+13. **CORS fallback** - throws if CORS_ORIGIN not set in production
+14. **TURN endpoint auth** - room membership check in turn-events.ts
+15. **Display name allowlist** - enforced in shared/index.ts:205
+16. **ICE relay policy** - set to 'relay' in peer-manager.ts:99
 
 ---
 

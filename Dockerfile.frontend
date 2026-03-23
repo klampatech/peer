@@ -52,4 +52,5 @@ RUN chown -R nginx:nginx /usr/share/nginx/html && \
 EXPOSE 80
 
 # Start Nginx
+USER nginx
 CMD ["nginx", "-g", "daemon off;"]
