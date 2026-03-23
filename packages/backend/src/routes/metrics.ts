@@ -9,6 +9,9 @@ interface Metric {
   type: 'counter' | 'gauge' | 'histogram';
   help: string;
   buckets?: number[];
+  // For histogram: track individual observations and count
+  observations?: number[];
+  count?: number;
 }
 
 const metrics: Map<string, Metric> = new Map();
@@ -105,9 +108,19 @@ export function incrementHttpErrors(): void {
 }
 
 export function updateRequestDuration(durationMs: number): void {
-  // Store as histogram - track sum for calculating averages
+  // Store as histogram - track individual observations for proper bucket counting
   const metric = metrics.get('http_request_duration_seconds');
-  if (metric) metric.value += durationMs / 1000;
+  if (metric) {
+    const durationSeconds = durationMs / 1000;
+    metric.value += durationSeconds; // Keep sum for calculating averages
+    metric.observations = metric.observations || [];
+    metric.observations.push(durationSeconds);
+    // Keep only last 1000 observations to prevent unbounded memory growth
+    if (metric.observations.length > 1000) {
+      metric.observations.shift();
+    }
+    metric.count = (metric.count || 0) + 1;
+  }
 }
 
 export function incrementRequestsInFlight(delta: number): void {
@@ -150,14 +163,35 @@ function formatPrometheusMetrics(): string {
     lines.push(`# TYPE ${metric.name} ${metric.type}`);
 
     if (metric.type === 'histogram') {
-      // Histogram format: bucket labels
       const buckets = metric.buckets || [0.005, 0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1, 2.5, 5, 10];
-      for (let i = 0; i < buckets.length; i++) {
-        const le = i === buckets.length - 1 ? '+Inf' : String(buckets[i + 1]);
-        lines.push(`${metric.name}_bucket{le="${le}"} 0`);
+      const observations = metric.observations || [];
+
+      // Count observations in each bucket
+      const bucketCounts = new Array(buckets.length + 1).fill(0);
+      for (const obs of observations) {
+        for (let i = 0; i < buckets.length; i++) {
+          if (obs <= buckets[i]) {
+            bucketCounts[i]++;
+            break;
+          }
+        }
+        // If > max bucket, count in +Inf bucket
+        if (obs > buckets[buckets.length - 1]) {
+          bucketCounts[buckets.length]++;
+        }
       }
+
+      // Output bucket lines
+      for (let i = 0; i < buckets.length; i++) {
+        const le = String(buckets[i]);
+        lines.push(`${metric.name}_bucket{le="${le}"} ${bucketCounts[i]}`);
+      }
+      // +Inf bucket
+      lines.push(`${metric.name}_bucket{le="+Inf"} ${bucketCounts[buckets.length]}`);
+
+      // Output sum and count
       lines.push(`${metric.name}_sum ${metric.value.toFixed(6)}`);
-      lines.push(`${metric.name}_count 0`);
+      lines.push(`${metric.name}_count ${metric.count || 0}`);
     } else {
       lines.push(`${metric.name} ${metric.value}`);
     }
