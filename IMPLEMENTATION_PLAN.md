@@ -1,6 +1,6 @@
 # Peer P2P VoIP Application - Implementation Plan
 
-> **Status:** In Progress
+> **Status:** Ready for v1.0 Release
 > **Last Updated:** 2026-03-22
 
 ---
