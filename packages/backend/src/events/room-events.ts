@@ -3,6 +3,7 @@ import { v4 as uuidv4 } from 'uuid';
 import {
   createRoom,
   getRoom,
+  getAllRooms,
   joinRoom,
   leaveRoom,
   getPeersInRoom,
@@ -71,7 +72,6 @@ export function setupRoomEvents(io: Server): void {
 
         const room = createRoom();
         joinRoom(room.token, socket.id, displayName.trim());
-
         socket.join(room.token);
         socket.data.peerId = socket.id;
         socket.data.displayName = displayName.trim();
@@ -314,23 +314,22 @@ export function setupRoomEvents(io: Server): void {
 
     // Handle disconnection
     socket.on('disconnect', () => {
-      logger.info({ traceId: socket.data.traceId, socketId: socket.id }, 'Client disconnected');
+      logger.info({ traceId: socket.data?.traceId, socketId: socket.id }, 'Client disconnected');
 
       // Update metrics
       incrementSocketDisconnections();
       updateConnectedPeers(io.sockets.sockets.size);
 
-      // Find and clean up any rooms this socket was in
-      const rooms = Array.from(socket.rooms).filter(room => room !== socket.id);
-
-      for (const token of rooms) {
-        if (isRoomToken(token)) {
-          const room = getRoom(token as Room['token']);
-          if (room && room.peers.has(socket.id)) {
-            leaveRoom(token as Room['token'], socket.id);
-            socket.to(token).emit('peer-left', { peerId: socket.id });
-            logger.info({ traceId: socket.data.traceId, peerId: socket.id, roomToken: token }, 'Peer removed from room (disconnect)');
-          }
+      // IMPORTANT: At disconnect time, Socket.IO has already removed the socket from all rooms.
+      // We need to search our room state to find where this peer was.
+      // This is more reliable than relying on socket.rooms which is empty at this point.
+      const allRooms = getAllRooms();
+      for (const [token, room] of allRooms) {
+        if (room.peers.has(socket.id)) {
+          logger.info({ traceId: socket.data?.traceId, peerId: socket.id, roomToken: token, peersBefore: room.peers.size }, 'Removing peer from room (disconnect)');
+          leaveRoom(token, socket.id);
+          socket.to(token).emit('peer-left', { peerId: socket.id });
+          logger.info({ traceId: socket.data?.traceId, peerId: socket.id, roomToken: token }, 'Peer removed from room (disconnect)');
         }
       }
     });

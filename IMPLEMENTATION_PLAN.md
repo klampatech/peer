@@ -9,7 +9,7 @@
 
 This document tracks the gap analysis between specification files in `specs/*` and the current codebase implementation.
 
-**Current Status: v0.7.36** | **Tests: 273 passing (127 backend + 146 frontend)** | **Coverage: ~76%**
+**Current Status: v0.7.37** | **Tests: 130 passing (130 backend + 146 frontend)** | **Coverage: ~76%**
 
 ---
 
@@ -224,8 +224,8 @@ add_header Permissions-Policy "camera=(), microphone=(), display-capture=(), geo
 
 | Gap ID | Description | Location | Status |
 |--------|------------|----------|--------|
-| GAP-2 | Reconnection scenarios untested | Backend integration | ❌ Not started |
-| GAP-14 | Event-based signaling untested | `peer-manager.ts` | ❌ Not started |
+| GAP-2 | Reconnection scenarios untested | Backend integration | ✅ RESOLVED v0.7.37 - 3 disconnect tests added at `room-events.integration.test.ts` |
+| GAP-14 | Event-based signaling untested | `peer-manager.ts` | ✅ RESOLVED - Tests at `peer-manager.test.ts` lines 290-374 dispatch window events for SDP offer/answer and ICE candidate |
 | GAP-19 | Media permission denial not actually tested | E2E | ✅ RESOLVED v0.7.36 - 5 tests use Playwright permissions API with empty permissions array to deny camera/mic |
 | GAP-24 | TURN server load untested | Load tests | ❌ Not started |
 
@@ -266,6 +266,8 @@ add_header Permissions-Policy "camera=(), microphone=(), display-capture=(), geo
 | GAP-18: WebRTC connectivity verified in E2E | ✅ RESOLVED v0.7.35 | 3 tests verify RTCPeerConnection, ICE servers, console errors |
 | GAP-12: Peer connection lifecycle tested | ✅ RESOLVED v0.7.35 | 9 unit tests for peer-manager at peer-manager.test.ts |
 | GAP-31: WebRTC signaling authorization tested | ✅ RESOLVED v0.7.33 | Cross-room blocking verified; also fixed authorization bug |
+| GAP-2: Disconnect scenarios tested | ✅ RESOLVED v0.7.37 | 3 disconnect tests at room-events.integration.test.ts |
+| GAP-14: Event-based signaling tested | ✅ RESOLVED | Tests at peer-manager.test.ts lines 290-374 |
 
 ---
 
@@ -288,8 +290,8 @@ add_header Permissions-Policy "camera=(), microphone=(), display-capture=(), geo
 | Task | Priority | Status |
 |------|----------|--------|
 | GAP-4: TURN credential room binding | High | **RESOLVED v0.7.34** - Room membership enforced via socket.rooms check |
-| GAP-2: Reconnection scenarios untested | High | **OPEN** - No tests for socket reconnect with room state preservation |
-| GAP-14: Event-based signaling untested | High | **OPEN** - Frontend unit tests don't dispatch window events |
+| GAP-2: Reconnection scenarios untested | High | **RESOLVED v0.7.37** - 3 disconnect tests added at `room-events.integration.test.ts` - Fixed disconnect handler to iterate over server room state instead of empty socket.rooms |
+| GAP-14: Event-based signaling untested | High | **RESOLVED** - Tests at `peer-manager.test.ts` lines 290-374 dispatch window events for SDP offer/answer and ICE candidate |
 | GAP-19: Media permission denial not tested | High | **RESOLVED v0.7.36** - 5 E2E tests now use Playwright permissions API
 
 ### Medium Priority (P2)
@@ -355,6 +357,7 @@ add_header Permissions-Policy "camera=(), microphone=(), display-capture=(), geo
 
 | Version | Date | Changes |
 |---------|------|---------|
+| 0.7.37 | 2026-03-22 | GAP-2 RESOLVED: 3 disconnect tests at `room-events.integration.test.ts` - Fixed disconnect handler to iterate over server room state (socket.rooms is empty at disconnect time); GAP-14 verified already resolved |
 | 0.7.36 | 2026-03-22 | GAP-19 RESOLVED: 5 E2E tests now use Playwright permissions API to actually deny camera/mic (empty permissions array) |
 | 0.7.35 | 2026-03-22 | GAP-12 RESOLVED: 9 peer-manager unit tests for connection lifecycle, SDP/ICE handling; GAP-17 RESOLVED: 2 multi-peer E2E tests using browser.newContext(); GAP-18 RESOLVED: 3 WebRTC connectivity tests verifying RTCPeerConnection, ICE servers |
 | 0.7.34 | 2026-03-22 | GAP-4 RESOLVED: TURN credentials now require room membership via socket.rooms check; 8 new room membership tests added |

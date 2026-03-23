@@ -960,4 +960,127 @@ describe('Room Events Integration', () => {
       expect(iceCandidateEvents).toHaveLength(0);
     });
   });
+
+  describe('socket:disconnect', () => {
+    it('should notify remaining peers when a peer disconnects abruptly', async () => {
+      // Client 1 creates a room
+      clientSocket = ioc(`http://localhost:${testPort}`, { forceNew: true });
+
+      const createResponse = await new Promise<Record<string, unknown>>((resolve, reject) => {
+        clientSocket.emit('room:create', { displayName: 'User One' }, (res: unknown) => {
+          if (res) resolve(res as Record<string, unknown>);
+          else reject(new Error('No response'));
+        });
+      });
+
+      const token = (createResponse.data as Record<string, unknown>).token as string;
+
+      // Client 2 joins the room
+      clientSocket2 = ioc(`http://localhost:${testPort}`, { forceNew: true });
+
+      const joinResponse = await new Promise<Record<string, unknown>>((resolve, reject) => {
+        clientSocket2.emit('room:join', { token, displayName: 'User Two' }, (res: unknown) => {
+          if (res) resolve(res as Record<string, unknown>);
+          else reject(new Error('No response'));
+        });
+      });
+
+      expect(joinResponse).toHaveProperty('success', true);
+
+      // Wait for socket state to stabilize after join
+      await new Promise(resolve => setTimeout(resolve, 100));
+
+      // Verify room exists with 2 peers
+      let room = getRoom(token as import('@peer/shared').RoomToken);
+      expect(room?.peers.size).toBe(2);
+
+      // Capture socket ID before disconnect
+      const clientSocketId = clientSocket.id;
+
+      // Client 1 disconnects abruptly (no room:leave)
+      clientSocket.disconnect();
+
+      // Wait for server to process disconnect and emit events
+      await new Promise(resolve => setTimeout(resolve, 500));
+
+      // Room should still exist but with only 1 peer now
+      room = getRoom(token as import('@peer/shared').RoomToken);
+      expect(room).toBeDefined();
+      expect(room?.peers.size).toBe(1);
+      expect(room?.peers.has(clientSocketId)).toBe(false);
+    });
+
+    it('should preserve room state when peer disconnects', async () => {
+      // Client 1 creates a room
+      clientSocket = ioc(`http://localhost:${testPort}`, { forceNew: true });
+
+      const createResponse = await new Promise<Record<string, unknown>>((resolve, reject) => {
+        clientSocket.emit('room:create', { displayName: 'Host' }, (res: unknown) => {
+          if (res) resolve(res as Record<string, unknown>);
+          else reject(new Error('No response'));
+        });
+      });
+
+      const token = (createResponse.data as Record<string, unknown>).token as string;
+
+      // Client 2 joins the room
+      clientSocket2 = ioc(`http://localhost:${testPort}`, { forceNew: true });
+
+      await new Promise<Record<string, unknown>>((resolve, reject) => {
+        clientSocket2.emit('room:join', { token, displayName: 'Guest' }, (res: unknown) => {
+          if (res) resolve(res as Record<string, unknown>);
+          else reject(new Error('No response'));
+        });
+      });
+
+      // Wait for socket state to stabilize
+      await new Promise(resolve => setTimeout(resolve, 100));
+
+      // Verify room has 2 peers
+      let room = getRoom(token as import('@peer/shared').RoomToken);
+      expect(room?.peers.size).toBe(2);
+
+      // Client 2 disconnects abruptly
+      clientSocket2.disconnect();
+
+      // Wait for server to process disconnect
+      await new Promise(resolve => setTimeout(resolve, 500));
+
+      // Room should still exist with 1 peer (Client 1)
+      room = getRoom(token as import('@peer/shared').RoomToken);
+      expect(room).toBeDefined();
+      expect(room?.peers.size).toBe(1);
+    });
+
+    it('should clean up room when last peer disconnects', async () => {
+      // Client 1 creates a room
+      clientSocket = ioc(`http://localhost:${testPort}`, { forceNew: true });
+
+      const createResponse = await new Promise<Record<string, unknown>>((resolve, reject) => {
+        clientSocket.emit('room:create', { displayName: 'Solo User' }, (res: unknown) => {
+          if (res) resolve(res as Record<string, unknown>);
+          else reject(new Error('No response'));
+        });
+      });
+
+      const token = (createResponse.data as Record<string, unknown>).token as string;
+
+      // Wait for socket state to stabilize
+      await new Promise(resolve => setTimeout(resolve, 100));
+
+      // Verify room exists
+      let room = getRoom(token as import('@peer/shared').RoomToken);
+      expect(room).toBeDefined();
+
+      // Client disconnects abruptly (no room:leave)
+      clientSocket.disconnect();
+
+      // Wait for server to process disconnect and room cleanup
+      await new Promise(resolve => setTimeout(resolve, 500));
+
+      // Room should be destroyed
+      room = getRoom(token as import('@peer/shared').RoomToken);
+      expect(room).toBeUndefined();
+    });
+  });
 });
