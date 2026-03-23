@@ -9,7 +9,7 @@
 
 This document tracks the gap analysis between specification files in `specs/*` and the current codebase implementation.
 
-**Current Status: v0.7.25** | **Tests: 241+ passing** | **Coverage: 76.05%**
+**Current Status: v0.7.26** | **Tests: 266 passing (104 backend + 162 E2E)** | **Coverage: 76.05%**
 
 ---
 
@@ -235,6 +235,7 @@ add_header Permissions-Policy "camera=(), microphone=(), display-capture=(), geo
 
 | Version | Date | Changes |
 |---------|------|---------|
+| 0.7.26 | 2026-03-22 | Test counts verified: 104 backend + 162 E2E passing; 6 mobile Chrome tests skip (known mobile layout issue) |
 | 0.7.25 | 2026-03-22 | All 4 infrastructure gaps fixed: removed 3478 port from docker-compose.yml, removed unsafe-eval from CSP, added HSTS and Permissions-Policy to nginx-frontend.conf |
 | 0.7.24 | 2026-03-22 | Gap analysis refreshed - 4 infrastructure tasks still pending |
 
