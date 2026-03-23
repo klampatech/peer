@@ -9,7 +9,7 @@
 
 This document tracks the gap analysis between specification files in `specs/*` and the current codebase implementation.
 
-**Current Status: v0.7.28** | **Tests: 359 passing (104 backend + 137 frontend + 118 E2E)** | **Coverage: 76.05%**
+**Current Status: v0.7.29** | **Tests: 359 passing (104 backend + 137 frontend + 118 E2E)** | **Coverage: 76.05%**
 
 ---
 
@@ -124,7 +124,7 @@ Phase 6: Testing + Hardening █████████████████
 
 ## Remaining Gaps Identified
 
-### 1. Development docker-compose exposes plaintext TURN port (Priority: Medium)
+### 1. Development docker-compose exposes plaintext TURN port ~~(Priority: Medium)~~ ✓ COMPLETED
 
 **Location:** `docker-compose.yml:59-60`
 
@@ -132,11 +132,11 @@ The development docker-compose exposes port 3478 (plaintext TURN/STUN) to the ho
 
 **Spec Requirement:** Section 2.3 specifies TLS-only TURN in production. Port 3478 should be internal-only or removed from dev config.
 
-**Action:** Remove host port bindings for 3478 in `docker-compose.yml`. Keep internal networking but remove `"3478:3478"` and `"3478:3478/udp"` port mappings.
+**Status:** ✓ FIXED v0.7.25 - Port 3478 is now only an internal environment variable (COTURN_PORT=3478), not exposed to host. TLS port 5349 remains exposed.
 
 ---
 
-### 2. CSP contains unsafe-eval (Priority: Medium)
+### 2. CSP contains unsafe-eval ~~(Priority: Medium)~~ ✓ COMPLETED
 
 **Locations:**
 - `nginx.conf:78`
@@ -146,11 +146,11 @@ Both nginx configuration files contain `'unsafe-eval'` in the Content-Security-P
 
 **Spec Requirement:** Section 8.4 (SECURITY_STANDARDS.md) specifies strict CSP that blocks inline scripts and eval.
 
-**Action:** Remove `'unsafe-eval'` from both nginx configurations. Keep `'unsafe-inline'` for React compatibility (can be addressed via nonce-based approach in future).
+**Status:** ✓ FIXED v0.7.25 - `'unsafe-eval'` removed from both nginx.conf and nginx-frontend.conf CSP headers. `'unsafe-inline'` retained for React compatibility.
 
 ---
 
-### 3. HSTS header missing in nginx-frontend.conf (Priority: Low)
+### 3. HSTS header missing in nginx-frontend.conf ~~(Priority: Low)~~ ✓ COMPLETED
 
 **Location:** `nginx-frontend.conf`
 
@@ -158,14 +158,14 @@ The `nginx.conf` has HSTS header configured (line 69), but `nginx-frontend.conf`
 
 **Spec Requirement:** Section 8.4 and 8.3 specify HSTS header with `max-age=31536000` and `includeSubDomains`.
 
-**Action:** Add HSTS header to `nginx-frontend.conf`:
+**Status:** ✓ FIXED v0.7.25 - HSTS header added to nginx-frontend.conf at line 32:
 ```
 add_header Strict-Transport-Security "max-age=31536000; includeSubDomains" always;
 ```
 
 ---
 
-### 4. Permissions-Policy header missing in nginx-frontend.conf (Priority: Low)
+### 4. Permissions-Policy header missing in nginx-frontend.conf ~~(Priority: Low)~~ ✓ COMPLETED
 
 **Location:** `nginx-frontend.conf`
 
@@ -173,22 +173,26 @@ The `nginx.conf` has Permissions-Policy configured (line 76), but `nginx-fronten
 
 **Spec Requirement:** Section 8.4 (SECURITY_STANDARDS.md) specifies `Permissions-Policy` to scope camera/mic to app origin.
 
-**Action:** Add Permissions-Policy header to `nginx-frontend.conf`:
+**Status:** ✓ FIXED v0.7.25 - Permissions-Policy header added to nginx-frontend.conf at line 33:
 ```
 add_header Permissions-Policy "camera=(), microphone=(), display-capture=(), geolocation=(), gyroscope=(), magnetometer=()" always;
 ```
 
 ---
 
-### 5. GAP-4: TURN Credentials Generated Without Room Membership Check (Priority: High)
+### 5. GAP-4: TURN Credentials Generated Without Room Membership Check (Priority: High) - PARTIALLY FIXED
 
-**Location:** `packages/backend/src/events/turn-events.ts:56-77`
+**Location:**
+- `packages/backend/src/events/turn-events.ts:56-77`
+- `packages/shared/src/index.ts:273-279` (TurnRequestSchema)
 
-When no `roomToken` is provided in the `turn:request` payload, credentials are generated without verifying room membership. This allows any authenticated socket connection to obtain TURN credentials without being in a room.
+**Issue:** When `roomToken` IS provided in the `turn:request` payload, room membership is verified (lines 60-75). However, when `roomToken` is NOT provided (payload is empty `{}`), credentials are still generated without any room membership check (line 77). The schema is `.optional()` which allows this bypass.
 
 **Spec Requirement:** Section 8.3 requires credentials to be fetched via authenticated Socket.IO event requiring active room session.
 
-**Action:** Require `roomToken` in the `turn:request` payload or verify socket is in a room before generating credentials.
+**Status:** ⚠ PARTIALLY FIXED - Room membership is now checked IF roomToken is provided, but the schema is optional allowing empty payloads to bypass the check entirely.
+
+**Action Required:** Make `roomToken` REQUIRED in `TurnRequestSchema` OR always verify socket is in some room (call `isPeerInRoom` with any room the socket has joined).
 
 ---
 
@@ -198,7 +202,43 @@ When no `roomToken` is provided in the `turn:request` payload, credentials are g
 
 **Spec Requirement:** Section 7.3 requires testing with multiple peers in same room.
 
-**Action:** Add E2E tests for: 2-peer voice/video call, peer disconnect/rejoin, mesh connection verification.
+**Status:** ⚠ IN PROGRESS - Need E2E tests for: 2-peer voice/video call, peer disconnect/rejoin, mesh connection verification.
+
+**Action:** Add E2E tests using `browser.newContext()` for multi-user scenarios.
+
+---
+
+## Critical Testing Gaps (from specs/INTEGRATION_TESTING_GAPS.md)
+
+### P0 - Critical (Address Before Production)
+
+| Gap ID | Description | Location | Status |
+|--------|------------|----------|--------|
+| GAP-1 | WebRTC signaling events untested (sdp:offer/answer, ice-candidate) | `room-events.ts:194-271` | ❌ Not started |
+| GAP-12 | Peer connection lifecycle untested | `peer-manager.ts:94-150` | ❌ Not started |
+| GAP-17 | Multi-peer E2E scenarios untested | `e2e/*.spec.ts` | ❌ Not started |
+| GAP-29 | SQL injection not tested | `message-repository.ts` | ❌ Not started |
+| GAP-30 | Chat XSS not tested | `message-repository.ts:127-138` | ❌ Not started |
+
+### P1 - High Priority
+
+| Gap ID | Description | Location | Status |
+|--------|------------|----------|--------|
+| GAP-2 | Reconnection scenarios untested | Backend integration | ❌ Not started |
+| GAP-14 | Event-based signaling untested | `peer-manager.ts` | ❌ Not started |
+| GAP-19 | Media permission denial not actually tested | E2E | ❌ Not started |
+| GAP-24 | TURN server load untested | Load tests | ❌ Not started |
+
+### P2 - Medium Priority
+
+| Gap ID | Description | Location | Status |
+|--------|------------|----------|--------|
+| GAP-5 | UUID version enforcement | `packages/shared/src/index.ts:190-192` | ✅ VERIFIED - Regex correctly enforces v4 |
+| GAP-8 | Socket event rate limiting | Backend | ❌ Not started |
+| GAP-13 | ICE failure handling | Frontend | ❌ Not started |
+| GAP-20 | Invite/share flow | E2E | ❌ Not started |
+| GAP-21 | Media controls (mute/camera) | E2E | ❌ Not started |
+| GAP-22 | Leave room flow | E2E | ❌ Not started |
 
 ---
 
@@ -215,10 +255,26 @@ When no `roomToken` is provided in the `turn:request` payload, credentials are g
 - [x] CSP hardened in nginx configs (remove unsafe-eval) - **COMPLETED v0.7.25**
 - [x] HSTS header in all nginx configs (nginx-frontend.conf) - **COMPLETED v0.7.25**
 - [x] Permissions-Policy header in nginx-frontend.conf - **COMPLETED v0.7.25**
+- [ ] GAP-4: TURN credentials require room membership (currently optional) - **NEEDS FIX**
+- [ ] GAP-1: WebRTC signaling events tested (sdp:offer/answer, ice-candidate) - **NEEDS TEST**
+- [ ] GAP-30: Chat XSS sanitization tested - **NEEDS TEST**
+- [ ] GAP-29: SQL injection prevention tested - **NEEDS TEST**
+- [ ] GAP-17: Multi-peer E2E scenarios tested - **NEEDS TEST**
 
 ---
 
-## v0.7.25 Tasks
+## v0.7.29 Tasks
+
+| Task | Priority | Status |
+|------|----------|--------|
+| Verify infrastructure gaps fixed (3478, CSP, HSTS, Permissions-Policy) | Medium | **Completed** - All 4 infrastructure gaps verified |
+| GAP-4: TURN credential room binding fix verification | High | **Partially fixed** - roomToken checked when provided, but optional schema allows bypass |
+| GAP-5: UUID v4 enforcement verification | Medium | **Verified** - Regex correctly enforces v4 |
+| Add critical testing gaps from INTEGRATION_TESTING_GAPS.md | High | **Added** - P0 gaps: GAP-1, 12, 17, 29, 30 |
+
+---
+
+## v0.7.28 Tasks
 
 | Task | Priority | Status |
 |------|----------|--------|
@@ -244,12 +300,12 @@ When no `roomToken` is provided in the `turn:request` payload, credentials are g
 
 | Header | nginx.conf | nginx-frontend.conf | Status |
 |--------|------------|---------------------|--------|
-| Content-Security-Policy | ✓ (has unsafe-eval) | ✓ (has unsafe-eval) | Partial (needs unsafe-eval removal) |
-| Strict-Transport-Security | ✓ (line 69) | ✗ Missing | Fix needed |
-| X-Frame-Options | ✓ DENY | ✓ DENY | Complete |
-| X-Content-Type-Options | ✓ nosniff | ✓ nosniff | Complete |
-| Referrer-Policy | ✓ (line 75) | ✓ (line 31) | Complete |
-| Permissions-Policy | ✓ (line 76) | ✗ Missing | Fix needed |
+| Content-Security-Policy | ✓ (no unsafe-eval) | ✓ (no unsafe-eval) | **Complete** |
+| Strict-Transport-Security | ✓ (line 69) | ✓ (line 32) | **Complete** |
+| X-Frame-Options | ✓ DENY | ✓ DENY | **Complete** |
+| X-Content-Type-Options | ✓ nosniff | ✓ nosniff | **Complete** |
+| Referrer-Policy | ✓ (line 75) | ✓ (line 31) | **Complete** |
+| Permissions-Policy | ✓ (line 76) | ✓ (line 33) | **Complete** |
 
 ---
 
@@ -257,6 +313,7 @@ When no `roomToken` is provided in the `turn:request` payload, credentials are g
 
 | Version | Date | Changes |
 |---------|------|---------|
+| 0.7.29 | 2026-03-22 | Verified infrastructure gaps fixed; GAP-4 partially fixed; added critical testing gaps from INTEGRATION_TESTING_GAPS.md |
 | 0.7.28 | 2026-03-22 | Added GAP-4 (TURN credential room binding) and GAP-6 (multi-peer testing) from INTEGRATION_TESTING_GAPS.md |
 | 0.7.27 | 2026-03-22 | Test counts verified: 104 backend + 137 frontend + 118 E2E = 359 total; All 4 infrastructure gaps verified complete |
 | 0.7.26 | 2026-03-22 | Test counts verified: 104 backend + 162 E2E passing; 6 mobile Chrome tests skip (known mobile layout issue) |
