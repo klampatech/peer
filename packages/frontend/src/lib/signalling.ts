@@ -23,12 +23,12 @@ export interface TurnCredentials {
 class SignallingClient {
   private socket: Socket | null = null;
 
-  connect(token: string, displayName: string): Promise<void> {
+  connect(token: string, displayName: string): Promise<boolean> {
     // If already connected, don't reconnect - this handles React StrictMode double-mounting
     // We check both the connection status and the stored socket ID
     if (this.socket?.connected) {
       console.log('Already connected, skipping reconnect');
-      return Promise.resolve();
+      return Promise.resolve(true);
     }
 
     return new Promise((resolve, reject) => {
@@ -56,7 +56,7 @@ class SignallingClient {
           if (response.success) {
             useRoomStore.getState().setConnected(true);
             useRoomStore.getState().setRoomToken(token);
-            resolve();
+            resolve(true);
           } else {
             reject(new Error(response.error?.message || 'Failed to join room'));
           }
@@ -66,8 +66,8 @@ class SignallingClient {
       this.socket.on('connect_error', (error) => {
         console.error('Connection error:', error);
         clearTimeout(connectionTimeout);
-        // Don't reject - resolve anyway to allow offline/local mode
-        resolve();
+        // Don't reject - resolve with false to allow offline/local mode
+        resolve(false);
       });
 
       this.socket.on('disconnect', () => {
@@ -214,8 +214,22 @@ class SignallingClient {
   }
 
   // Request TURN credentials from server
-  requestTurnCredentials(): void {
-    this.socket?.emit('turn:request');
+  // Returns a promise that resolves when credentials are received
+  requestTurnCredentials(roomToken: string): Promise<void> {
+    return new Promise((resolve, reject) => {
+      const timeout = setTimeout(() => {
+        reject(new Error('TURN credentials request timed out'));
+      }, 5000);
+
+      this.socket?.emit('turn:request', { roomToken }, (response: { success: boolean; error?: { code: string; message: string } }) => {
+        clearTimeout(timeout);
+        if (response.success) {
+          resolve();
+        } else {
+          reject(new Error(response.error?.message || 'TURN credentials failed'));
+        }
+      });
+    });
   }
 
   // Send a chat message

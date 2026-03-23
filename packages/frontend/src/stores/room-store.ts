@@ -188,18 +188,22 @@ export async function connect(token: string, displayName: string): Promise<void>
     useRoomStore.getState().setRoomToken(token);
 
     // Connect to signalling server (non-fatal if it fails)
+    let isInRoom = false;
     try {
-      await signallingClient.connect(token, displayName);
+      isInRoom = await signallingClient.connect(token, displayName);
     } catch (err) {
       console.warn('Failed to connect to signalling server, continuing anyway:', err);
       // Continue without signalling - still show the room UI
     }
 
     // Request TURN credentials for NAT traversal (non-fatal)
-    try {
-      signallingClient.requestTurnCredentials();
-    } catch (err) {
-      console.warn('Failed to request TURN credentials:', err);
+    // Only request if we're confirmed to be in the room
+    if (isInRoom) {
+      try {
+        await signallingClient.requestTurnCredentials(token);
+      } catch (err) {
+        console.warn('Failed to request TURN credentials:', err);
+      }
     }
 
     // Initialize peer manager with local stream (may be null)

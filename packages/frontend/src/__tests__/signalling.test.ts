@@ -90,8 +90,9 @@ describe('SignallingClient', () => {
       expect(typeof signallingClient.requestTurnCredentials).toBe('function');
     });
 
-    it('should not throw when calling without socket', () => {
-      expect(() => signallingClient.requestTurnCredentials()).not.toThrow();
+    it('should not throw when calling without socket', async () => {
+      // Should reject without a socket but not throw
+      await expect(signallingClient.requestTurnCredentials('12345678-1234-4567-8901-123456789012')).rejects.toBeDefined();
     });
   });
 
