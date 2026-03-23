@@ -36,10 +36,36 @@ class MockRTCIceCandidate {
 }
 
 class MockRTCPeerConnection {
-  readonly connectionState = 'new';
-  readonly iceConnectionState = 'new';
+  private _connectionState: RTCPeerConnectionState = 'new';
+  private _iceConnectionState: RTCIceConnectionState = 'new';
+
+  get connectionState(): RTCPeerConnectionState {
+    return this._connectionState;
+  }
+
+  set connectionState(value: RTCPeerConnectionState) {
+    this._connectionState = value;
+  }
+
+  get iceConnectionState(): RTCIceConnectionState {
+    return this._iceConnectionState;
+  }
+
+  set iceConnectionState(value: RTCIceConnectionState) {
+    this._iceConnectionState = value;
+  }
+
+  // Required properties from RTCPeerConnection interface
+  readonly canTrickleIceCandidates: boolean | null = null;
+  readonly currentLocalDescription: RTCSessionDescription | null = null;
+  readonly currentRemoteDescription: RTCSessionDescription | null = null;
+  readonly iceGatheringState: RTCIceGatheringState = 'new';
+  readonly signalingState: RTCSignalingState = 'stable';
   readonly localDescription: RTCSessionDescription | null = null;
   readonly remoteDescription: RTCSessionDescription | null = null;
+  readonly pendingLocalDescription: RTCSessionDescription | null = null;
+  readonly pendingRemoteDescription: RTCSessionDescription | null = null;
+  readonly sctp: RTCSctpTransport | null = null;
   private _senders: RTCRtpSender[] = [];
   private _receivers: RTCRtpReceiver[] = [];
 
@@ -95,11 +121,30 @@ class MockRTCPeerConnection {
     // Mock close
   }
 
-  onicecandidate: ((this: RTCPeerConnection, ev: RTCPeerConnectionIceEvent) => void) | null = null;
-  ontrack: ((this: RTCPeerConnection, ev: Event) => void) | null = null;
-  onconnectionstatechange: ((this: RTCPeerConnection, ev: Event) => void) | null = null;
-}
+  // Required event handlers from RTCPeerConnection interface (use Function to avoid this context issues)
+  ondatachannel: ((ev: RTCDataChannelEvent) => void) | null = null;
+  onicecandidate: ((ev: RTCPeerConnectionIceEvent) => void) | null = null;
+  onicecandidateerror: ((ev: RTCPeerConnectionIceErrorEvent) => void) | null = null;
+  oniceconnectionstatechange: ((ev: Event) => void) | null = null;
+  onicegatheringstatechange: ((ev: Event) => void) | null = null;
+  onnegotiationneeded: ((ev: Event) => void) | null = null;
+  onsignalingstatechange: ((ev: Event) => void) | null = null;
+  ontrack: ((ev: Event) => void) | null = null;
+  onconnectionstatechange: ((ev: Event) => void) | null = null;
 
+  addTransceiver(_trackOrKind: MediaStreamTrack | string, _options?: RTCRtpTransceiverInit): RTCRtpTransceiver {
+    const transceiver: RTCRtpTransceiver = {
+      direction: 'sendrecv',
+      mid: null,
+      receiver: { track: { id: '' } } as unknown as RTCRtpReceiver,
+      sender: { track: null } as unknown as RTCRtpSender,
+      currentDirection: 'sendrecv',
+      setDirection: () => {},
+      stop: () => {},
+    };
+    return transceiver;
+  }
+}
 globalThis.RTCPeerConnection = MockRTCPeerConnection as unknown as typeof RTCPeerConnection;
 globalThis.RTCSessionDescription = MockRTCSessionDescription as unknown as typeof RTCSessionDescription;
 globalThis.RTCIceCandidate = MockRTCIceCandidate as unknown as typeof RTCIceCandidate;
@@ -478,7 +523,7 @@ describe('PeerManager', () => {
       const mockConnection = peer!.connection as unknown as MockRTCPeerConnection;
 
       // Trigger state change
-      mockConnection.connectionState = 'checking';
+      mockConnection.connectionState = 'connecting';
       if (mockConnection.onconnectionstatechange) {
         mockConnection.onconnectionstatechange(new Event('connectionstatechange'));
       }

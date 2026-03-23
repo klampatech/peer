@@ -221,7 +221,7 @@ export function setupRoomEvents(io: Server): void {
       }
 
       // Verify target peer is in the same room
-      const room = getRoom(roomToken);
+      const room = getRoom(roomToken as Room['token']);
       if (!room || !room.peers.has(targetPeerId)) {
         logger.warn({ traceId: socket.data.traceId, targetPeerId }, 'Unauthorized SDP offer - peers not in same room');
         return;
@@ -264,7 +264,7 @@ export function setupRoomEvents(io: Server): void {
       }
 
       // Verify target peer is in the same room
-      const room = getRoom(roomToken);
+      const room = getRoom(roomToken as Room['token']);
       if (!room || !room.peers.has(targetPeerId)) {
         logger.warn({ traceId: socket.data.traceId, targetPeerId }, 'Unauthorized SDP answer - peers not in same room');
         return;
@@ -300,7 +300,7 @@ export function setupRoomEvents(io: Server): void {
       }
 
       // Verify target peer is in the same room
-      const room = getRoom(roomToken);
+      const room = getRoom(roomToken as Room['token']);
       if (!room || !room.peers.has(targetPeerId)) {
         logger.warn({ traceId: socket.data.traceId, targetPeerId }, 'Unauthorized ICE candidate - peers not in same room');
         return;
