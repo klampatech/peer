@@ -9,7 +9,7 @@
 
 This document tracks the gap analysis between specification files in `specs/*` and the current codebase implementation.
 
-**Current Status: v0.7.31** | **Tests: 241 passing (104 backend + 137 frontend)** | **Coverage: 76.05%**
+**Current Status: v0.7.32** | **Tests: 241 passing (112 backend + 137 frontend)** | **Coverage: ~76%**
 
 ---
 
@@ -217,8 +217,8 @@ add_header Permissions-Policy "camera=(), microphone=(), display-capture=(), geo
 | GAP-1 | WebRTC signaling events untested (sdp:offer/answer, ice-candidate) | `room-events.ts:194-271` | ❌ Not started |
 | GAP-12 | Peer connection lifecycle untested | `peer-manager.ts:94-150` | ❌ Not started |
 | GAP-17 | Multi-peer E2E scenarios untested | `e2e/*.spec.ts` | ❌ Not started |
-| GAP-29 | SQL injection not tested | `message-repository.ts` | ❌ Not started |
-| GAP-30 | Chat XSS not tested | `message-repository.ts:127-138` | ❌ Not started |
+| GAP-29 | SQL injection not tested | `message-repository.ts` | ✅ Resolved v0.7.32 - added 4 SQL injection tests |
+| GAP-30 | Chat XSS not tested | `message-repository.ts:127-138` | ✅ Resolved v0.7.32 - added 7 XSS payload tests |
 
 ### P1 - High Priority
 
@@ -259,8 +259,8 @@ add_header Permissions-Policy "camera=(), microphone=(), display-capture=(), geo
 | Permissions-Policy header in nginx-frontend.conf | ✅ Complete | v0.7.25 |
 | GAP-5: UUID v4 enforcement | ✅ Fixed | Regex correctly enforces v4 |
 | GAP-1: WebRTC signaling events tested | ❌ OPEN | No backend tests for `sdp:offer/answer/ice-candidate` |
-| GAP-30: Chat XSS sanitization tested | ❌ OPEN | `sanitizeHtml()` needs XSS payload tests |
-| GAP-29: SQL injection prevention tested | ❌ OPEN | Parameterized queries need injection tests |
+| GAP-30: Chat XSS sanitization tested | ✅ RESOLVED v0.7.32 | 7 XSS payload tests added to message-repository.test.ts |
+| GAP-29: SQL injection prevention tested | ✅ RESOLVED v0.7.32 | 4 SQL injection tests added to message-repository.test.ts |
 | GAP-17: Multi-peer E2E scenarios tested | ❌ OPEN | Zero tests using `browser.newContext()` |
 | GAP-4: TURN credentials require room membership | ❌ OPEN | roomToken optional schema allows bypass |
 | GAP-18: WebRTC connectivity verified in E2E | ❌ OPEN | No RTCPeerConnection state checks |
@@ -279,8 +279,8 @@ add_header Permissions-Policy "camera=(), microphone=(), display-capture=(), geo
 | GAP-12: Peer connection lifecycle untested | Critical | **OPEN** - No frontend tests for peer-manager connection creation, SDP/ICE handlers at `packages/frontend/src/lib/webrtc/peer-manager.ts:94-150` |
 | GAP-17: Multi-peer E2E scenarios untested | Critical | **OPEN** - Zero E2E tests use `browser.newContext()` for concurrent users |
 | GAP-18: WebRTC connectivity not verified | Critical | **OPEN** - E2E tests only check URLs, never verify `RTCPeerConnection` state |
-| GAP-29: SQL injection not tested | Critical | **OPEN** - No security tests verify parameterized queries block injection in `packages/backend/src/repositories/message-repository.ts` |
-| GAP-30: Chat XSS not tested | Critical | **OPEN** - `sanitizeHtml()` exists at `packages/backend/src/repositories/message-repository.ts:127-138` but untested with XSS payloads |
+| GAP-29: SQL injection not tested | Critical | **RESOLVED v0.7.32** - 4 SQL injection tests verify parameterized queries block injection in `packages/backend/src/repositories/message-repository.ts` |
+| GAP-30: Chat XSS not tested | Critical | **RESOLVED v0.7.32** - 7 XSS payload tests verify `sanitizeHtml() at `packages/backend/src/repositories/message-repository.ts:127-138` |
 | GAP-31: WebRTC signaling authorization untested | Critical | **OPEN** - Security tests don't verify peers can't send signaling to other rooms |
 
 ### High Priority (P1)

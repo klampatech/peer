@@ -34,6 +34,36 @@ The Peer P2P VoIP application has **multi-layer test coverage** across unit, int
 
 ---
 
+## Scope Clarification
+
+This document focuses on **automation-layer gaps** — gaps that affect the ability to run tests in headed browsers with real multi-peer scenarios. It covers which test gaps directly impede test automation and execution, not the complete set of testing deficiencies across all layers.
+
+**Authoritative source for all 37 gaps:** [`INTEGRATION_TESTING_GAPS.md`](./INTEGRATION_TESTING_GAPS.md) — the complete inventory of testing gaps across backend, frontend, E2E, load, and security layers.
+
+### Gap Categories Covered by This Document
+
+| Category | Gaps | Coverage |
+|----------|------|----------|
+| Automation-specific failures | GAP-A1 through GAP-A10 | Tests that exist but don't actually verify the described behavior |
+| E2E multi-peer gaps | GAP-17 through GAP-22 | Multi-user scenarios, WebRTC connectivity verification, media controls |
+| Backend gaps impacting automation | GAP-1, GAP-4, GAP-6, GAP-11 | Signaling events, TURN binding, multi-peer (3+), mocked DB |
+| Frontend gaps impacting automation | GAP-12 through GAP-16 | Peer lifecycle, ICE failure, event-based signaling, track replacement |
+| Load gaps impacting automation | GAP-23, GAP-24, GAP-28 | Real Socket.IO events, TURN load, combined signaling+TURN |
+| Security gaps impacting automation | GAP-29, GAP-30, GAP-31, GAP-S1, GAP-S2 | SQL/XSS injection, signaling authorization, real bugs |
+
+### Gap Categories in INTEGRATION_TESTING_GAPS.md (Not Duplicated Here)
+
+| Category | Gaps | Notes |
+|----------|------|-------|
+| Backend unit/integration | GAP-1 through GAP-16 | Full backend gap inventory |
+| E2E coverage | GAP-17 through GAP-22 | Multi-peer, WebRTC connectivity, media controls |
+| Load testing | GAP-23 through GAP-28 | Real Socket.IO events, TURN, flooding, signaling |
+| Security testing | GAP-29 through GAP-37 | SQL/XSS injection, OWASP coverage, SDP tampering |
+
+This document is a **focused supplement** to INTEGRATION_TESTING_GAPS.md. All gap definitions, bug confirmations, and severity ratings in that document remain authoritative. This document does not redefine or contradict any gap — it maps automation-specific failures onto the existing gap taxonomy.
+
+---
+
 ## GAP-A1 through GAP-A10: Automation-Specific Gaps
 
 These gaps represent automation failures — areas where tests exist in name but fail to actually verify the described behavior.
