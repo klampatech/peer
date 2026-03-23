@@ -33,10 +33,16 @@ export async function createServer(): Promise<AppServer> {
   const app = express();
   const httpServer = http.createServer(app);
 
+  // Validate CORS_ORIGIN in production - fail fast if not set
+  const corsOrigin = process.env.CORS_ORIGIN;
+  if (!corsOrigin && process.env.NODE_ENV === 'production') {
+    throw new Error('CORS_ORIGIN environment variable is required in production');
+  }
+
   // Configure Socket.IO
   const io = new SocketIOServer(httpServer, {
     cors: {
-      origin: process.env.CORS_ORIGIN || 'http://localhost:5173',
+      origin: corsOrigin || 'http://localhost:5173',
       methods: ['GET', 'POST'],
       credentials: true,
     },

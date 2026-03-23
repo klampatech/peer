@@ -133,6 +133,13 @@ test.describe('WebRTC Connectivity (GAP-18)', () => {
     const criticalErrors = consoleErrors.filter(
       (e) => !e.includes('Permission') && !e.includes('NotAllowed') && !e.includes('getUserMedia')
     );
+
+    // Debug: log what the actual errors were
+    if (criticalErrors.length > 0) {
+      console.log('Console errors found:', consoleErrors);
+      console.log('Critical errors (after filter):', criticalErrors);
+    }
+
     expect(criticalErrors.length).toBe(0);
   });
 });

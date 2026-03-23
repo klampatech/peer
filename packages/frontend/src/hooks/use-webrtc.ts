@@ -201,22 +201,32 @@ export function useWebRTC(options: UseWebRTCOptions = {}): UseWebRTCReturn {
       previousStreamRef.current = null;
     }
 
-    // Get camera stream again
-    const cameraStream = await getUserMedia({
-      video: true,
-      audio: false, // Keep audio from previous stream
-    });
+    // Get camera stream again, preserving current audio state
+    let cameraStream: MediaStream | null = null;
+    try {
+      cameraStream = await getUserMedia({
+        video: true,
+        audio: audioEnabled, // Preserve current audio state
+      });
 
-    // Replace screen share track with camera
-    const videoTrack = cameraStream.getVideoTracks()[0];
-    if (videoTrack) {
-      await peerManager.replaceVideoTrack(videoTrack);
+      // Replace screen share track with camera
+      const videoTrack = cameraStream.getVideoTracks()[0];
+      if (videoTrack) {
+        await peerManager.replaceVideoTrack(videoTrack);
+      }
+
+      // Update local store
+      setLocalStream(cameraStream);
+      setScreenSharing(false);
+    } catch (err) {
+      // If camera permission was revoked, log error and keep screen sharing disabled
+      // The user will need to re-enable camera manually
+      console.error('Failed to restore camera after screen share stop:', err);
+      setScreenSharing(false);
+      // Set localStream to null to indicate no video available
+      setLocalStream(null);
     }
-
-    // Update local store
-    setLocalStream(cameraStream);
-    setScreenSharing(false);
-  }, [screenSharing, localStream, setLocalStream, setScreenSharing]);
+  }, [screenSharing, localStream, audioEnabled, setLocalStream, setScreenSharing]);
 
   // Update ref for stopScreenShare
   // eslint-disable-next-line react-hooks/exhaustive-deps

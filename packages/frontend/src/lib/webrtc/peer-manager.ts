@@ -94,9 +94,9 @@ class PeerManager {
   private createPeerConnection(peerId: string): RTCPeerConnection {
     const connection = new RTCPeerConnection({
       iceServers,
-      // Use 'all' policy to try direct P2P first, fall back to TURN relay if needed
-      // SDP validation on backend prevents private IP leakage
-      iceTransportPolicy: 'all',
+      // Use 'relay' policy to only use TURN candidates - prevents private IP leakage
+      // This ensures all media goes through the TURN server for security
+      iceTransportPolicy: 'relay',
     });
 
     // Add local tracks to the connection

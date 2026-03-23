@@ -9,7 +9,7 @@ export const securityMiddleware = helmet({
     directives: {
       defaultSrc: ["'self'"],
       scriptSrc: ["'self'"],
-      styleSrc: ["'self'", "'unsafe-inline'"],
+      styleSrc: ["'self'"], // Removed 'unsafe-inline' - backend is API-only, no inline styles needed
       imgSrc: ["'self'", 'data:', 'blob:'],
       connectSrc: ["'self'", 'ws:', 'wss:'],
       mediaSrc: ["'self'", 'blob:'],
@@ -57,7 +57,13 @@ export function corsMiddleware(
   res: Response,
   next: NextFunction
 ): void {
-  const origin = process.env.CORS_ORIGIN || 'http://localhost:5173';
+  // Validate CORS_ORIGIN in production - fail fast if not set
+  const corsOrigin = process.env.CORS_ORIGIN;
+  if (!corsOrigin && process.env.NODE_ENV === 'production') {
+    throw new Error('CORS_ORIGIN environment variable is required in production');
+  }
+
+  const origin = corsOrigin || 'http://localhost:5173';
 
   res.header('Access-Control-Allow-Origin', origin);
   res.header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');

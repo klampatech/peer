@@ -199,12 +199,19 @@ export function isRoomToken(value: string): boolean {
 import { z } from 'zod';
 
 /**
+ * Display name validation pattern: alphanumeric + common punctuation, max 50 chars
+ * Allows: letters (any language), numbers, spaces, hyphens, underscores, periods, apostrophes, commas
+ */
+const displayNamePattern = /^[\p{L}\p{N} \-_.',]{1,50}$/u;
+
+/**
  * Schema for room:create event payload
  */
 export const RoomCreateSchema = z.object({
   displayName: z.string()
     .min(1, 'Display name is required')
-    .max(50, 'Display name must be 50 characters or less'),
+    .max(50, 'Display name must be 50 characters or less')
+    .regex(displayNamePattern, 'Display name contains invalid characters'),
 });
 
 export type RoomCreateInput = z.infer<typeof RoomCreateSchema>;
@@ -220,7 +227,8 @@ export const RoomJoinSchema = z.object({
     ),
   displayName: z.string()
     .min(1, 'Display name is required')
-    .max(50, 'Display name must be 50 characters or less'),
+    .max(50, 'Display name must be 50 characters or less')
+    .regex(displayNamePattern, 'Display name contains invalid characters'),
 });
 
 export type RoomJoinInput = z.infer<typeof RoomJoinSchema>;

@@ -6,6 +6,40 @@
 
 ---
 
+## ⚠️ NEXT STEPS — Just Execute These
+
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│  STOP — Do not ask questions. Run these tasks in order:                     │
+│                                                                             │
+│  1. P0-2: Fix Media Stream Cleanup (packages/frontend/src/hooks/use-webrtc.ts)
+│     - Screen share stop must restore camera stream                         │
+│     - Current: onended callback only logs, doesn't restore camera          │
+│                                                                             │
+│  2. P1-1: Remove 'unsafe-inline' from CSP (nginx.conf:55)               │
+│     - Use Vite's nonce/hash support instead                                │
+│                                                                             │
+│  3. P1-2: Fail on missing CORS_ORIGIN in production (server.ts:39)       │
+│     - Remove localhost fallback                                            │
+│                                                                             │
+│  4. P1-6: Change iceTransportPolicy to 'relay' (peer-manager.ts:99)       │
+│     - Prevents private IP leakage to peers                                 │
+│                                                                             │
+│  5. P1-3: Remove port 3000 exposure (docker-compose.yml:22-23)           │
+│     - Backend should only be accessible via nginx                          │
+│                                                                             │
+│  6. P1-4: Add room membership check to TURN endpoint (turn-events.ts)     │
+│     - Verify socket has joined room before issuing credentials            │
+│                                                                             │
+│  7. P1-5: Add display name allowlist (packages/shared/src/schemas.ts)      │
+│     - alphanumeric + common punctuation, max 50 chars                     │
+│                                                                             │
+│  Remaining items (P2, P3) are hardening/polish — do after P1 complete    │
+└─────────────────────────────────────────────────────────────────────────────┘
+```
+
+---
+
 ## Executive Summary
 
 This document identifies gaps between the specification requirements (Peer_System_Design.md, SECURITY_AUDIT.md, SECURITY_STANDARDS.md) and the current implementation. Tasks are prioritized by:
