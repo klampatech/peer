@@ -180,12 +180,7 @@ This document identifies gaps between the specification requirements (Peer_Syste
 ### P2-3: Add Metrics Endpoint Verification
 **Reference:** SECURITY_STANDARDS §10
 
-**Current State:**
-- `routes/metrics.ts` exists - verify it's functional
-
-**Required:**
-- Ensure `/metrics` endpoint returns Prometheus format
-- Track: request rate, error rate, latency, active rooms, active peers
+**Status:** ✅ FIXED - `routes/metrics.ts` now properly tracks histogram observations and outputs correct bucket counts
 
 **Effort:** ~1 hour
 
