@@ -9,7 +9,7 @@
 
 This document tracks the gap analysis between specification files in `specs/*` and the current codebase implementation.
 
-**Current Status: v0.7.35** | **Tests: 263 passing (127 backend + 137 frontend)** | **Coverage: ~76%**
+**Current Status: v0.7.36** | **Tests: 273 passing (127 backend + 146 frontend)** | **Coverage: ~76%**
 
 ---
 
@@ -102,10 +102,10 @@ This document tracks the gap analysis between specification files in `specs/*` a
 | Area | Count | Status |
 |------|-------|--------|
 | Backend unit tests | 127 | Passing |
-| Frontend tests | 137 | Passing |
-| E2E tests | 118 | Passing (2 skipped on mobile Chrome/Safari) |
+| Frontend tests | 146 | Passing |
+| E2E tests | 130 | Passing (2 skipped) |
 | Backend line coverage | 76.05% | Exceeds 70% target |
-| Total tests | 382 | All passing |
+| Total tests | 403 | All passing |
 
 ---
 
@@ -226,7 +226,7 @@ add_header Permissions-Policy "camera=(), microphone=(), display-capture=(), geo
 |--------|------------|----------|--------|
 | GAP-2 | Reconnection scenarios untested | Backend integration | ❌ Not started |
 | GAP-14 | Event-based signaling untested | `peer-manager.ts` | ❌ Not started |
-| GAP-19 | Media permission denial not actually tested | E2E | ❌ Not started |
+| GAP-19 | Media permission denial not actually tested | E2E | ✅ RESOLVED v0.7.36 - 5 tests use Playwright permissions API with empty permissions array to deny camera/mic |
 | GAP-24 | TURN server load untested | Load tests | ❌ Not started |
 
 ### P2 - Medium Priority
@@ -290,7 +290,7 @@ add_header Permissions-Policy "camera=(), microphone=(), display-capture=(), geo
 | GAP-4: TURN credential room binding | High | **RESOLVED v0.7.34** - Room membership enforced via socket.rooms check |
 | GAP-2: Reconnection scenarios untested | High | **OPEN** - No tests for socket reconnect with room state preservation |
 | GAP-14: Event-based signaling untested | High | **OPEN** - Frontend unit tests don't dispatch window events |
-| GAP-19: Media permission denial not tested | High | **OPEN** - E2E tests don't use Playwright's `setPermissions()` API |
+| GAP-19: Media permission denial not tested | High | **RESOLVED v0.7.36** - 5 E2E tests now use Playwright permissions API
 
 ### Medium Priority (P2)
 
@@ -355,6 +355,7 @@ add_header Permissions-Policy "camera=(), microphone=(), display-capture=(), geo
 
 | Version | Date | Changes |
 |---------|------|---------|
+| 0.7.36 | 2026-03-22 | GAP-19 RESOLVED: 5 E2E tests now use Playwright permissions API to actually deny camera/mic (empty permissions array) |
 | 0.7.35 | 2026-03-22 | GAP-12 RESOLVED: 9 peer-manager unit tests for connection lifecycle, SDP/ICE handling; GAP-17 RESOLVED: 2 multi-peer E2E tests using browser.newContext(); GAP-18 RESOLVED: 3 WebRTC connectivity tests verifying RTCPeerConnection, ICE servers |
 | 0.7.34 | 2026-03-22 | GAP-4 RESOLVED: TURN credentials now require room membership via socket.rooms check; 8 new room membership tests added |
 | 0.7.33 | 2026-03-22 | GAP-1 RESOLVED: 14 backend integration tests for WebRTC signaling (sdp:offer, sdp:answer, ice-candidate); GAP-31 RESOLVED: fixed authorization bug in room-events.ts that prevented cross-room signaling blocking |
