@@ -267,7 +267,7 @@ jobs:
 
       - name: Start nginx
         run: |
-          docker compose -f docker-compose.yml up -d nginx
+          docker compose -f docker-compose.yml up -d --no-deps nginx
           echo $! > /tmp/nginx.pid
 
       - name: Wait for services to be ready
