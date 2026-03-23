@@ -39,21 +39,7 @@ This document identifies gaps between the specification requirements (Peer_Syste
 ### P0-1: Enable HTTPS in Nginx Configuration
 **Reference:** CR-4, SECURITY_STANDARDS §2
 
-**Current State:**
-- `nginx.conf:43-87` only defines HTTP server block
-- No HTTPS server block configured
-
-**Required:**
-```nginx
-server {
-    listen 443 ssl http2;
-    ssl_certificate /etc/ssl/peer/fullchain.pem;
-    ssl_certificate_key /etc/ssl/peer/privkey.pem;
-    ssl_protocols TLSv1.2 TLSv1.3;
-    ssl_ciphers ECDHE-RSA-AES256-GCM-SHA512:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-RSA-AES128-GCM-SHA256;
-    # ... existing security headers
-}
-```
+**Status:** ✅ FIXED - `nginx.conf:40-103` adds HTTPS server block with TLS 1.2/1.3, modern cipher suites, HTTP→HTTPS redirect
 
 **Effort:** ~30 minutes
 
@@ -364,16 +350,16 @@ Phase 4: Polish (P3)
 7. **Production Network Isolation** - proxy-network and turn-network separated
 8. **Container Resource Limits** - Defined in production compose
 9. **Sourcemaps Disabled** - vite.config.ts:24
+10. **HTTPS Enabled** - nginx.conf:40-103 adds HTTPS server block with TLS 1.2/1.3
 
 ### Remaining Issues
-1. **HTTPS not enabled** - nginx.conf missing HTTPS server block
-2. **Media stream cleanup** - screen share stop doesn't restore camera
-3. **CSP unsafe-inline** - still present in nginx.conf
-4. **CORS fallback** - still defaults to localhost
-5. **Dev network isolation** - port 3000 exposed, single network
-6. **TURN endpoint auth** - no room membership check
-7. **Display name allowlist** - not enforced
-8. **ICE relay policy** - should be 'relay' not 'all'
+1. **Media stream cleanup** - screen share stop doesn't restore camera
+2. **CSP unsafe-inline** - still present in nginx.conf
+3. **CORS fallback** - still defaults to localhost
+4. **Dev network isolation** - port 3000 exposed, single network
+5. **TURN endpoint auth** - no room membership check
+6. **Display name allowlist** - not enforced
+7. **ICE relay policy** - should be 'relay' not 'all'
 
 ---
 
