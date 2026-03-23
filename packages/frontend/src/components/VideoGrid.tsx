@@ -41,9 +41,14 @@ export default function VideoGrid({
   // Empty state - waiting for others
   if (participantCount === 0) {
     return (
-      <div className="flex-1 flex items-center justify-center">
+      <div className="flex-1 flex items-center justify-center bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-primary/10 via-background to-background">
         <div className="text-center">
-          <p className="text-textMuted text-lg">Waiting for others to join...</p>
+          {/* Animated ring spinner */}
+          <div className="relative w-16 h-16 mx-auto mb-4">
+            <div className="absolute inset-0 border-2 border-primary/30 rounded-full" />
+            <div className="absolute inset-0 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+          </div>
+          <p className="text-textSecondary text-lg">Waiting for others to join...</p>
           <p className="text-textMuted text-sm mt-2">Share the link to invite others</p>
         </div>
       </div>
@@ -51,7 +56,7 @@ export default function VideoGrid({
   }
 
   return (
-    <div className={`grid ${getGridColumns()} gap-4 p-4`} role="region" aria-label="Video grid">
+    <div className={`grid ${getGridColumns()} gap-4 p-4 bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-primary/5 via-background to-purple-500/5`} role="region" aria-label="Video grid">
       {/* Local Video Tile */}
       {localStream && (
         <VideoTile

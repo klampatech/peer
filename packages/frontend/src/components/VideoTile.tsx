@@ -70,7 +70,7 @@ export default function VideoTile({
       ) : (
         /* Avatar Placeholder */
         <div className="w-full h-full flex items-center justify-center bg-surface">
-          <div className="w-16 h-16 rounded-full bg-primary flex items-center justify-center text-xl font-bold text-white">
+          <div className="w-16 h-16 rounded-full bg-gradient-to-br from-primary to-purple-500 flex items-center justify-center text-xl font-bold text-white">
             {initials}
           </div>
         </div>
@@ -78,7 +78,7 @@ export default function VideoTile({
 
       {/* Name Label Overlay */}
       <div className="absolute bottom-2 left-2 flex items-center gap-2">
-        <div className="bg-black/50 backdrop-blur-sm px-2 py-1 rounded text-sm text-textPrimary">
+        <div className="bg-white/10 backdrop-blur-sm border border-white/10 px-2 py-1 rounded text-sm text-textPrimary">
           {isLocal ? 'You' : displayName}
         </div>
 
@@ -99,9 +99,7 @@ export default function VideoTile({
 
       {/* Speaking Indicator Overlay */}
       {isSpeaking && (
-        <div className="absolute inset-x-0 bottom-0 h-1 bg-success/80">
-          <div className="absolute inset-0 bg-success animate-pulse opacity-75" />
-        </div>
+        <div className="absolute inset-0 rounded-lg ring-4 ring-success/50 animate-pulse shadow-[0_0_20px_rgba(34,197,94,0.6)]" />
       )}
     </div>
   );

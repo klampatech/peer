@@ -210,11 +210,11 @@ describe('VideoTile', () => {
       expect(rootElement).not.toHaveClass('ring-2');
     });
 
-    it('should show speaking indicator bar at bottom', () => {
+    it('should show glowing ring overlay when speaking', () => {
       render(<VideoTile displayName="John Doe" isSpeaking={true} />);
 
-      const indicatorBar = document.querySelector('.bg-success\\/80');
-      expect(indicatorBar).toBeInTheDocument();
+      const indicatorRing = document.querySelector('.ring-success\\/50');
+      expect(indicatorRing).toBeInTheDocument();
     });
   });
 

@@ -26,7 +26,7 @@ export default {
         warning: '#9E6A03',
       },
       fontFamily: {
-        sans: ['Inter', 'system-ui', 'sans-serif'],
+        sans: ['Outfit', 'system-ui', 'sans-serif'],
       },
     },
   },

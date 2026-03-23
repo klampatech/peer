@@ -121,7 +121,7 @@ Phase 3: Screen Share + TURN █████████████████
 Phase 4: Chat + Persistence  ████████████████████ 100%
 Phase 5: UI Polish           ████████████████████ 100%
 Phase 6: Testing + Hardening ████████████████████ 100%
-Phase 7: UI Enhancements     ████████████░░░░░░░░ 40%
+Phase 7: UI Enhancements     ████████████████████ 100%
 Phase 8: Bug Fixes           ███████░░░░░░░░░░░░░░ 50%
 ```
 
@@ -233,17 +233,17 @@ VUS=50 DURATION=5m k6 run tests/load/turn-server-load-test.js
 
 | Task | Priority | Status | Notes |
 |------|----------|--------|-------|
-| Replace Inter with Outfit font | Medium | **Not Started** | Update tailwind.config.js fontFamily |
-| VideoTile avatar gradient | High | **Not Started** | `bg-gradient-to-br from-primary to-purple-500` |
-| Speaking indicator glow ring | High | **Not Started** | Replace ring + bottom bar with animated shadow |
-| VideoTile name label glassmorphism | Medium | **Not Started** | `bg-white/10 backdrop-blur-sm border border-white/10` |
-| ControlBar glassmorphism background | High | **Not Started** | Add `backdrop-blur-xl bg-surface/80` |
-| ControlBar hover effects (scale + glow) | Medium | **Not Started** | `hover:scale-110 hover:shadow-lg` |
-| VideoGrid gradient mesh background | High | **Not Started** | Radial gradients in CSS |
-| VideoGrid enhanced empty state | Medium | **Not Started** | Animated ring spinner + waiting text |
-| HomePage animated gradient background | Medium | **Not Started** | CSS animation with radial gradients |
-| HomePage logo animation | Medium | **Not Started** | Pulsing ring behind logo |
-| Micro-interactions (buttons, panels) | Medium | **Not Started** | Spring animations, focus rings |
+| Replace Inter with Outfit font | Medium | **Complete** | Updated tailwind.config.js and index.html |
+| VideoTile avatar gradient | High | **Complete** | `bg-gradient-to-br from-primary to-purple-500` |
+| Speaking indicator glow ring | High | **Complete** | Replaced ring + bottom bar with animated shadow |
+| VideoTile name label glassmorphism | Medium | **Complete** | `bg-white/10 backdrop-blur-sm border border-white/10` |
+| ControlBar glassmorphism background | High | **Complete** | Added `backdrop-blur-xl bg-surface/80` |
+| ControlBar hover effects (scale + glow) | Medium | **Complete** | `hover:scale-110 hover:shadow-lg` |
+| VideoGrid gradient mesh background | High | **Complete** | Radial gradients in CSS |
+| VideoGrid enhanced empty state | Medium | **Complete** | Animated ring spinner + waiting text |
+| HomePage animated gradient background | Medium | **Complete** | CSS animation with radial gradients |
+| HomePage logo animation | Medium | **Complete** | Pulsing ring behind logo |
+| Micro-interactions (buttons, panels) | Medium | **Complete** | Scale, glow on buttons |
 
 ---
 

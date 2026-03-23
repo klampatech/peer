@@ -146,11 +146,11 @@ export default function ControlBar({ onLeave, onToggleChat }: ControlBarProps) {
   };
 
   return (
-    <div className="h-16 border-t border-border bg-surface flex items-center justify-center px-4 gap-4">
+    <div className="h-16 border-t border-white/10 bg-surface/80 backdrop-blur-xl flex items-center justify-center px-4 gap-4">
       {/* Mute Button */}
       <button
         onClick={handleToggleAudio}
-        className={`btn ${audioEnabled ? 'bg-surfaceHover text-textPrimary' : 'bg-error text-white'} rounded-full w-12 h-12`}
+        className={`btn ${audioEnabled ? 'bg-white/10 text-textPrimary hover:bg-white/20 hover:scale-110 hover:shadow-lg hover:shadow-primary/25' : 'bg-error text-white hover:scale-110 hover:shadow-lg hover:shadow-error/50'} rounded-full w-12 h-12 transition-all duration-200`}
         aria-label={audioEnabled ? 'Mute microphone' : 'Unmute microphone'}
       >
         {audioEnabled ? <Mic className="w-5 h-5" /> : <MicOff className="w-5 h-5" />}
@@ -159,7 +159,7 @@ export default function ControlBar({ onLeave, onToggleChat }: ControlBarProps) {
       {/* Video Button */}
       <button
         onClick={handleToggleVideo}
-        className={`btn ${videoEnabled ? 'bg-surfaceHover text-textPrimary' : 'bg-error text-white'} rounded-full w-12 h-12`}
+        className={`btn ${videoEnabled ? 'bg-white/10 text-textPrimary hover:bg-white/20 hover:scale-110 hover:shadow-lg hover:shadow-primary/25' : 'bg-error text-white hover:scale-110 hover:shadow-lg hover:shadow-error/50'} rounded-full w-12 h-12 transition-all duration-200`}
         aria-label={videoEnabled ? 'Turn off camera' : 'Turn on camera'}
       >
         {videoEnabled ? <Video className="w-5 h-5" /> : <VideoOff className="w-5 h-5" />}
@@ -168,7 +168,7 @@ export default function ControlBar({ onLeave, onToggleChat }: ControlBarProps) {
       {/* Screen Share Button */}
       <button
         onClick={handleToggleScreenShare}
-        className={`btn ${screenSharing ? 'bg-primary text-white' : 'bg-surfaceHover text-textPrimary'} rounded-full w-12 h-12`}
+        className={`btn ${screenSharing ? 'bg-primary text-white hover:scale-110 hover:shadow-lg hover:shadow-primary/50' : 'bg-white/10 text-textPrimary hover:bg-white/20 hover:scale-110 hover:shadow-lg hover:shadow-primary/25'} rounded-full w-12 h-12 transition-all duration-200`}
         aria-label={screenSharing ? 'Stop screen share' : 'Share screen'}
       >
         <Monitor className="w-5 h-5" />
@@ -177,7 +177,7 @@ export default function ControlBar({ onLeave, onToggleChat }: ControlBarProps) {
       {/* Chat Button */}
       <button
         onClick={onToggleChat}
-        className="btn bg-surfaceHover text-textPrimary rounded-full w-12 h-12"
+        className="btn bg-white/10 text-textPrimary hover:bg-white/20 hover:scale-110 hover:shadow-lg hover:shadow-primary/25 rounded-full w-12 h-12 transition-all duration-200"
         aria-label="Toggle chat"
       >
         <MessageSquare className="w-5 h-5" />
@@ -186,7 +186,7 @@ export default function ControlBar({ onLeave, onToggleChat }: ControlBarProps) {
       {/* Leave Button */}
       <button
         onClick={onLeave}
-        className="btn bg-error text-white rounded-full w-12 h-12"
+        className="btn bg-error text-white hover:scale-110 hover:shadow-lg hover:shadow-error/50 rounded-full w-12 h-12 transition-all duration-200"
         aria-label="Leave call"
       >
         <PhoneOff className="w-5 h-5" />

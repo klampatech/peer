@@ -108,11 +108,18 @@ export default function HomePage({ displayName, onDisplayNameChange }: HomePageP
   };
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center p-4">
-      <div className="w-full max-w-md">
+    <div className="min-h-screen flex flex-col items-center justify-center p-4 relative overflow-hidden">
+      {/* Animated gradient background */}
+      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-primary/20 via-background to-purple-500/10" />
+      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_bottom_right,_var(--tw-gradient-stops))] from-primary/10 via-transparent to-transparent animate-pulse" style={{ animationDuration: '4s' }} />
+      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_left,_var(--tw-gradient-stops))] from-purple-500/10 via-transparent to-transparent animate-pulse" style={{ animationDuration: '6s' }} />
+
+      <div className="w-full max-w-md relative z-10">
         {/* Logo/Header */}
-        <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-16 h-16 bg-primary rounded-2xl mb-4">
+        <div className="text-center mb-8 relative">
+          {/* Pulsing ring behind logo */}
+          <div className="absolute inset-0 m-auto w-20 h-20 rounded-2xl bg-primary/30 animate-ping" style={{ animationDuration: '2s' }} />
+          <div className="relative inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-primary to-purple-500 rounded-2xl mb-4 shadow-lg shadow-primary/30">
             <Video className="w-8 h-8 text-white" />
           </div>
           <h1 className="text-3xl font-bold text-textPrimary mb-2">Peer</h1>
@@ -139,7 +146,7 @@ export default function HomePage({ displayName, onDisplayNameChange }: HomePageP
         <button
           onClick={handleCreateRoom}
           disabled={isCreating}
-          className="btn btn-primary w-full mb-4"
+          className="btn btn-primary w-full mb-4 hover:scale-[1.02] hover:shadow-lg hover:shadow-primary/25 transition-all duration-200"
         >
           <Video className="w-4 h-4 mr-2" />
           {isCreating ? 'Creating...' : 'Create New Room'}
@@ -169,7 +176,7 @@ export default function HomePage({ displayName, onDisplayNameChange }: HomePageP
               value={joinToken}
               onChange={(e) => setJoinToken(e.target.value)}
             />
-            <button onClick={handleJoinRoom} className="btn btn-secondary">
+            <button onClick={handleJoinRoom} className="btn btn-secondary hover:scale-105 hover:shadow-md transition-all duration-200">
               Join
             </button>
           </div>
@@ -179,7 +186,7 @@ export default function HomePage({ displayName, onDisplayNameChange }: HomePageP
         <div className="mt-6 text-center">
           <button
             onClick={handleShareLink}
-            className="btn btn-secondary text-sm"
+            className="btn btn-secondary text-sm hover:scale-105 hover:shadow-md transition-all duration-200"
           >
             {copied ? (
               <>
