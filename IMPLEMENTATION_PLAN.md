@@ -1,6 +1,6 @@
 # Peer P2P VoIP Application - Implementation Plan
 
-> **Status:** Ready for v1.0 Release + UI Enhancements
+> **Status:** Ready for v1.0 Release + Bug Fixes + UI Enhancements
 > **Last Updated:** 2026-03-22
 
 ---
@@ -9,7 +9,7 @@
 
 This document tracks the gap analysis between specification files in `specs/*` and the current codebase implementation.
 
-**Current Status: v0.7.40** | **Tests: 403 passing (133 backend + 146 frontend + 124 E2E)** | **Coverage: ~76%**
+**Current Status: v0.7.41** | **Tests: 403 passing (133 backend + 146 frontend + 124 E2E)** | **Coverage: ~76%**
 
 ---
 
