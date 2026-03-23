@@ -18,13 +18,19 @@ This document identifies gaps between the specification requirements (Peer_Syste
 
 | Issue | Status | Notes |
 |-------|--------|-------|
-| CR-2: TURN_SECRET fallback | ✅ FIXED | `server.ts` throws if TURN_SECRET not set |
+| CR-2: TURN_SECRET fallback | ✅ FIXED | `server.ts:3-6` throws if TURN_SECRET not set |
 | CR-3: Rate limiter not wired | ✅ FIXED | `setupSocketRateLimiter(io)` called in `server.ts:48` |
 | CR-5: coturn authentication | ✅ FIXED | `static-auth-secret` in `turnserver.conf:23` |
 | CR-7: Certbot staging flag | ✅ FIXED | `docker-compose.production.yml:130` removes `--staging` |
-| CR-9: Chat broken (peerId) | ✅ FIXED | Zod schemas and proper socket data handling |
+| CR-9: Chat broken (peerId) | ✅ FIXED | Set in `room-events.ts:76,129` |
 | Network isolation (production) | ✅ FIXED | Separate `proxy-network` and `turn-network` in prod compose |
 | Container resource limits | ✅ FIXED | Defined in `docker-compose.production.yml` |
+| P1-4: Disable sourcemaps | ✅ FIXED | `vite.config.ts:24` sets `sourcemap: false` |
+| P0-4: Event listener cleanup | ✅ FIXED | `peer-manager.ts:38-41` stores bound handlers |
+| P0-5: Non-root container user | ✅ FIXED | `Dockerfile.frontend:41-49` creates nginx user |
+| SDP validation | ✅ FIXED | `room-events.ts:204-208` validates no private IPs |
+| Room membership verification | ✅ FIXED | `room-events.ts:210-228` verifies same room |
+| P2-4: Container hardening | ✅ FIXED | `docker-compose.production.yml:38,63-64,89,120` |
 
 ---
 
@@ -35,18 +41,17 @@ This document identifies gaps between the specification requirements (Peer_Syste
 
 **Current State:**
 - `nginx.conf:43-87` only defines HTTP server block
-- HTTPS server block is commented out or missing
+- No HTTPS server block configured
 
 **Required:**
 ```nginx
-# Uncomment and configure HTTPS server block
 server {
     listen 443 ssl http2;
     ssl_certificate /etc/ssl/peer/fullchain.pem;
     ssl_certificate_key /etc/ssl/peer/privkey.pem;
     ssl_protocols TLSv1.2 TLSv1.3;
     ssl_ciphers ECDHE-RSA-AES256-GCM-SHA512:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-RSA-AES128-GCM-SHA256;
-    # ... all existing security headers
+    # ... existing security headers
 }
 ```
 
@@ -54,148 +59,54 @@ server {
 
 ---
 
-### P0-2: Fix TURN_HOST Environment Variable Integration
-**Reference:** CR-1, SECURITY_STANDARDS §3
-
-**Current State:**
-- `turn-credentials.ts:39` defaults to `localhost` if `TURN_HOST` not set
-- Production deployment requires actual TURN server hostname
-
-**Required:**
-- Ensure `TURN_HOST` is set in production environment variables
-- Add validation at startup to fail fast if `TURN_HOST` is missing in production mode
-
-**Effort:** ~1 hour (validation logic)
-
----
-
-### P0-3: Fix Media Stream Cleanup on Screen Share Stop
+### P0-2: Fix Media Stream Cleanup on Screen Share Stop
 **Reference:** CR-10, SECURITY_STANDARDS §3
 
 **Current State:**
-- `media.ts:112-115` handles `onended` event but doesn't stop camera tracks
-- When screen share stops, camera continues broadcasting
+- `media.ts:112-115` handles `onended` event but only logs - doesn't trigger UI callback
+- When screen share stops, camera isn't restored automatically
 
 **Required:**
-- In `use-webrtc.ts` or `media.ts`, on screen share stop:
-  1. Stop all camera tracks before switching to camera stream
-  2. Ensure UI state matches actual media state
+- In `use-webrtc.ts` or via the `onended` callback, on screen share stop:
+  1. Stop all screen share tracks
+  2. Call callback to restore camera stream
+  3. Ensure UI state matches actual media state
 
 **Effort:** ~2 hours
 
 ---
 
-### P0-4: Fix Event Listener Cleanup in peer-manager
-**Reference:** CR-11, SECURITY_STANDARDS §3
+### P0-3: Remove Plaintext TURN Port Exposure in Dev
+**Reference:** CR-6
 
 **Current State:**
-- `.bind(this)` creates new function reference each time
-- `removeEventListener` fails to remove listeners on reconnection
+- `docker-compose.yml:58-60` only exposes 5349 (TLS) ✅ GOOD
+- Need to verify production compose doesn't expose 3478
 
-**Required:**
-- Store bound function references in a variable
-- Or use AbortController for cleanup
+**Verification Required:**
+- ✅ Confirmed: `docker-compose.production.yml:65-67` only exposes 5349
 
-**Effort:** ~1 hour
-
----
-
-### P0-5: Run Frontend Container as Non-Root User
-**Reference:** CR-12, SECURITY_STANDARDS §6
-
-**Current State:**
-- `Dockerfile.frontend` runs nginx as root
-
-**Required:**
-```dockerfile
-# Add before CMD
-RUN addgroup -S nginx && adduser -S nginx -G nginx
-USER nginx
-```
-
-**Effort:** ~30 minutes
+**Status:** ALREADY FIXED - No action needed
 
 ---
 
 ## P1 — Critical Path (Fix Before Production)
 
-### P1-1: Add SDP Validation in Signaling
-**Reference:** H-1, SECURITY_STANDARDS §3, §7
-
-**Current State:**
-- `room-events.ts` relays SDP offers/answers as raw objects
-- No validation of SDP structure or size
-
-**Required:**
-- Add Zod schema for SDP validation (max 10KB, reject private IP ranges)
-- Validate before relaying to peers
-
-**Effort:** ~2 hours
-
----
-
-### P1-2: Filter ICE Private IP Candidates
-**Reference:** H-2, SECURITY_STANDARDS §3
-
-**Current State:**
-- No `iceTransportPolicy` set in RTCPeerConnection
-- Private host IPs exchanged with all peers
-
-**Required:**
-- Set `iceTransportPolicy: 'relay'` in peer connections
-- Or implement candidate filtering before exchange
-
-**Effort:** ~1 hour
-
----
-
-### P1-3: Add Room Membership Verification on Signaling Events
-**Reference:** H-3, SECURITY_STANDARDS §4
-
-**Current State:**
-- `sdp:offer`, `sdp:answer`, `ice-candidate` handlers don't verify sender is in same room
-
-**Required:**
-- Add room membership check: verify `senderSocket.data.rooms` includes target peer
-- Reject unauthorized signaling attempts
-
-**Effort:** ~2 hours
-
----
-
-### P1-4: Disable Sourcemaps in Production Build
-**Reference:** H-4, SECURITY_STANDARDS §5
-
-**Current State:**
-- `vite.config.ts` may have sourcemaps enabled
-
-**Required:**
-```typescript
-// vite.config.ts
-build: {
-  sourcemap: false, // Disable in production
-}
-```
-
-**Effort:** ~15 minutes
-
----
-
-### P1-5: Fix CSP - Remove unsafe-inline and unsafe-eval
+### P1-1: Fix CSP - Remove unsafe-inline
 **Reference:** H-8, SECURITY_STANDARDS §5
 
 **Current State:**
-- `nginx.conf:55` CSP includes `'unsafe-inline' 'unsafe-eval'`
+- `nginx.conf:55` CSP includes `'unsafe-inline'` in script-src
 
 **Required:**
-- Remove unsafe directives
-- Use nonce or hash for any required inline scripts (Vite handles this)
+- Remove `'unsafe-inline'` from script-src
+- Use Vite's built-in hash/nonce support for any required inline scripts
 
 **Effort:** ~1 hour
 
 ---
 
-### P1-6: Fix CORS Fallback to Localhost
+### P1-2: Fix CORS Fallback to Localhost
 **Reference:** H-5, SECURITY_STANDARDS §4
 
 **Current State:**
@@ -209,7 +120,7 @@ build: {
 
 ---
 
-### P1-7: Fix Dev Docker Compose Network Isolation
+### P1-3: Fix Dev Docker Compose Network Isolation
 **Reference:** H-6, H-7
 
 **Current State:**
@@ -224,25 +135,11 @@ build: {
 
 ---
 
-### P1-8: Fix Plaintext TURN Port Exposure
-**Reference:** CR-6
-
-**Current State:**
-- `docker-compose.yml:58-60` only exposes 5349 (TLS) - GOOD
-- Need to verify production compose doesn't expose 3478
-
-**Required:**
-- Verify `docker-compose.production.yml` only exposes 5349
-
-**Effort:** ~15 minutes (verification)
-
----
-
-### P1-9: TURN Credential Endpoint Room Membership Check
+### P1-4: Add Room Membership Verification on TURN Endpoint
 **Reference:** CR-8, SECURITY_STANDARDS §3
 
 **Current State:**
-- `turn-events.ts:13-52` generates credentials without verifying room membership
+- `turn-events.ts` generates credentials without verifying room membership
 
 **Required:**
 - Verify socket has joined a room before issuing TURN credentials
@@ -251,7 +148,7 @@ build: {
 
 ---
 
-### P1-10: Add Display Name Character Allowlist
+### P1-5: Add Display Name Character Allowlist
 **Reference:** H-12, SECURITY_STANDARDS §7
 
 **Current State:**
@@ -266,20 +163,35 @@ build: {
 
 ---
 
+### P1-6: Change ICE Transport Policy to Relay
+**Reference:** H-2, SECURITY_STANDARDS §3
+
+**Current State:**
+- `peer-manager.ts:99` uses `iceTransportPolicy: 'all'`
+- Private host IPs exchanged with peers
+
+**Required:**
+- Set `iceTransportPolicy: 'relay'` to only use TURN candidates
+- This prevents private IP leakage
+
+**Effort:** ~15 minutes
+
+---
+
 ## P2 — Hardening (Post-Launch Recommended)
 
 ### P2-1: Implement Zod Schema Validation for All Socket Events
 **Reference:** H-13, SECURITY_STANDARDS §7
 
 **Current State:**
-- Zod is installed but usage is inconsistent
-- Some events use Zod, others don't
+- Zod is installed and used for room events
+- Need to verify all events have consistent Zod validation
 
 **Required:**
 - Audit all Socket.IO event handlers
-- Ensure consistent Zod validation across all events
+- Ensure consistent Zod validation across all events (room, chat, turn)
 
-**Effort:** ~4 hours
+**Effort:** ~2 hours
 
 ---
 
@@ -287,18 +199,18 @@ build: {
 **Reference:** L-9, SECURITY_STANDARDS §10
 
 **Current State:**
-- No structured logging specification implemented
-- `logger.ts` exists but may not be fully integrated
+- `logger.ts` exists with structured logging
+- Verify full integration across all events
 
 **Required:**
-- Implement JSON structured logging with trace IDs
+- Verify JSON structured logging with trace IDs everywhere
 - Add security event logging (auth failures, rate limit hits)
 
-**Effort:** ~3 hours
+**Effort:** ~1 hour (audit)
 
 ---
 
-### P2-3: Add Metrics Endpoint
+### P2-3: Add Metrics Endpoint Verification
 **Reference:** SECURITY_STANDARDS §10
 
 **Current State:**
@@ -308,31 +220,11 @@ build: {
 - Ensure `/metrics` endpoint returns Prometheus format
 - Track: request rate, error rate, latency, active rooms, active peers
 
-**Effort:** ~2 hours
-
----
-
-### P2-4: Add Container Hardening (DockerBench)
-**Reference:** H-11, SECURITY_STANDARDS §6
-
-**Current State:**
-- No `cap_drop`, `read_only`, `security_opt` in dev compose
-
-**Required:**
-- Add to production compose if not present:
-  ```yaml
-  security_opt:
-    - no-new-privileges:true
-  cap_drop:
-    - ALL
-  read_only: true
-  ```
-
 **Effort:** ~1 hour
 
 ---
 
-### P2-5: Add DTLS Cipher Hardening
+### P2-4: Add DTLS Cipher Hardening
 **Reference:** M-3, SECURITY_STANDARDS §3
 
 **Current State:**
@@ -408,29 +300,22 @@ build: {
 ```
 Phase 1: Deploy Blockers (P0)
 ├── P0-1: Enable HTTPS
-├── P0-2: TURN_HOST integration
-├── P0-3: Media stream cleanup
-├── P0-4: Event listener cleanup
-└── P0-5: Non-root container user
+├── P0-2: Media stream cleanup
+└── P0-3: TURN port verification (DONE)
 
 Phase 2: Critical Path (P1)
-├── P1-1: SDP validation
-├── P1-2: ICE candidate filtering
-├── P1-3: Room membership verification
-├── P1-4: Disable sourcemaps
-├── P1-5: Fix CSP
-├── P1-6: CORS fallback fix
-├── P1-7: Dev network isolation
-├── P1-8: TURN port verification
-├── P1-9: TURN endpoint auth
-└── P1-10: Display name allowlist
+├── P1-1: Fix CSP
+├── P1-2: CORS fallback fix
+├── P1-3: Dev network isolation
+├── P1-4: TURN endpoint auth
+├── P1-5: Display name allowlist
+└── P1-6: ICE relay policy
 
 Phase 3: Hardening (P2)
 ├── P2-1: Zod schema consistency
 ├── P2-2: Structured logging
 ├── P2-3: Metrics endpoint
-├── P2-4: Container hardening
-└── P2-5: DTLS cipher hardening
+└── P2-4: DTLS cipher hardening
 
 Phase 4: Polish (P3)
 ├── P3-1: Per-socket rate limiting
@@ -451,19 +336,44 @@ Phase 4: Polish (P3)
 | AC-05 | Mute Toggle | ✅ | Working |
 | AC-06 | Camera Toggle | ✅ | Working |
 | AC-07 | Screen Share | ✅ | Working |
-| AC-08 | Screen Share Stop | 🔧 | Need P0-3 fix |
+| AC-08 | Screen Share Stop | 🔧 | Need P0-2 fix |
 | AC-09 | Text Chat | ✅ | Working |
 | AC-10 | Chat Persistence | ✅ | Working |
 | AC-11 | Ephemeral Room | ✅ | Working |
-| AC-12 | NAT Traversal | 🔧 | Need P0-2 fix |
+| AC-12 | NAT Traversal | ✅ | Working with TURN |
 | AC-13 | Performance | ✅ | E2E tests exist |
-| AC-14 | OWASP ZAP | 🔧 | Need test in CI |
-| AC-15 | Security Headers | 🔧 | Need P0-1, P1-5 |
+| AC-14 | OWASP ZAP | ❌ | Need test in CI |
+| AC-15 | Security Headers | 🔧 | Need P0-1, P1-1 |
 | AC-16 | Cross-browser | ✅ | Configured in playwright |
 | AC-17 | Mobile | ⚠️ | Manual testing needed |
 | AC-18 | Load Test | ❌ | k6 not in CI |
 | AC-19 | Accessibility | ✅ | E2E tests exist |
 | AC-20 | Permission Denied UX | ✅ | E2E tests exist |
+
+---
+
+## New Findings Since Last Review
+
+### Fixed Issues Now in Codebase
+1. **Socket.IO Rate Limiter** - Wired in server.ts:48
+2. **TURN Secret Validation** - Throws if missing (server.ts:3-6)
+3. **SDP Private IP Validation** - Implemented in room-events.ts:204-208
+4. **Room Membership Checks** - Implemented for all signaling events
+5. **Event Listener Cleanup** - Bound handlers stored in constructor
+6. **Non-root Container User** - nginx user created in Dockerfile
+7. **Production Network Isolation** - proxy-network and turn-network separated
+8. **Container Resource Limits** - Defined in production compose
+9. **Sourcemaps Disabled** - vite.config.ts:24
+
+### Remaining Issues
+1. **HTTPS not enabled** - nginx.conf missing HTTPS server block
+2. **Media stream cleanup** - screen share stop doesn't restore camera
+3. **CSP unsafe-inline** - still present in nginx.conf
+4. **CORS fallback** - still defaults to localhost
+5. **Dev network isolation** - port 3000 exposed, single network
+6. **TURN endpoint auth** - no room membership check
+7. **Display name allowlist** - not enforced
+8. **ICE relay policy** - should be 'relay' not 'all'
 
 ---
 
