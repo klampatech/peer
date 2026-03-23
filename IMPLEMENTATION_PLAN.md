@@ -9,7 +9,7 @@
 
 This document tracks the gap analysis between specification files in `specs/*` and the current codebase implementation.
 
-**Current Status: v0.7.32** | **Tests: 241 passing (112 backend + 137 frontend)** | **Coverage: ~76%**
+**Current Status: v0.7.33** | **Tests: 252 passing (124 backend + 137 frontend)** | **Coverage: ~76%**
 
 ---
 
@@ -258,14 +258,14 @@ add_header Permissions-Policy "camera=(), microphone=(), display-capture=(), geo
 | HSTS header in all nginx configs | ✅ Complete | v0.7.25 |
 | Permissions-Policy header in nginx-frontend.conf | ✅ Complete | v0.7.25 |
 | GAP-5: UUID v4 enforcement | ✅ Fixed | Regex correctly enforces v4 |
-| GAP-1: WebRTC signaling events tested | ❌ OPEN | No backend tests for `sdp:offer/answer/ice-candidate` |
+| GAP-1: WebRTC signaling events tested | ✅ RESOLVED v0.7.33 | 14 integration tests added for sdp:offer, sdp:answer, ice-candidate |
 | GAP-30: Chat XSS sanitization tested | ✅ RESOLVED v0.7.32 | 7 XSS payload tests added to message-repository.test.ts |
 | GAP-29: SQL injection prevention tested | ✅ RESOLVED v0.7.32 | 4 SQL injection tests added to message-repository.test.ts |
 | GAP-17: Multi-peer E2E scenarios tested | ❌ OPEN | Zero tests using `browser.newContext()` |
 | GAP-4: TURN credentials require room membership | ❌ OPEN | roomToken optional schema allows bypass |
 | GAP-18: WebRTC connectivity verified in E2E | ❌ OPEN | No RTCPeerConnection state checks |
 | GAP-12: Peer connection lifecycle tested | ❌ OPEN | No frontend tests for peer-manager |
-| GAP-31: WebRTC signaling authorization tested | ❌ OPEN | No tests for cross-room signaling prevention |
+| GAP-31: WebRTC signaling authorization tested | ✅ RESOLVED v0.7.33 | Cross-room blocking verified; also fixed authorization bug |
 
 ---
 
@@ -275,13 +275,13 @@ add_header Permissions-Policy "camera=(), microphone=(), display-capture=(), geo
 
 | Task | Priority | Status |
 |------|----------|--------|
-| GAP-1: WebRTC signaling events untested | Critical | **OPEN** - No backend integration tests for `sdp:offer`, `sdp:answer`, `ice-candidate` at `packages/backend/src/events/room-events.ts:194-271` |
+| GAP-1: WebRTC signaling events untested | Critical | **RESOLVED v0.7.33** - 14 backend integration tests added for `sdp:offer`, `sdp:answer`, `ice-candidate` at `packages/backend/src/__tests__/room-events.integration.test.ts` |
 | GAP-12: Peer connection lifecycle untested | Critical | **OPEN** - No frontend tests for peer-manager connection creation, SDP/ICE handlers at `packages/frontend/src/lib/webrtc/peer-manager.ts:94-150` |
 | GAP-17: Multi-peer E2E scenarios untested | Critical | **OPEN** - Zero E2E tests use `browser.newContext()` for concurrent users |
 | GAP-18: WebRTC connectivity not verified | Critical | **OPEN** - E2E tests only check URLs, never verify `RTCPeerConnection` state |
 | GAP-29: SQL injection not tested | Critical | **RESOLVED v0.7.32** - 4 SQL injection tests verify parameterized queries block injection in `packages/backend/src/repositories/message-repository.ts` |
 | GAP-30: Chat XSS not tested | Critical | **RESOLVED v0.7.32** - 7 XSS payload tests verify `sanitizeHtml() at `packages/backend/src/repositories/message-repository.ts:127-138` |
-| GAP-31: WebRTC signaling authorization untested | Critical | **OPEN** - Security tests don't verify peers can't send signaling to other rooms |
+| GAP-31: WebRTC signaling authorization untested | Critical | **RESOLVED v0.7.33** - Cross-room blocking verified; fixed authorization bug in room-events.ts |
 
 ### High Priority (P1)
 
@@ -355,6 +355,8 @@ add_header Permissions-Policy "camera=(), microphone=(), display-capture=(), geo
 
 | Version | Date | Changes |
 |---------|------|---------|
+| 0.7.33 | 2026-03-22 | GAP-1 RESOLVED: 14 backend integration tests for WebRTC signaling (sdp:offer, sdp:answer, ice-candidate); GAP-31 RESOLVED: fixed authorization bug in room-events.ts that prevented cross-room signaling blocking |
+| 0.7.32 | 2026-03-22 | GAP-29 RESOLVED: 4 SQL injection tests; GAP-30 RESOLVED: 7 XSS payload tests |
 | 0.7.29 | 2026-03-22 | Verified infrastructure gaps fixed; GAP-4 partially fixed; added critical testing gaps from INTEGRATION_TESTING_GAPS.md |
 | 0.7.28 | 2026-03-22 | Added GAP-4 (TURN credential room binding) and GAP-6 (multi-peer testing) from INTEGRATION_TESTING_GAPS.md |
 | 0.7.27 | 2026-03-22 | Test counts verified: 104 backend + 137 frontend + 118 E2E = 359 total; All 4 infrastructure gaps verified complete |

@@ -424,4 +424,540 @@ describe('Room Events Integration', () => {
       expect(room?.peers.size).toBe(1);
     });
   });
+
+  describe('WebRTC Signaling - sdp:offer', () => {
+    it('should relay SDP offer to target peer in same room', async () => {
+      // Create room with peer 1
+      clientSocket = ioc(`http://localhost:${testPort}`, { forceNew: true });
+      const createResponse = await new Promise<Record<string, unknown>>((resolve, reject) => {
+        clientSocket.emit('room:create', { displayName: 'Peer 1' }, (res: unknown) => {
+          if (res) resolve(res as Record<string, unknown>);
+          else reject(new Error('No response'));
+        });
+      });
+      const token = createResponse.data as Record<string, unknown>;
+
+      // Peer 2 joins
+      clientSocket2 = ioc(`http://localhost:${testPort}`, { forceNew: true });
+      await new Promise<void>((resolve, reject) => {
+        clientSocket2.emit('room:join', { token: token.token, displayName: 'Peer 2' }, (res: unknown) => {
+          const r = res as Record<string, unknown>;
+          if (r.success) resolve();
+          else reject(new Error('Join failed'));
+        });
+      });
+
+      // Listen for sdp:offer on peer 2
+      const sdpOfferEvents: unknown[] = [];
+      clientSocket2.on('sdp:offer', (data: unknown) => {
+        sdpOfferEvents.push(data);
+      });
+
+      // Peer 1 sends SDP offer to peer 2
+      const mockSdp = {
+        type: 'offer' as const,
+        sdp: 'v=0\r\no=- 123456789 2 IN IP4 127.0.0.1\r\ns=-\r\nt=0 0\r\na=ice-ufrag:test\r\na=ice-pwd:test\r\n',
+      };
+      clientSocket.emit('sdp:offer', {
+        targetPeerId: clientSocket2.id,
+        sdp: mockSdp,
+      });
+
+      await new Promise(resolve => setTimeout(resolve, 100));
+
+      expect(sdpOfferEvents).toHaveLength(1);
+      const event = sdpOfferEvents[0] as Record<string, unknown>;
+      expect(event).toHaveProperty('peerId', clientSocket.id);
+      expect(event).toHaveProperty('sdp');
+      expect((event.sdp as Record<string, unknown>).type).toBe('offer');
+    });
+
+    it('should reject SDP offer with invalid payload', async () => {
+      clientSocket = ioc(`http://localhost:${testPort}`, { forceNew: true });
+
+      const createResponse = await new Promise<Record<string, unknown>>((resolve, reject) => {
+        clientSocket.emit('room:create', { displayName: 'Peer 1' }, (res: unknown) => {
+          if (res) resolve(res as Record<string, unknown>);
+          else reject(new Error('No response'));
+        });
+      });
+      const token = createResponse.data as Record<string, unknown>;
+
+      clientSocket2 = ioc(`http://localhost:${testPort}`, { forceNew: true });
+      await new Promise<void>((resolve, reject) => {
+        clientSocket2.emit('room:join', { token: token.token, displayName: 'Peer 2' }, (res: unknown) => {
+          const r = res as Record<string, unknown>;
+          if (r.success) resolve();
+          else reject(new Error('Join failed'));
+        });
+      });
+
+      // Listen for any errors (server logs but doesn't emit errors for invalid payload)
+      const sdpOfferEvents: unknown[] = [];
+      clientSocket2.on('sdp:offer', (data: unknown) => {
+        sdpOfferEvents.push(data);
+      });
+
+      // Send invalid SDP offer (missing required fields)
+      clientSocket.emit('sdp:offer', {
+        targetPeerId: clientSocket2.id,
+        sdp: { type: 'offer' }, // missing sdp field
+      });
+
+      await new Promise(resolve => setTimeout(resolve, 100));
+
+      // Should not relay invalid payload
+      expect(sdpOfferEvents).toHaveLength(0);
+    });
+
+    it('should reject SDP offer from peer not in a room', async () => {
+      clientSocket = ioc(`http://localhost:${testPort}`, { forceNew: true });
+
+      const createResponse = await new Promise<Record<string, unknown>>((resolve, reject) => {
+        clientSocket.emit('room:create', { displayName: 'Peer 1' }, (res: unknown) => {
+          if (res) resolve(res as Record<string, unknown>);
+          else reject(new Error('No response'));
+        });
+      });
+      const token = createResponse.data as Record<string, unknown>;
+
+      clientSocket2 = ioc(`http://localhost:${testPort}`, { forceNew: true });
+      await new Promise<void>((resolve, reject) => {
+        clientSocket2.emit('room:join', { token: token.token, displayName: 'Peer 2' }, (res: unknown) => {
+          const r = res as Record<string, unknown>;
+          if (r.success) resolve();
+          else reject(new Error('Join failed'));
+        });
+      });
+
+      // Client 3 not in any room
+      const clientSocket3 = ioc(`http://localhost:${testPort}`, { forceNew: true });
+
+      const sdpOfferEvents: unknown[] = [];
+      clientSocket2.on('sdp:offer', (data: unknown) => {
+        sdpOfferEvents.push(data);
+      });
+
+      // Peer not in room tries to send SDP offer
+      const mockSdp = {
+        type: 'offer' as const,
+        sdp: 'v=0\r\no=- 123456789 2 IN IP4 127.0.0.1\r\ns=-\r\nt=0 0\r\n',
+      };
+      clientSocket3.emit('sdp:offer', {
+        targetPeerId: clientSocket2.id,
+        sdp: mockSdp,
+      });
+
+      await new Promise(resolve => setTimeout(resolve, 100));
+
+      // Should not relay - peer not authorized
+      expect(sdpOfferEvents).toHaveLength(0);
+    });
+
+    it('should reject cross-room SDP offer', async () => {
+      // Create room A with peer 1
+      clientSocket = ioc(`http://localhost:${testPort}`, { forceNew: true });
+      const createResponseA = await new Promise<Record<string, unknown>>((resolve, reject) => {
+        clientSocket.emit('room:create', { displayName: 'Peer 1' }, (res: unknown) => {
+          if (res) resolve(res as Record<string, unknown>);
+          else reject(new Error('No response'));
+        });
+      });
+      const tokenA = createResponseA.data as Record<string, unknown>;
+
+      // Create room B with peer 2
+      clientSocket2 = ioc(`http://localhost:${testPort}`, { forceNew: true });
+      const createResponseB = await new Promise<Record<string, unknown>>((resolve, reject) => {
+        clientSocket2.emit('room:create', { displayName: 'Peer 2' }, (res: unknown) => {
+          if (res) resolve(res as Record<string, unknown>);
+          else reject(new Error('No response'));
+        });
+      });
+      const tokenB = createResponseB.data as Record<string, unknown>;
+
+      // Peer 2 joins room A
+      await new Promise<void>((resolve, reject) => {
+        clientSocket2.emit('room:join', { token: tokenA.token, displayName: 'Peer 2' }, (res: unknown) => {
+          const r = res as Record<string, unknown>;
+          if (r.success) resolve();
+          else reject(new Error('Join failed'));
+        });
+      });
+
+      // Listen for sdp:offer in room B (should NOT receive)
+      const clientSocket3 = ioc(`http://localhost:${testPort}`, { forceNew: true });
+      await new Promise<void>((resolve, reject) => {
+        clientSocket3.emit('room:join', { token: tokenB.token, displayName: 'Peer 3' }, (res: unknown) => {
+          const r = res as Record<string, unknown>;
+          if (r.success) resolve();
+          else reject(new Error('Join failed'));
+        });
+      });
+
+      const sdpOfferEvents: unknown[] = [];
+      clientSocket3.on('sdp:offer', (data: unknown) => {
+        sdpOfferEvents.push(data);
+      });
+
+      // Peer 1 (in room A) tries to send SDP offer to peer 3 (in room B)
+      const mockSdp = {
+        type: 'offer' as const,
+        sdp: 'v=0\r\no=- 123456789 2 IN IP4 127.0.0.1\r\ns=-\r\nt=0 0\r\n',
+      };
+      clientSocket.emit('sdp:offer', {
+        targetPeerId: clientSocket3.id,
+        sdp: mockSdp,
+      });
+
+      await new Promise(resolve => setTimeout(resolve, 100));
+
+      // Peer 3 should NOT receive the offer (cross-room)
+      expect(sdpOfferEvents).toHaveLength(0);
+    });
+
+    it('should reject SDP with private IP addresses', async () => {
+      clientSocket = ioc(`http://localhost:${testPort}`, { forceNew: true });
+
+      const createResponse = await new Promise<Record<string, unknown>>((resolve, reject) => {
+        clientSocket.emit('room:create', { displayName: 'Peer 1' }, (res: unknown) => {
+          if (res) resolve(res as Record<string, unknown>);
+          else reject(new Error('No response'));
+        });
+      });
+      const token = createResponse.data as Record<string, unknown>;
+
+      clientSocket2 = ioc(`http://localhost:${testPort}`, { forceNew: true });
+      await new Promise<void>((resolve, reject) => {
+        clientSocket2.emit('room:join', { token: token.token, displayName: 'Peer 2' }, (res: unknown) => {
+          const r = res as Record<string, unknown>;
+          if (r.success) resolve();
+          else reject(new Error('Join failed'));
+        });
+      });
+
+      const sdpOfferEvents: unknown[] = [];
+      clientSocket2.on('sdp:offer', (data: unknown) => {
+        sdpOfferEvents.push(data);
+      });
+
+      // SDP containing private IP in ICE candidate
+      const mockSdpWithPrivateIP = {
+        type: 'offer' as const,
+        sdp: 'v=0\r\no=- 123456789 2 IN IP4 127.0.0.1\r\ns=-\r\nt=0 0\r\na=candidate:1 1 UDP 2130363903 192.168.1.100 54777 typ host\r\n',
+      };
+      clientSocket.emit('sdp:offer', {
+        targetPeerId: clientSocket2.id,
+        sdp: mockSdpWithPrivateIP,
+      });
+
+      await new Promise(resolve => setTimeout(resolve, 100));
+
+      // Should reject SDP with private IP in ICE candidate
+      expect(sdpOfferEvents).toHaveLength(0);
+    });
+  });
+
+  describe('WebRTC Signaling - sdp:answer', () => {
+    it('should relay SDP answer to target peer in same room', async () => {
+      clientSocket = ioc(`http://localhost:${testPort}`, { forceNew: true });
+      const createResponse = await new Promise<Record<string, unknown>>((resolve, reject) => {
+        clientSocket.emit('room:create', { displayName: 'Peer 1' }, (res: unknown) => {
+          if (res) resolve(res as Record<string, unknown>);
+          else reject(new Error('No response'));
+        });
+      });
+      const token = createResponse.data as Record<string, unknown>;
+
+      clientSocket2 = ioc(`http://localhost:${testPort}`, { forceNew: true });
+      await new Promise<void>((resolve, reject) => {
+        clientSocket2.emit('room:join', { token: token.token, displayName: 'Peer 2' }, (res: unknown) => {
+          const r = res as Record<string, unknown>;
+          if (r.success) resolve();
+          else reject(new Error('Join failed'));
+        });
+      });
+
+      // Listen for sdp:answer on peer 1
+      const sdpAnswerEvents: unknown[] = [];
+      clientSocket.on('sdp:answer', (data: unknown) => {
+        sdpAnswerEvents.push(data);
+      });
+
+      // Peer 2 sends SDP answer to peer 1
+      const mockSdp = {
+        type: 'answer' as const,
+        sdp: 'v=0\r\no=- 123456789 2 IN IP4 127.0.0.1\r\ns=-\r\nt=0 0\r\na=ice-ufrag:test\r\na=ice-pwd:test\r\n',
+      };
+      clientSocket2.emit('sdp:answer', {
+        targetPeerId: clientSocket.id,
+        sdp: mockSdp,
+      });
+
+      await new Promise(resolve => setTimeout(resolve, 100));
+
+      expect(sdpAnswerEvents).toHaveLength(1);
+      const event = sdpAnswerEvents[0] as Record<string, unknown>;
+      expect(event).toHaveProperty('peerId', clientSocket2.id);
+      expect(event).toHaveProperty('sdp');
+      expect((event.sdp as Record<string, unknown>).type).toBe('answer');
+    });
+
+    it('should reject SDP answer with invalid payload', async () => {
+      clientSocket = ioc(`http://localhost:${testPort}`, { forceNew: true });
+      const createResponse = await new Promise<Record<string, unknown>>((resolve, reject) => {
+        clientSocket.emit('room:create', { displayName: 'Peer 1' }, (res: unknown) => {
+          if (res) resolve(res as Record<string, unknown>);
+          else reject(new Error('No response'));
+        });
+      });
+      const token = createResponse.data as Record<string, unknown>;
+
+      clientSocket2 = ioc(`http://localhost:${testPort}`, { forceNew: true });
+      await new Promise<void>((resolve, reject) => {
+        clientSocket2.emit('room:join', { token: token.token, displayName: 'Peer 2' }, (res: unknown) => {
+          const r = res as Record<string, unknown>;
+          if (r.success) resolve();
+          else reject(new Error('Join failed'));
+        });
+      });
+
+      const sdpAnswerEvents: unknown[] = [];
+      clientSocket.on('sdp:answer', (data: unknown) => {
+        sdpAnswerEvents.push(data);
+      });
+
+      // Send invalid SDP answer (wrong type)
+      clientSocket2.emit('sdp:answer', {
+        targetPeerId: clientSocket.id,
+        sdp: { type: 'invalid' }, // invalid type
+      });
+
+      await new Promise(resolve => setTimeout(resolve, 100));
+
+      expect(sdpAnswerEvents).toHaveLength(0);
+    });
+
+    it('should reject cross-room SDP answer', async () => {
+      // Create two separate rooms
+      clientSocket = ioc(`http://localhost:${testPort}`, { forceNew: true });
+      const createResponseA = await new Promise<Record<string, unknown>>((resolve, reject) => {
+        clientSocket.emit('room:create', { displayName: 'Peer 1' }, (res: unknown) => {
+          if (res) resolve(res as Record<string, unknown>);
+          else reject(new Error('No response'));
+        });
+      });
+      const tokenA = createResponseA.data as Record<string, unknown>;
+
+      clientSocket2 = ioc(`http://localhost:${testPort}`, { forceNew: true });
+      await new Promise<void>((resolve, reject) => {
+        clientSocket2.emit('room:join', { token: tokenA.token, displayName: 'Peer 2' }, (res: unknown) => {
+          const r = res as Record<string, unknown>;
+          if (r.success) resolve();
+          else reject(new Error('Join failed'));
+        });
+      });
+
+      // Peer 3 in different room
+      const clientSocket3 = ioc(`http://localhost:${testPort}`, { forceNew: true });
+      const createResponseB = await new Promise<Record<string, unknown>>((resolve, reject) => {
+        clientSocket3.emit('room:create', { displayName: 'Peer 3' }, (res: unknown) => {
+          if (res) resolve(res as Record<string, unknown>);
+          else reject(new Error('No response'));
+        });
+      });
+
+      const sdpAnswerEvents: unknown[] = [];
+      clientSocket3.on('sdp:answer', (data: unknown) => {
+        sdpAnswerEvents.push(data);
+      });
+
+      // Peer 2 tries to send SDP answer to peer 3 in different room
+      const mockSdp = {
+        type: 'answer' as const,
+        sdp: 'v=0\r\no=- 123456789 2 IN IP4 127.0.0.1\r\ns=-\r\nt=0 0\r\n',
+      };
+      clientSocket2.emit('sdp:answer', {
+        targetPeerId: clientSocket3.id,
+        sdp: mockSdp,
+      });
+
+      await new Promise(resolve => setTimeout(resolve, 100));
+
+      // Should not relay cross-room
+      expect(sdpAnswerEvents).toHaveLength(0);
+    });
+  });
+
+  describe('WebRTC Signaling - ice-candidate', () => {
+    it('should relay ICE candidate to target peer in same room', async () => {
+      clientSocket = ioc(`http://localhost:${testPort}`, { forceNew: true });
+      const createResponse = await new Promise<Record<string, unknown>>((resolve, reject) => {
+        clientSocket.emit('room:create', { displayName: 'Peer 1' }, (res: unknown) => {
+          if (res) resolve(res as Record<string, unknown>);
+          else reject(new Error('No response'));
+        });
+      });
+      const token = createResponse.data as Record<string, unknown>;
+
+      clientSocket2 = ioc(`http://localhost:${testPort}`, { forceNew: true });
+      await new Promise<void>((resolve, reject) => {
+        clientSocket2.emit('room:join', { token: token.token, displayName: 'Peer 2' }, (res: unknown) => {
+          const r = res as Record<string, unknown>;
+          if (r.success) resolve();
+          else reject(new Error('Join failed'));
+        });
+      });
+
+      const iceCandidateEvents: unknown[] = [];
+      clientSocket2.on('ice-candidate', (data: unknown) => {
+        iceCandidateEvents.push(data);
+      });
+
+      // Peer 1 sends ICE candidate to peer 2
+      const mockCandidate = {
+        candidate: 'candidate:1 1 UDP 2130363903 192.168.1.100 54777 typ host',
+        sdpMid: 'audio-0',
+        sdpMLineIndex: 0,
+      };
+      clientSocket.emit('ice-candidate', {
+        targetPeerId: clientSocket2.id,
+        candidate: mockCandidate,
+      });
+
+      await new Promise(resolve => setTimeout(resolve, 100));
+
+      expect(iceCandidateEvents).toHaveLength(1);
+      const event = iceCandidateEvents[0] as Record<string, unknown>;
+      expect(event).toHaveProperty('peerId', clientSocket.id);
+      expect(event).toHaveProperty('candidate');
+    });
+
+    it('should reject ICE candidate with invalid payload', async () => {
+      clientSocket = ioc(`http://localhost:${testPort}`, { forceNew: true });
+      const createResponse = await new Promise<Record<string, unknown>>((resolve, reject) => {
+        clientSocket.emit('room:create', { displayName: 'Peer 1' }, (res: unknown) => {
+          if (res) resolve(res as Record<string, unknown>);
+          else reject(new Error('No response'));
+        });
+      });
+      const token = createResponse.data as Record<string, unknown>;
+
+      clientSocket2 = ioc(`http://localhost:${testPort}`, { forceNew: true });
+      await new Promise<void>((resolve, reject) => {
+        clientSocket2.emit('room:join', { token: token.token, displayName: 'Peer 2' }, (res: unknown) => {
+          const r = res as Record<string, unknown>;
+          if (r.success) resolve();
+          else reject(new Error('Join failed'));
+        });
+      });
+
+      const iceCandidateEvents: unknown[] = [];
+      clientSocket2.on('ice-candidate', (data: unknown) => {
+        iceCandidateEvents.push(data);
+      });
+
+      // Send invalid ICE candidate (missing candidate field)
+      clientSocket.emit('ice-candidate', {
+        targetPeerId: clientSocket2.id,
+        candidate: { sdpMid: null }, // missing candidate string
+      });
+
+      await new Promise(resolve => setTimeout(resolve, 100));
+
+      expect(iceCandidateEvents).toHaveLength(0);
+    });
+
+    it('should reject ICE candidate from peer not in a room', async () => {
+      clientSocket = ioc(`http://localhost:${testPort}`, { forceNew: true });
+      const createResponse = await new Promise<Record<string, unknown>>((resolve, reject) => {
+        clientSocket.emit('room:create', { displayName: 'Peer 1' }, (res: unknown) => {
+          if (res) resolve(res as Record<string, unknown>);
+          else reject(new Error('No response'));
+        });
+      });
+      const token = createResponse.data as Record<string, unknown>;
+
+      clientSocket2 = ioc(`http://localhost:${testPort}`, { forceNew: true });
+      await new Promise<void>((resolve, reject) => {
+        clientSocket2.emit('room:join', { token: token.token, displayName: 'Peer 2' }, (res: unknown) => {
+          const r = res as Record<string, unknown>;
+          if (r.success) resolve();
+          else reject(new Error('Join failed'));
+        });
+      });
+
+      // Peer not in any room
+      const clientSocket3 = ioc(`http://localhost:${testPort}`, { forceNew: true });
+
+      const iceCandidateEvents: unknown[] = [];
+      clientSocket2.on('ice-candidate', (data: unknown) => {
+        iceCandidateEvents.push(data);
+      });
+
+      const mockCandidate = {
+        candidate: 'candidate:1 1 UDP 2130363903 192.168.1.100 54777 typ host',
+        sdpMid: 'audio-0',
+        sdpMLineIndex: 0,
+      };
+      clientSocket3.emit('ice-candidate', {
+        targetPeerId: clientSocket2.id,
+        candidate: mockCandidate,
+      });
+
+      await new Promise(resolve => setTimeout(resolve, 100));
+
+      expect(iceCandidateEvents).toHaveLength(0);
+    });
+
+    it('should reject cross-room ICE candidate', async () => {
+      // Create two separate rooms
+      clientSocket = ioc(`http://localhost:${testPort}`, { forceNew: true });
+      const createResponseA = await new Promise<Record<string, unknown>>((resolve, reject) => {
+        clientSocket.emit('room:create', { displayName: 'Peer 1' }, (res: unknown) => {
+          if (res) resolve(res as Record<string, unknown>);
+          else reject(new Error('No response'));
+        });
+      });
+      const tokenA = createResponseA.data as Record<string, unknown>;
+
+      clientSocket2 = ioc(`http://localhost:${testPort}`, { forceNew: true });
+      await new Promise<void>((resolve, reject) => {
+        clientSocket2.emit('room:join', { token: tokenA.token, displayName: 'Peer 2' }, (res: unknown) => {
+          const r = res as Record<string, unknown>;
+          if (r.success) resolve();
+          else reject(new Error('Join failed'));
+        });
+      });
+
+      // Peer 3 in different room
+      const clientSocket3 = ioc(`http://localhost:${testPort}`, { forceNew: true });
+      await new Promise<void>((resolve, reject) => {
+        clientSocket3.emit('room:create', { displayName: 'Peer 3' }, (res: unknown) => {
+          if (res) resolve(res as Record<string, unknown>);
+          else reject(new Error('No response'));
+        });
+      });
+
+      const iceCandidateEvents: unknown[] = [];
+      clientSocket3.on('ice-candidate', (data: unknown) => {
+        iceCandidateEvents.push(data);
+      });
+
+      // Peer 2 tries to send ICE candidate to peer 3 in different room
+      const mockCandidate = {
+        candidate: 'candidate:1 1 UDP 2130363903 192.168.1.100 54777 typ host',
+        sdpMid: 'audio-0',
+        sdpMLineIndex: 0,
+      };
+      clientSocket2.emit('ice-candidate', {
+        targetPeerId: clientSocket3.id,
+        candidate: mockCandidate,
+      });
+
+      await new Promise(resolve => setTimeout(resolve, 100));
+
+      // Should not relay cross-room
+      expect(iceCandidateEvents).toHaveLength(0);
+    });
+  });
 });

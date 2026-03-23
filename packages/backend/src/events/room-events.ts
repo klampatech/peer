@@ -208,7 +208,21 @@ export function setupRoomEvents(io: Server): void {
       }
 
       // Authorization: verify sender is in a room and target is in same room
-      if (!socket.data.peerId || !socket.rooms.has(targetPeerId)) {
+      if (!socket.data.peerId) {
+        logger.warn({ traceId: socket.data.traceId, targetPeerId }, 'Unauthorized SDP offer - sender not in a room');
+        return;
+      }
+
+      // Find the room token from sender's rooms
+      const roomToken = Array.from(socket.rooms).find(room => isRoomToken(room));
+      if (!roomToken) {
+        logger.warn({ traceId: socket.data.traceId, targetPeerId }, 'Unauthorized SDP offer - sender not in any room');
+        return;
+      }
+
+      // Verify target peer is in the same room
+      const room = getRoom(roomToken);
+      if (!room || !room.peers.has(targetPeerId)) {
         logger.warn({ traceId: socket.data.traceId, targetPeerId }, 'Unauthorized SDP offer - peers not in same room');
         return;
       }
@@ -237,7 +251,21 @@ export function setupRoomEvents(io: Server): void {
       }
 
       // Authorization: verify sender is in a room and target is in same room
-      if (!socket.data.peerId || !socket.rooms.has(targetPeerId)) {
+      if (!socket.data.peerId) {
+        logger.warn({ traceId: socket.data.traceId, targetPeerId }, 'Unauthorized SDP answer - sender not in a room');
+        return;
+      }
+
+      // Find the room token from sender's rooms
+      const roomToken = Array.from(socket.rooms).find(room => isRoomToken(room));
+      if (!roomToken) {
+        logger.warn({ traceId: socket.data.traceId, targetPeerId }, 'Unauthorized SDP answer - sender not in any room');
+        return;
+      }
+
+      // Verify target peer is in the same room
+      const room = getRoom(roomToken);
+      if (!room || !room.peers.has(targetPeerId)) {
         logger.warn({ traceId: socket.data.traceId, targetPeerId }, 'Unauthorized SDP answer - peers not in same room');
         return;
       }
@@ -259,7 +287,21 @@ export function setupRoomEvents(io: Server): void {
       const { targetPeerId, candidate } = validation.data!;
 
       // Authorization: verify sender is in a room and target is in same room
-      if (!socket.data.peerId || !socket.rooms.has(targetPeerId)) {
+      if (!socket.data.peerId) {
+        logger.warn({ traceId: socket.data.traceId, targetPeerId }, 'Unauthorized ICE candidate - sender not in a room');
+        return;
+      }
+
+      // Find the room token from sender's rooms
+      const roomToken = Array.from(socket.rooms).find(room => isRoomToken(room));
+      if (!roomToken) {
+        logger.warn({ traceId: socket.data.traceId, targetPeerId }, 'Unauthorized ICE candidate - sender not in any room');
+        return;
+      }
+
+      // Verify target peer is in the same room
+      const room = getRoom(roomToken);
+      if (!room || !room.peers.has(targetPeerId)) {
         logger.warn({ traceId: socket.data.traceId, targetPeerId }, 'Unauthorized ICE candidate - peers not in same room');
         return;
       }
