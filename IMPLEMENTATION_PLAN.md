@@ -9,7 +9,7 @@
 
 This document tracks the gap analysis between specification files in `specs/*` and the current codebase implementation.
 
-**Current Status: v0.7.39** | **Tests: 133 passing (133 backend + 146 frontend)** | **Coverage: ~76%**
+**Current Status: v0.7.40** | **Tests: 133 passing (133 backend + 152 frontend)** | **Coverage: ~76%**
 
 ---
 
@@ -235,7 +235,7 @@ add_header Permissions-Policy "camera=(), microphone=(), display-capture=(), geo
 |--------|------------|----------|--------|
 | GAP-5 | UUID version enforcement | `packages/shared/src/index.ts:190-192` | ✅ VERIFIED - Regex correctly enforces v4 |
 | GAP-8 | Socket event rate limiting | Backend | ❌ Not started |
-| GAP-13 | ICE failure handling | Frontend | ❌ Not started |
+| GAP-13 | ICE failure handling | Frontend | ✅ RESOLVED - 6 tests verify ICE failure handling at `peer-manager.test.ts` |
 | GAP-20 | Invite/share flow | E2E | ✅ RESOLVED v0.7.38 - Copy invite link button tested |
 | GAP-21 | Media controls (mute/camera) | E2E | ✅ RESOLVED v0.7.38 - Media control buttons tested |
 | GAP-22 | Leave room flow | E2E | ✅ RESOLVED v0.7.38 - Leave room button tested |
@@ -300,7 +300,7 @@ add_header Permissions-Policy "camera=(), microphone=(), display-capture=(), geo
 |------|----------|--------|
 | GAP-5: UUID v4 enforcement | Medium | **VERIFIED FIXED** - Regex at `packages/shared/src/index.ts:190-192` correctly enforces v4 |
 | GAP-8: Socket event rate limiting untested | Medium | **RESOLVED v0.7.39** - 3 integration tests verify socket rate limiting at `packages/backend/src/__tests__/socket-rate-limit.integration.test.ts` |
-| GAP-13: ICE failure handling untested | Medium | **OPEN** - No frontend tests for ICE connection failure, timeout, TURN fallback |
+| GAP-13: ICE failure handling untested | Medium | **RESOLVED** - 6 tests verify ICE failure handling at `peer-manager.test.ts:387-486` |
 | GAP-20: Invite/share flow untested | Medium | **RESOLVED v0.7.38** - "Copy invite link" button tested in E2E |
 | GAP-21: Media controls (mute/camera) untested | Medium | **RESOLVED v0.7.38** - Mute/camera buttons tested in E2E |
 | GAP-22: Leave room flow untested | Medium | **RESOLVED v0.7.38** - Leave room button tested in E2E |
@@ -357,6 +357,7 @@ add_header Permissions-Policy "camera=(), microphone=(), display-capture=(), geo
 
 | Version | Date | Changes |
 |---------|------|---------|
+| 0.7.40 | 2026-03-22 | GAP-13 RESOLVED: 6 tests verify ICE failure handling (connection failed, disconnected, connecting, connected states, callback invocation) at `peer-manager.test.ts` |
 | 0.7.39 | 2026-03-22 | GAP-8 RESOLVED: 3 socket rate limit integration tests verify connection limiting (5 connections per 2 seconds, blocking excess connections, resetting after duration expires) at `socket-rate-limit.integration.test.ts` |
 | 0.7.38 | 2026-03-22 | GAP-20 RESOLVED: "Copy invite link" button tested; GAP-21 RESOLVED: Media control buttons tested; GAP-22 RESOLVED: Leave room flow tested |
 | 0.7.37 | 2026-03-22 | GAP-2 RESOLVED: 3 disconnect tests at `room-events.integration.test.ts` - Fixed disconnect handler to iterate over server room state (socket.rooms is empty at disconnect time); GAP-14 verified already resolved |

@@ -417,6 +417,133 @@ describe('PeerManager', () => {
       expect(peer).toBeDefined();
     });
   });
+
+  // GAP-13: ICE failure handling tests
+  describe('ICE failure handling', () => {
+    it('should handle ICE connection state change to failed', async () => {
+      const localStream = { getTracks: () => [] } as unknown as MediaStream;
+      peerManager.initialize(localStream);
+
+      // Connect to peer first
+      await peerManager.connectToPeer('peer-ice-fail');
+
+      // Get the mock peer connection
+      const peer = peerManager.getPeers().get('peer-ice-fail');
+      expect(peer).toBeDefined();
+
+      // Simulate ICE connection state change by directly triggering the handler
+      // The peer should be removed from the peers map when connection fails
+      const mockConnection = peer!.connection as unknown as MockRTCPeerConnection;
+      mockConnection.connectionState = 'failed';
+
+      // Trigger connection state change
+      if (mockConnection.onconnectionstatechange) {
+        mockConnection.onconnectionstatechange(new Event('connectionstatechange'));
+      }
+
+      // After ICE failure, the peer should be cleaned up
+      expect(peerManager.getPeers().has('peer-ice-fail')).toBe(false);
+    });
+
+    it('should handle ICE connection state change to disconnected', async () => {
+      const localStream = { getTracks: () => [] } as unknown as MediaStream;
+      peerManager.initialize(localStream);
+
+      // Connect to peer first
+      await peerManager.connectToPeer('peer-ice-disconnect');
+
+      const peer = peerManager.getPeers().get('peer-ice-disconnect');
+      expect(peer).toBeDefined();
+
+      // Simulate disconnected state
+      const mockConnection = peer!.connection as unknown as MockRTCPeerConnection;
+      mockConnection.connectionState = 'disconnected';
+
+      if (mockConnection.onconnectionstatechange) {
+        mockConnection.onconnectionstatechange(new Event('connectionstatechange'));
+      }
+
+      // Peer should be removed when disconnected
+      expect(peerManager.getPeers().has('peer-ice-disconnect')).toBe(false);
+    });
+
+    it('should log ICE connection state changes', async () => {
+      const consoleSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
+      const localStream = { getTracks: () => [] } as unknown as MediaStream;
+      peerManager.initialize(localStream);
+
+      await peerManager.connectToPeer('peer-ice-log');
+
+      const peer = peerManager.getPeers().get('peer-ice-log');
+      const mockConnection = peer!.connection as unknown as MockRTCPeerConnection;
+
+      // Trigger state change
+      mockConnection.connectionState = 'checking';
+      if (mockConnection.onconnectionstatechange) {
+        mockConnection.onconnectionstatechange(new Event('connectionstatechange'));
+      }
+
+      expect(consoleSpy).toHaveBeenCalled();
+      consoleSpy.mockRestore();
+    });
+
+    it('should not remove peer on connecting state', async () => {
+      const localStream = { getTracks: () => [] } as unknown as MediaStream;
+      peerManager.initialize(localStream);
+
+      await peerManager.connectToPeer('peer-ice-connecting');
+
+      const peer = peerManager.getPeers().get('peer-ice-connecting');
+      const mockConnection = peer!.connection as unknown as MockRTCPeerConnection;
+
+      // Set to connecting state - should NOT remove peer
+      mockConnection.connectionState = 'connecting';
+      if (mockConnection.onconnectionstatechange) {
+        mockConnection.onconnectionstatechange(new Event('connectionstatechange'));
+      }
+
+      // Peer should still exist
+      expect(peerManager.getPeers().has('peer-ice-connecting')).toBe(true);
+    });
+
+    it('should not remove peer on connected state', async () => {
+      const localStream = { getTracks: () => [] } as unknown as MediaStream;
+      peerManager.initialize(localStream);
+
+      await peerManager.connectToPeer('peer-ice-connected');
+
+      const peer = peerManager.getPeers().get('peer-ice-connected');
+      const mockConnection = peer!.connection as unknown as MockRTCPeerConnection;
+
+      // Set to connected state - should NOT remove peer
+      mockConnection.connectionState = 'connected';
+      if (mockConnection.onconnectionstatechange) {
+        mockConnection.onconnectionstatechange(new Event('connectionstatechange'));
+      }
+
+      // Peer should still exist
+      expect(peerManager.getPeers().has('peer-ice-connected')).toBe(true);
+    });
+
+    it('should call onPeerDisconnected callback on ICE failure', async () => {
+      const onPeerDisconnected = vi.fn();
+      const localStream = { getTracks: () => [] } as unknown as MediaStream;
+      peerManager.initialize(localStream, undefined, onPeerDisconnected);
+
+      await peerManager.connectToPeer('peer-callback');
+
+      const peer = peerManager.getPeers().get('peer-callback');
+      const mockConnection = peer!.connection as unknown as MockRTCPeerConnection;
+
+      // Trigger failure
+      mockConnection.connectionState = 'failed';
+      if (mockConnection.onconnectionstatechange) {
+        mockConnection.onconnectionstatechange(new Event('connectionstatechange'));
+      }
+
+      expect(onPeerDisconnected).toHaveBeenCalledWith('peer-callback');
+    });
+  });
 });
 
 describe('PeerManager exports', () => {
