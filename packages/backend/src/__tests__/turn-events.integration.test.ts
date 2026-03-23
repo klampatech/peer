@@ -547,6 +547,10 @@ describe('TURN Events Integration', () => {
   });
 
   describe('rate limiting on HTTP endpoints', () => {
+    beforeEach(() => {
+      rateLimitConsumeCount = 0;
+    });
+
     it('should call rate limiter consume on each request', async () => {
       const { rateLimitMiddleware } = await import('../middleware/rate-limit.js');
       const app = express();
