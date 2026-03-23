@@ -9,7 +9,7 @@
 
 This document tracks the gap analysis between specification files in `specs/*` and the current codebase implementation.
 
-**Current Status: v0.7.24** | **Tests: 241+ passing** | **Coverage: 76.05%**
+**Current Status: v0.7.25** | **Tests: 241+ passing** | **Coverage: 76.05%**
 
 ---
 
@@ -189,22 +189,21 @@ add_header Permissions-Policy "camera=(), microphone=(), display-capture=(), geo
 - [x] Zod validation for all Socket.IO payloads
 - [x] Metrics endpoint available (`/metrics`)
 - [x] Plaintext TURN port not exposed in production (TLS-only 5349)
-- [ ] Development docker-compose consistency with production (remove 3478 host port) - **Pending**
-- [ ] CSP hardened in nginx configs (remove unsafe-eval) - **Pending**
-- [ ] HSTS header in all nginx configs (nginx-frontend.conf missing) - **Pending**
-- [ ] Permissions-Policy header in nginx-frontend.conf - **Pending**
+- [x] Development docker-compose consistency with production (remove 3478 host port) - **COMPLETED v0.7.25**
+- [x] CSP hardened in nginx configs (remove unsafe-eval) - **COMPLETED v0.7.25**
+- [x] HSTS header in all nginx configs (nginx-frontend.conf missing) - **COMPLETED v0.7.25**
+- [x] Permissions-Policy header in nginx-frontend.conf - **COMPLETED v0.7.25**
 
 ---
 
-## v0.7.20 Tasks
+## v0.7.25 Tasks
 
 | Task | Priority | Status |
 |------|----------|--------|
-| Remove plaintext TURN port 3478 from docker-compose.yml | Medium | **Pending** - dev docker-compose.yml lines 59-60 expose ports 3478 (TCP/UDP) to host. Production only exposes 5349 (TLS). |
-| Remove unsafe-eval from nginx CSP | Medium | **Pending** - nginx.conf:78 and nginx-frontend.conf:32 contain unsafe-eval |
-| Add HSTS header to nginx-frontend.conf | Low | **Pending** - HSTS absent from nginx-frontend.conf (only in nginx.conf:69) |
-| Add Permissions-Policy to nginx-frontend.conf | Low | **Pending** - Referrer-Policy present (line 31) but Permissions-Policy missing |
-| Verify coturn image tag alignment | Low | **Completed** - both configs use coturn:4.6.2-alpine |
+| Remove plaintext TURN port 3478 from docker-compose.yml | Medium | **Completed** - dev docker-compose.yml no longer exposes port 3478 to host |
+| Remove unsafe-eval from nginx CSP | Medium | **Completed** - nginx.conf and nginx-frontend.conf CSP updated |
+| Add HSTS header to nginx-frontend.conf | Low | **Completed** - HSTS added to nginx-frontend.conf |
+| Add Permissions-Policy to nginx-frontend.conf | Low | **Completed** - Referrer-Policy present but Permissions-Policy now added |
 
 ---
 
@@ -236,63 +235,5 @@ add_header Permissions-Policy "camera=(), microphone=(), display-capture=(), geo
 
 | Version | Date | Changes |
 |---------|------|---------|
+| 0.7.25 | 2026-03-22 | All 4 infrastructure gaps fixed: removed 3478 port from docker-compose.yml, removed unsafe-eval from CSP, added HSTS and Permissions-Policy to nginx-frontend.conf |
 | 0.7.24 | 2026-03-22 | Gap analysis refreshed - 4 infrastructure tasks still pending |
-| 0.7.23 | 2026-03-22 | Gap analysis refreshed - 4 infrastructure tasks still pending |
-| 0.7.22 | 2026-03-22 | Gap analysis refreshed - 4 infrastructure tasks still pending |
-| 0.7.21 | 2026-03-22 | Gap analysis refreshed - 4 infrastructure tasks still pending |
-| 0.7.20 | 2026-03-22 | Gap analysis refreshed - 4 infrastructure tasks still pending |
-| 0.7.19 | 2026-03-22 | Gap analysis refreshed - 4 infrastructure tasks pending (added Permissions-Policy gap) |
-| 0.7.18 | 2026-03-22 | Gap analysis refreshed - 3 tasks still pending (verified current state) |
-| 0.7.17 | 2026-03-22 | Gap analysis refreshed - 3 tasks remaining (TURN port, CSP, HSTS) |
-| 0.7.16 | 2026-03-22 | All exit criteria complete: metrics endpoint, no plaintext TURN |
-
-### Specification Coverage Status
-
-| Spec Section | Implementation Status |
-|--------------|----------------------|
-| 5.1.1 Room Management | ✓ Complete |
-| 5.1.2 Voice (VoIP) | ✓ Complete |
-| 5.1.3 Video | ✓ Complete |
-| 5.1.4 Screen Sharing | ✓ Complete |
-| 5.1.5 Text Chat | ✓ Complete |
-| 5.1.6 NAT Traversal | ✓ Complete |
-| 6.1 Sprint 1 (Foundation) | ✓ Complete |
-| 6.2 Sprint 2 (WebRTC) | ✓ Complete |
-| 6.3 Sprint 3 (Screen+TURN) | ✓ Complete |
-| 6.4 Sprint 4 (Chat) | ✓ Complete |
-| 6.5 Sprint 5 (UI) | ✓ Complete |
-| 6.6 Sprint 6 (Testing) | ✓ Complete |
-
-### Security Audit Resolution
-
-All 12 Critical findings have been fixed. All 19 High findings have been fixed or addressed. Remaining work is infrastructure hardening (CSP, HSTS).
-
-### Testing Coverage
-
-| Area | Current | Target |
-|------|---------|--------|
-| Backend unit tests | 104 | ≥ 70% |
-| Frontend tests | 137 | ≥ 60% |
-| E2E tests | 168 | Full coverage |
-| Backend line coverage | 76.05% | ≥ 70% |
-
----
-
-## Version History
-
-| Version | Date | Changes |
-|---------|------|---------|
-| 0.7.24 | 2026-03-22 | Gap analysis refreshed - 4 infrastructure tasks still pending |
-| 0.7.23 | 2026-03-22 | Gap analysis refreshed - 4 infrastructure tasks still pending |
-| 0.7.22 | 2026-03-22 | Gap analysis refreshed - 4 infrastructure tasks still pending |
-| 0.7.21 | 2026-03-22 | Gap analysis refreshed - 4 infrastructure tasks still pending |
-| 0.7.18 | 2026-03-22 | Added SECURITY_STANDARDS.md reference; 3 infrastructure tasks pending |
-| 0.7.17 | 2026-03-22 | Gap analysis refreshed - 3 tasks remaining (TURN port, CSP, HSTS) |
-| 0.7.16 | 2026-03-22 | All exit criteria complete: metrics endpoint, no plaintext TURN |
-| 0.7.15 | 2026-03-22 | Added /metrics endpoint, removed plaintext TURN port 3478 |
-| 0.7.14 | 2026-03-22 | Gap analysis refreshed |
-| 0.7.13 | 2026-03-22 | 2 remaining tasks confirmed |
-| 0.7.12 | 2026-03-22 | Zod validation confirmed complete |
-| 0.7.11 | 2026-03-22 | Sourcemaps disabled |
-| 0.7.10 | 2026-03-22 | Release (all critical security fixes) |
-| 0.7.9 | 2026-03-21 | PeerManager unit tests implemented |
