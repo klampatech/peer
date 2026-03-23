@@ -10,7 +10,11 @@
     "test:coverage": "pnpm -r run test:coverage",
     "lint": "pnpm -r run lint",
     "typecheck": "pnpm -r run typecheck",
-    "clean": "pnpm -r run clean"
+    "clean": "pnpm -r run clean",
+    "load:test": "k6 run tests/load/turn-server-load-test.js",
+    "load:test:http": "k6 run tests/load/http-load-test.js",
+    "load:test:ws": "k6 run tests/load/websocket-load-test.js",
+    "load:test:signalling": "k6 run tests/load/signalling-server.js"
   },
   "keywords": [
     "webrtc",

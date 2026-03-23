@@ -9,7 +9,7 @@
 
 This document tracks the gap analysis between specification files in `specs/*` and the current codebase implementation.
 
-**Current Status: v0.7.47** | **Tests: 403 passing (133 backend + 146 frontend + 124 E2E)** | **Coverage: ~76%**
+**Current Status: v0.7.48** | **Tests: 403 passing (133 backend + 146 frontend + 124 E2E)** | **Coverage: ~76%**
 
 ---
 
@@ -182,17 +182,30 @@ This ensures the sender always receives their own message regardless of browser/
 
 ---
 
-### P1: TURN Server Load Testing (Not Started)
+### P1: TURN Server Load Testing (Partially Resolved)
 
 #### 4. GAP-24: TURN Server Load Untested (Priority: High)
 
-**Location:** `tests/load/*.js`
+**Location:** `tests/load/turn-server-load-test.js`
 
 **Spec Requirement:** Section 7.3 requires TURN server load testing for concurrent relay sessions, bandwidth consumption.
 
-**Status:** ❌ Not started
+**Status:** ✅ PARTIALLY RESOLVED v0.7.48 - k6 TURN load test implemented
 
-**Action:** Add k6 load test for coturn TURN server to exercise relay bandwidth, concurrent sessions.
+**Action:** Added comprehensive k6 load test (`tests/load/turn-server-load-test.js`) that tests:
+- TURN credential generation under load (via Socket.IO)
+- STUN binding request throughput
+- Concurrent relay session allocation simulation
+
+**Verification:**
+```bash
+# Requires Docker running for full coturn testing
+k6 run tests/load/turn-server-load-test.js
+# Or with custom settings
+VUS=50 DURATION=5m k6 run tests/load/turn-server-load-test.js
+```
+
+**Note:** Full relay bandwidth testing requires coturn running (via Docker). The test was validated against the backend - TURN credential generation works, STUN requests fail without coturn (expected).
 
 ---
 
@@ -253,7 +266,7 @@ This ensures the sender always receives their own message regardless of browser/
 | GAP-2 | Reconnection scenarios untested | ✅ RESOLVED v0.7.37 |
 | GAP-14 | Event-based signaling untested | ✅ RESOLVED |
 | GAP-19 | Media permission denial not actually tested | ✅ RESOLVED v0.7.36 |
-| GAP-24 | TURN server load untested | ❌ NOT STARTED |
+| GAP-24 | TURN server load untested | ✅ PARTIALLY RESOLVED v0.7.48 |
 
 ### P2 - Medium Priority (All Resolved)
 
@@ -295,7 +308,7 @@ This ensures the sender always receives their own message regardless of browser/
 | Video Reconnect After Toggle Off | ✅ RESOLVED | Fixed in ControlBar.tsx with track re-enabling logic |
 | Chat Messages Same Browser Tab | ✅ RESOLVED | Fixed in chat-events.ts with direct socket emit to sender |
 | Invite Link Pre-fill Room ID | ✅ RESOLVED | Added ?room= query param parsing and auto-redirect |
-| GAP-24: TURN server load testing | ❌ NOT STARTED | Test coverage gap |
+| GAP-24: TURN server load testing | ✅ PARTIALLY RESOLVED | k6 test implemented, requires Docker for full validation |
 
 ---
 
@@ -303,6 +316,7 @@ This ensures the sender always receives their own message regardless of browser/
 
 | Version | Date | Changes |
 |---------|------|---------|
+| 0.7.48 | 2026-03-22 | GAP-24 Partial: Added k6 TURN load test - tests credential generation, STUN throughput, concurrent sessions (requires Docker for full coturn validation) |
 | 0.7.47 | 2026-03-22 | Chat Fix: Fixed chat messages not displaying for sender - added direct socket emit to sender in addition to room broadcast |
 | 0.7.46 | 2026-03-22 | Invite Link Fix: Added ?room= query parameter parsing on HomePage for auto-redirect to room; Updated Sidebar and HomePage share link to use query param format |
 | 0.7.45 | 2026-03-22 | Video Reconnect Fix: Fixed video toggle off/on bug - track.enabled is now propagated to peer connections via replaceTrack() |
