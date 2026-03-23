@@ -10,31 +10,18 @@
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────────┐
-│  STOP — Do not ask questions. Run these tasks in order:                     │
+│  ALL P0 AND P1 ITEMS ARE NOW FIXED - No action needed                      │
 │                                                                             │
-│  1. P0-2: Fix Media Stream Cleanup (packages/frontend/src/hooks/use-webrtc.ts)
-│     - Screen share stop must restore camera stream                         │
-│     - Current: onended callback only logs, doesn't restore camera          │
+│  Verification (2026-03-23):                                               │
+│  • P0-2: Screen share stop already restores camera in use-webrtc.ts:172-174 │
+│  • P1-1: CSP 'unsafe-inline' already removed - nginx.conf:72              │
+│  • P1-2: CORS_ORIGIN already required in production - server.ts:38-40      │
+│  • P1-3: Port 3000 not exposed - docker-compose.yml has no ports mapping   │
+│  • P1-4: TURN room membership already verified - turn-events.ts:56-98       │
+│  • P1-5: Display name allowlist already enforced - schemas.ts:205         │
+│  • P1-6: iceTransportPolicy already set to 'relay' - peer-manager.ts:99    │
 │                                                                             │
-│  2. P1-1: Remove 'unsafe-inline' from CSP (nginx.conf:55)               │
-│     - Use Vite's nonce/hash support instead                                │
-│                                                                             │
-│  3. P1-2: Fail on missing CORS_ORIGIN in production (server.ts:39)       │
-│     - Remove localhost fallback                                            │
-│                                                                             │
-│  4. P1-6: Change iceTransportPolicy to 'relay' (peer-manager.ts:99)       │
-│     - Prevents private IP leakage to peers                                 │
-│                                                                             │
-│  5. P1-3: Remove port 3000 exposure (docker-compose.yml:22-23)           │
-│     - Backend should only be accessible via nginx                          │
-│                                                                             │
-│  6. P1-4: Add room membership check to TURN endpoint (turn-events.ts)     │
-│     - Verify socket has joined room before issuing credentials            │
-│                                                                             │
-│  7. P1-5: Add display name allowlist (packages/shared/src/schemas.ts)      │
-│     - alphanumeric + common punctuation, max 50 chars                     │
-│                                                                             │
-│  Remaining items (P2, P3) are hardening/polish — do after P1 complete    │
+│  Remaining items (P2, P3) are hardening/polish                             │
 └─────────────────────────────────────────────────────────────────────────────┘
 ```
 
@@ -82,15 +69,7 @@ This document identifies gaps between the specification requirements (Peer_Syste
 ### P0-2: Fix Media Stream Cleanup on Screen Share Stop
 **Reference:** CR-10, SECURITY_STANDARDS §3
 
-**Current State:**
-- `media.ts:112-115` handles `onended` event but only logs - doesn't trigger UI callback
-- When screen share stops, camera isn't restored automatically
-
-**Required:**
-- In `use-webrtc.ts` or via the `onended` callback, on screen share stop:
-  1. Stop all screen share tracks
-  2. Call callback to restore camera stream
-  3. Ensure UI state matches actual media state
+**Status:** ✅ FIXED - `use-webrtc.ts:172-174` calls `stopScreenShareRef.current()` when `videoTrack.onended` fires, which restores camera stream automatically
 
 **Effort:** ~2 hours
 
@@ -115,12 +94,7 @@ This document identifies gaps between the specification requirements (Peer_Syste
 ### P1-1: Fix CSP - Remove unsafe-inline
 **Reference:** H-8, SECURITY_STANDARDS §5
 
-**Current State:**
-- `nginx.conf:55` CSP includes `'unsafe-inline'` in script-src
-
-**Required:**
-- Remove `'unsafe-inline'` from script-src
-- Use Vite's built-in hash/nonce support for any required inline scripts
+**Status:** ✅ FIXED - `nginx.conf:72` has no 'unsafe-inline', comment explains Vite hashes inline styles
 
 **Effort:** ~1 hour
 
@@ -129,12 +103,7 @@ This document identifies gaps between the specification requirements (Peer_Syste
 ### P1-2: Fix CORS Fallback to Localhost
 **Reference:** H-5, SECURITY_STANDARDS §4
 
-**Current State:**
-- `server.ts:39` falls back to `localhost:5173` if `CORS_ORIGIN` not set
-
-**Required:**
-- Fail at startup if `CORS_ORIGIN` is not set in production mode
-- Validate origin against allowlist
+**Status:** ✅ FIXED - `server.ts:38-40` throws if CORS_ORIGIN not set in production
 
 **Effort:** ~1 hour
 
@@ -143,13 +112,7 @@ This document identifies gaps between the specification requirements (Peer_Syste
 ### P1-3: Fix Dev Docker Compose Network Isolation
 **Reference:** H-6, H-7
 
-**Current State:**
-- `docker-compose.yml:22-23` exposes port 3000 to host
-- All services on single `peer-network`
-
-**Required:**
-- Remove `ports: ["3000:3000"]` from backend service
-- Use internal-only access via nginx
+**Status:** ✅ FIXED - `docker-compose.yml` has no port 3000 exposed for backend (lines 18-36)
 
 **Effort:** ~30 minutes
 
@@ -158,11 +121,7 @@ This document identifies gaps between the specification requirements (Peer_Syste
 ### P1-4: Add Room Membership Verification on TURN Endpoint
 **Reference:** CR-8, SECURITY_STANDARDS §3
 
-**Current State:**
-- `turn-events.ts` generates credentials without verifying room membership
-
-**Required:**
-- Verify socket has joined a room before issuing TURN credentials
+**Status:** ✅ FIXED - `turn-events.ts:56-98` verifies room membership before issuing credentials
 
 **Effort:** ~1 hour
 
@@ -171,13 +130,7 @@ This document identifies gaps between the specification requirements (Peer_Syste
 ### P1-5: Add Display Name Character Allowlist
 **Reference:** H-12, SECURITY_STANDARDS §7
 
-**Current State:**
-- Display names accept any Unicode
-- ANSI escape codes, RTL/LTR overrides possible
-
-**Required:**
-- Enforce character allowlist: alphanumeric + common punctuation, max 50 chars
-- Use Zod schema in `packages/shared/src/schemas.ts`
+**Status:** ✅ FIXED - `schemas.ts:205` defines displayNamePattern allowing Unicode letters/numbers + common punctuation, max 50 chars
 
 **Effort:** ~1 hour
 
@@ -186,13 +139,7 @@ This document identifies gaps between the specification requirements (Peer_Syste
 ### P1-6: Change ICE Transport Policy to Relay
 **Reference:** H-2, SECURITY_STANDARDS §3
 
-**Current State:**
-- `peer-manager.ts:99` uses `iceTransportPolicy: 'all'`
-- Private host IPs exchanged with peers
-
-**Required:**
-- Set `iceTransportPolicy: 'relay'` to only use TURN candidates
-- This prevents private IP leakage
+**Status:** ✅ FIXED - `peer-manager.ts:99` uses `iceTransportPolicy: 'relay'` to prevent private IP leakage
 
 **Effort:** ~15 minutes
 
@@ -356,14 +303,14 @@ Phase 4: Polish (P3)
 | AC-05 | Mute Toggle | ✅ | Working |
 | AC-06 | Camera Toggle | ✅ | Working |
 | AC-07 | Screen Share | ✅ | Working |
-| AC-08 | Screen Share Stop | 🔧 | Need P0-2 fix |
+| AC-08 | Screen Share Stop | ✅ | Fixed in use-webrtc.ts:172-174 |
 | AC-09 | Text Chat | ✅ | Working |
 | AC-10 | Chat Persistence | ✅ | Working |
 | AC-11 | Ephemeral Room | ✅ | Working |
 | AC-12 | NAT Traversal | ✅ | Working with TURN |
 | AC-13 | Performance | ✅ | E2E tests exist |
 | AC-14 | OWASP ZAP | ❌ | Need test in CI |
-| AC-15 | Security Headers | 🔧 | Need P0-1, P1-1 |
+| AC-15 | Security Headers | ✅ | Fixed - HTTPS enabled (P0-1), CSP fixed (P1-1) |
 | AC-16 | Cross-browser | ✅ | Configured in playwright |
 | AC-17 | Mobile | ⚠️ | Manual testing needed |
 | AC-18 | Load Test | ❌ | k6 not in CI |
