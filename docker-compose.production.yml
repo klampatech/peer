@@ -1,8 +1,8 @@
 services:
   backend:
     build:
-      context: ./packages/backend
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: packages/backend/Dockerfile
     # Backend not exposed to host - only accessible through nginx
     # Port 3000 is internal only via docker network
     environment:
@@ -39,8 +39,8 @@ services:
 
   frontend:
     build:
-      context: ./packages/frontend
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: packages/frontend/Dockerfile
       args:
         - VITE_API_URL=https://204.168.181.142
     restart: unless-stopped
