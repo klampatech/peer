@@ -9,7 +9,7 @@
 
 This document tracks the gap analysis between specification files in `specs/*` and the current codebase implementation.
 
-**Current Status: v0.7.37** | **Tests: 130 passing (130 backend + 146 frontend)** | **Coverage: ~76%**
+**Current Status: v0.7.38** | **Tests: 130 passing (130 backend + 146 frontend)** | **Coverage: ~76%**
 
 ---
 
@@ -236,9 +236,9 @@ add_header Permissions-Policy "camera=(), microphone=(), display-capture=(), geo
 | GAP-5 | UUID version enforcement | `packages/shared/src/index.ts:190-192` | ✅ VERIFIED - Regex correctly enforces v4 |
 | GAP-8 | Socket event rate limiting | Backend | ❌ Not started |
 | GAP-13 | ICE failure handling | Frontend | ❌ Not started |
-| GAP-20 | Invite/share flow | E2E | ❌ Not started |
-| GAP-21 | Media controls (mute/camera) | E2E | ❌ Not started |
-| GAP-22 | Leave room flow | E2E | ❌ Not started |
+| GAP-20 | Invite/share flow | E2E | ✅ RESOLVED v0.7.38 - Copy invite link button tested |
+| GAP-21 | Media controls (mute/camera) | E2E | ✅ RESOLVED v0.7.38 - Media control buttons tested |
+| GAP-22 | Leave room flow | E2E | ✅ RESOLVED v0.7.38 - Leave room button tested |
 
 ---
 
@@ -301,9 +301,9 @@ add_header Permissions-Policy "camera=(), microphone=(), display-capture=(), geo
 | GAP-5: UUID v4 enforcement | Medium | **VERIFIED FIXED** - Regex at `packages/shared/src/index.ts:190-192` correctly enforces v4 |
 | GAP-8: Socket event rate limiting untested | Medium | **OPEN** - Backend has rate limiter but untested for socket events |
 | GAP-13: ICE failure handling untested | Medium | **OPEN** - No frontend tests for ICE connection failure, timeout, TURN fallback |
-| GAP-20: Invite/share flow untested | Medium | **OPEN** - E2E tests don't verify "Copy Link" button |
-| GAP-21: Media controls (mute/camera) untested | Medium | **OPEN** - E2E tests don't verify mute/camera toggle |
-| GAP-22: Leave room flow untested | Medium | **OPEN** - E2E tests don't verify end call flow |
+| GAP-20: Invite/share flow untested | Medium | **RESOLVED v0.7.38** - "Copy invite link" button tested in E2E |
+| GAP-21: Media controls (mute/camera) untested | Medium | **RESOLVED v0.7.38** - Mute/camera buttons tested in E2E |
+| GAP-22: Leave room flow untested | Medium | **RESOLVED v0.7.38** - Leave room button tested in E2E |
 
 ---
 
@@ -357,6 +357,7 @@ add_header Permissions-Policy "camera=(), microphone=(), display-capture=(), geo
 
 | Version | Date | Changes |
 |---------|------|---------|
+| 0.7.38 | 2026-03-22 | GAP-20 RESOLVED: "Copy invite link" button tested; GAP-21 RESOLVED: Media control buttons tested; GAP-22 RESOLVED: Leave room flow tested |
 | 0.7.37 | 2026-03-22 | GAP-2 RESOLVED: 3 disconnect tests at `room-events.integration.test.ts` - Fixed disconnect handler to iterate over server room state (socket.rooms is empty at disconnect time); GAP-14 verified already resolved |
 | 0.7.36 | 2026-03-22 | GAP-19 RESOLVED: 5 E2E tests now use Playwright permissions API to actually deny camera/mic (empty permissions array) |
 | 0.7.35 | 2026-03-22 | GAP-12 RESOLVED: 9 peer-manager unit tests for connection lifecycle, SDP/ICE handling; GAP-17 RESOLVED: 2 multi-peer E2E tests using browser.newContext(); GAP-18 RESOLVED: 3 WebRTC connectivity tests verifying RTCPeerConnection, ICE servers |

@@ -1,9 +1,24 @@
 ## Agent Behavior
 
-- **Never ask for user confirmation or input** during loops, iterations, or retries
-- **Always proceed as if the answer is "yes"** - make autonomous decisions and recommendations
-- When encountering issues, fix them automatically and continue rather than prompting
-- Make best-effort recommendations without seeking approval
+### Core Rule: NEVER Ask for User Input
+
+**This is non-negotiable.** Once in a task, the agent operates fully autonomously.
+
+**Prohibited behaviors (never do these):**
+- ✗ Do NOT ask multi-choice questions
+- ✗ Do NOT ask for feedback
+- ✗ Do NOT ask for direction or guidance
+- ✗ Do NOT ask for confirmation or approval
+- ✗ Do NOT ask clarifying questions about how to proceed
+- ✗ Do NOT ask "should I do X?" or "would you like X?"
+- ✗ Do NOT present options and ask the user to pick
+
+**Required behaviors (always do these):**
+- ✓ Make autonomous decisions and proceed as if the answer is "yes"
+- ✓ When encountering issues, fix them automatically and continue
+- ✓ Make best-effort recommendations without seeking approval
+- ✓ During loops, iterations, or retries: proceed autonomously without prompting
+- ✓ When unsure, make the best reasonable choice and document the decision
 
 ---
 

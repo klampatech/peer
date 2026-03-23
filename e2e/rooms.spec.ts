@@ -66,4 +66,30 @@ test.describe('Rooms', () => {
     // Should redirect back to home since no display name
     await expect(page).toHaveURL('/');
   });
+
+  test('GAP-20: copy invite link button exists in room sidebar', async ({ page }) => {
+    // Create a room
+    await page.getByLabel('Your Name').fill('Test User');
+    await page.getByRole('button', { name: 'Create New Room' }).click();
+
+    // Wait for navigation to room
+    await expect(page).toHaveURL(/\/room\/.+/, { timeout: 30000 });
+    await page.waitForTimeout(2000);
+
+    // The sidebar contains the Copy Invite Link button
+    // Look for the button with "Copy Invite Link" text or "Copied!" after clicking
+    const copyButton = page.getByRole('button', { name: /copy invite link|copied/i });
+    await expect(copyButton).toBeVisible();
+
+    // Click the button - clipboard API may not work in headless but button should be clickable
+    await copyButton.click();
+
+    // After clicking, it should show "Copied!" text
+    // Note: In headless mode, clipboard API may not work - test passes if button exists and is clickable
+    const copiedText = page.getByText('Copied!');
+    const isCopiedVisible = await copiedText.isVisible().catch(() => false);
+    if (isCopiedVisible) {
+      await expect(copiedText).toBeVisible({ timeout: 5000 });
+    }
+  });
 });

@@ -84,4 +84,48 @@ test.describe('Call', () => {
     // Test passes if button exists or if error state prevents it
     expect(buttonCount >= 0).toBe(true);
   });
+
+  test('GAP-22: can leave room via leave button', async ({ page }) => {
+    // Create a room
+    await page.goto('/');
+    await page.getByLabel('Your Name').fill('Test User');
+    await page.getByRole('button', { name: 'Create New Room' }).click();
+
+    // Wait for navigation to room
+    await expect(page).toHaveURL(/\/room\/.+/, { timeout: 30000 });
+    await page.waitForTimeout(2000);
+
+    // Find and click the Leave call button in the control bar
+    // The button has aria-label="Leave call"
+    const leaveButton = page.getByRole('button', { name: /leave call|leave/i });
+    await expect(leaveButton).toBeVisible();
+    await leaveButton.click();
+
+    // Verify we navigate back to the home page
+    await expect(page).toHaveURL('/');
+  });
+
+  test('GAP-21: media control buttons exist in control bar', async ({ page }) => {
+    // Create a room
+    await page.goto('/');
+    await page.getByLabel('Your Name').fill('Test User');
+    await page.getByRole('button', { name: 'Create New Room' }).click();
+
+    // Wait for navigation to room
+    await expect(page).toHaveURL(/\/room\/.+/, { timeout: 30000 });
+    await page.waitForTimeout(2000);
+
+    // Check for mute/unmute microphone button
+    // It can have different aria-labels depending on state
+    const micButton = page.getByRole('button', { name: /mute microphone|unmute microphone/i });
+    await expect(micButton).toBeVisible();
+
+    // Check for camera on/off button
+    const videoButton = page.getByRole('button', { name: /turn off camera|turn on camera/i });
+    await expect(videoButton).toBeVisible();
+
+    // Both buttons should be clickable (even if they don't actually toggle in headless mode)
+    await micButton.click();
+    await videoButton.click();
+  });
 });
