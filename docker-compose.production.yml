@@ -89,7 +89,6 @@ services:
 
   nginx:
     image: nginx:alpine
-    user: nginx
     ports:
       - "80:80"
       - "443:443"
@@ -100,6 +99,7 @@ services:
       - certbot-etc:/etc/letsencrypt
       - certbot-var:/var/lib/letsencrypt
       - nginx-data:/var/log/nginx
+      - nginx-cache:/var/cache/nginx
     depends_on:
       - backend
       - frontend
@@ -132,6 +132,7 @@ volumes:
   backend-data:
   coturn-data:
   nginx-data:
+  nginx-cache:
   certbot-etc:
   certbot-var:
 
