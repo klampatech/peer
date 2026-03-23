@@ -9,6 +9,10 @@ class MockRTCSessionDescription {
     this.type = init.type;
     this.sdp = init.sdp ?? '';
   }
+
+  toJSON(): RTCSessionDescriptionInit {
+    return { type: this.type, sdp: this.sdp };
+  }
 }
 
 class MockRTCIceCandidate {
@@ -44,11 +48,11 @@ class MockRTCPeerConnection {
   }
 
   createOffer(_options?: RTCOfferOptions): Promise<RTCSessionDescription> {
-    return Promise.resolve({ type: 'offer', sdp: 'mock-sdp' });
+    return Promise.resolve(new MockRTCSessionDescription({ type: 'offer', sdp: 'mock-sdp' }));
   }
 
   createAnswer(_options?: RTCAnswerOptions): Promise<RTCSessionDescription> {
-    return Promise.resolve({ type: 'answer', sdp: 'mock-sdp' });
+    return Promise.resolve(new MockRTCSessionDescription({ type: 'answer', sdp: 'mock-sdp' }));
   }
 
   setLocalDescription(_description: RTCSessionDescriptionInit): Promise<void> {
@@ -92,7 +96,7 @@ class MockRTCPeerConnection {
   }
 
   onicecandidate: ((this: RTCPeerConnection, ev: RTCPeerConnectionIceEvent) => void) | null = null;
-  ontrack: ((this: RTCPeerConnection, ev: RTCPeerConnectionTrackEvent) => void) | null = null;
+  ontrack: ((this: RTCPeerConnection, ev: Event) => void) | null = null;
   onconnectionstatechange: ((this: RTCPeerConnection, ev: Event) => void) | null = null;
 }
 
