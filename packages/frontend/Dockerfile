@@ -6,6 +6,10 @@ RUN corepack enable && corepack prepare pnpm@9 --activate
 
 WORKDIR /app
 
+# Build args for production URL
+ARG VITE_API_URL=https://localhost
+ENV VITE_API_URL=$VITE_API_URL
+
 # Copy workspace files
 COPY pnpm-workspace.yaml ./
 COPY packages/shared packages/shared
@@ -17,7 +21,7 @@ RUN pnpm install --frozen-lockfile
 # Build shared types first
 RUN pnpm --filter @peer/shared build
 
-# Build frontend
+# Build frontend with explicit API URL
 RUN pnpm --filter @peer/frontend build
 
 # Production stage - serve with nginx
@@ -26,25 +30,8 @@ FROM nginx:alpine AS production
 # Copy built frontend files
 COPY --from=builder /app/packages/frontend/dist /usr/share/nginx/html
 
-# Copy custom nginx config for SPA (handle React Router)
-COPY --from=builder /app/packages/frontend/dist /usr/share/nginx/html
-
-# Create nginx config for SPA routing
-RUN echo 'server { \
-    listen 80; \
-    server_name localhost; \
-    root /usr/share/nginx/html; \
-    index index.html; \
-    \
-    location / { \
-        try_files $uri $uri/ /index.html; \
-    } \
-    \
-    location ~* \.(js|css|png|jpg|jpeg|gif|ico|svg|woff|woff2|ttf|eot)$ { \
-        expires 1y; \
-        add_header Cache-Control "public, immutable"; \
-    } \
-}' > /etc/nginx/conf.d/default.conf
+# Copy nginx config for SPA (handles React Router fallback + ACME challenge + gzip + security headers)
+COPY nginx-frontend.conf /etc/nginx/conf.d/default.conf
 
 EXPOSE 80
 

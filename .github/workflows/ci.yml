@@ -114,36 +114,52 @@ jobs:
       - name: Build packages
         run: pnpm build
 
-      - name: Start backend
+      - name: Start backend and frontend
         run: |
+          # Start backend (ts-node dev server on port 3000)
           cd packages/backend
           pnpm dev &
           echo $! > /tmp/backend.pid
+
+          # Start frontend (vite dev server on port 5173)
+          cd ../frontend
+          pnpm dev &
+          echo $! > /tmp/frontend.pid
         env:
           NODE_ENV: test
 
-      - name: Wait for backend to be ready
+      - name: Wait for services to be ready
         run: |
           for i in $(seq 1 30); do
-            if curl -sf http://localhost:3000/health > /dev/null 2>&1; then
-              echo "Backend ready after ${i} attempts"
+            BACKEND_OK=0
+            FRONTEND_OK=0
+            curl -sf http://localhost:3000/health > /dev/null 2>&1 && BACKEND_OK=1
+            curl -sf http://localhost:5173 > /dev/null 2>&1 && FRONTEND_OK=1
+            if [ "$BACKEND_OK" -eq 1 ] && [ "$FRONTEND_OK" -eq 1 ]; then
+              echo "Both services ready after ${i} attempts"
               exit 0
             fi
-            echo "Waiting for backend... ($i/30)"
+            echo "Waiting for services... backend=$BACKEND_OK frontend=$FRONTEND_OK ($i/30)"
             sleep 2
           done
-          echo "FAIL: Backend did not become ready within 60 seconds"
+          echo "FAIL: Services did not become ready within 60 seconds"
           exit 1
 
       - name: Run E2E tests
         run: pnpm exec playwright test
+        env:
+          CI: 'true'
 
-      - name: Stop backend
+      - name: Stop services
         if: always()
         run: |
           if [ -f /tmp/backend.pid ]; then
             kill $(cat /tmp/backend.pid) 2>/dev/null || true
-            rm /tmp/backend.pid
+            rm -f /tmp/backend.pid
+          fi
+          if [ -f /tmp/frontend.pid ]; then
+            kill $(cat /tmp/frontend.pid) 2>/dev/null || true
+            rm -f /tmp/frontend.pid
           fi
 
   security-headers:
@@ -165,38 +181,46 @@ jobs:
           node-version: '22'
           cache: 'pnpm'
 
-      - name: Install dependencies and build
-        run: |
-          pnpm install --frozen-lockfile
-          pnpm build
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
 
-      - name: Start Docker Compose services
-        run: |
-          docker compose -f docker-compose.yml up -d
-          # Give services time to start
-          sleep 10
+      - name: Build packages
+        run: pnpm build
 
-      - name: Wait for nginx to be ready
+      - name: Start backend
+        run: |
+          cd packages/backend
+          pnpm dev &
+          echo $! > /tmp/backend.pid
+        env:
+          NODE_ENV: test
+          CORS_ORIGIN: http://localhost:5173
+
+      - name: Wait for backend to be ready
         run: |
           for i in $(seq 1 30); do
-            if curl -sf http://localhost/health > /dev/null 2>&1 || curl -sf http://localhost:80 > /dev/null 2>&1; then
-              echo "nginx ready after ${i} attempts"
+            if curl -sf http://localhost:3000/health > /dev/null 2>&1; then
+              echo "Backend ready after ${i} attempts"
               exit 0
             fi
-            echo "Waiting for nginx... ($i/30)"
+            echo "Waiting for backend... ($i/30)"
             sleep 2
           done
-          echo "FAIL: nginx did not become ready within 60 seconds"
+          echo "FAIL: Backend did not become ready within 60 seconds"
           exit 1
 
       - name: Verify security headers
         run: node tests/security/http-headers.js
         env:
-          BASE_URL: http://localhost
+          BASE_URL: http://localhost:3000
 
-      - name: Stop Docker Compose services
+      - name: Stop backend
         if: always()
-        run: docker compose -f docker-compose.yml down
+        run: |
+          if [ -f /tmp/backend.pid ]; then
+            kill $(cat /tmp/backend.pid) 2>/dev/null || true
+            rm -f /tmp/backend.pid
+          fi
 
   security-scan:
     name: OWASP ZAP Scan
@@ -217,38 +241,47 @@ jobs:
           node-version: '22'
           cache: 'pnpm'
 
-      - name: Install dependencies and build
-        run: |
-          pnpm install --frozen-lockfile
-          pnpm build
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
 
-      - name: Start Docker Compose services
-        run: |
-          docker compose -f docker-compose.yml up -d
-          # Give services time to start
-          sleep 10
+      - name: Build packages
+        run: pnpm build
 
-      - name: Wait for nginx to be ready
+      - name: Start backend
+        run: |
+          cd packages/backend
+          pnpm dev &
+          echo $! > /tmp/backend.pid
+        env:
+          NODE_ENV: test
+          CORS_ORIGIN: http://localhost:5173
+
+      - name: Start nginx
+        run: |
+          docker compose -f docker-compose.yml up -d nginx
+          echo $! > /tmp/nginx.pid
+
+      - name: Wait for services to be ready
         run: |
           for i in $(seq 1 30); do
-            if curl -sf http://localhost/health > /dev/null 2>&1 || curl -sf http://localhost:80 > /dev/null 2>&1; then
-              echo "nginx ready after ${i} attempts"
+            if curl -sf http://localhost:3000/health > /dev/null 2>&1 && curl -sf http://localhost/health > /dev/null 2>&1; then
+              echo "Services ready after ${i} attempts"
               exit 0
             fi
-            echo "Waiting for nginx... ($i/30)"
+            echo "Waiting for services... ($i/30)"
             sleep 2
           done
-          echo "FAIL: nginx did not become ready within 60 seconds"
+          echo "FAIL: Services did not become ready within 60 seconds"
           exit 1
 
       - name: Run OWASP ZAP scan
         run: |
-          # Run ZAP baseline scan using Docker - scan nginx (port 80), not backend
+          # Run ZAP baseline scan via docker against nginx (which proxies to backend)
           docker run --rm \
             --network="host" \
             -v "$(pwd):/zap/wrk:rw" \
             -t owasp/zap2docker-stable zap.sh \
-            -cmd -quickurl http://localhost \
+            -cmd -quickurl http://localhost/health \
             -quickprogress \
             -timeout 120 \
             -reportfile zap-report.html \
@@ -266,9 +299,14 @@ jobs:
             fi
           fi
 
-      - name: Stop Docker Compose services
+      - name: Stop services
         if: always()
-        run: docker compose -f docker-compose.yml down
+        run: |
+          if [ -f /tmp/backend.pid ]; then
+            kill $(cat /tmp/backend.pid) 2>/dev/null || true
+            rm -f /tmp/backend.pid
+          fi
+          docker compose -f docker-compose.yml down 2>/dev/null || true
 
   load-test:
     name: Load Test

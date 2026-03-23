@@ -42,18 +42,10 @@ export default defineConfig({
   projects: process.env.CI ? ciProjects : localProjects,
 
   /* Run your local dev server before starting the tests */
-  webServer: [
-    {
-      command: 'pnpm dev',
-      url: 'http://localhost:5173',
-      reuseExistingServer: !process.env.CI,
-      timeout: 120 * 1000,
-    },
-    {
-      command: 'pnpm dev',
-      url: 'http://localhost:3000/health',
-      reuseExistingServer: !process.env.CI,
-      timeout: 120 * 1000,
-    },
-  ],
+  webServer: {
+    command: 'pnpm dev',
+    url: 'http://localhost:5173',
+    reuseExistingServer: !process.env.CI,
+    timeout: 120 * 1000,
+  },
 });

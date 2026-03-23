@@ -59,10 +59,11 @@ function randomDisplayName() {
  */
 function simulateSocketIOConnection(roomToken, displayName) {
   const url = `${WS_URL}/?token=${roomToken}&name=${encodeURIComponent(displayName)}`;
+  const t0 = Date.now();
 
   return ws.connect(url, {}, function(socket) {
     socket.on('open', function() {
-      connectionDuration.add(Date.now() - socket._startTime);
+      connectionDuration.add(Date.now() - t0);
       peersJoined.add(1);
     });
 
