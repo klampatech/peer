@@ -139,7 +139,7 @@ class MockRTCPeerConnection {
       receiver: { track: { id: '' } } as unknown as RTCRtpReceiver,
       sender: { track: null } as unknown as RTCRtpSender,
       currentDirection: 'sendrecv',
-      setDirection: () => {},
+      setCodecPreferences: () => Promise.resolve(),
       stop: () => {},
     };
     return transceiver;
