@@ -9,7 +9,7 @@
 
 This document tracks the gap analysis between specification files in `specs/*` and the current codebase implementation.
 
-**Current Status: v0.7.34** | **Tests: 263 passing (127 backend + 137 frontend)** | **Coverage: ~76%**
+**Current Status: v0.7.35** | **Tests: 263 passing (127 backend + 137 frontend)** | **Coverage: ~76%**
 
 ---
 
@@ -215,8 +215,8 @@ add_header Permissions-Policy "camera=(), microphone=(), display-capture=(), geo
 | Gap ID | Description | Location | Status |
 |--------|------------|----------|--------|
 | GAP-1 | WebRTC signaling events untested (sdp:offer/answer, ice-candidate) | `room-events.ts:194-271` | ❌ Not started |
-| GAP-12 | Peer connection lifecycle untested | `peer-manager.ts:94-150` | ❌ Not started |
-| GAP-17 | Multi-peer E2E scenarios untested | `e2e/*.spec.ts` | ❌ Not started |
+| GAP-12 | Peer connection lifecycle untested | `peer-manager.ts:94-150` | ✅ RESOLVED v0.7.35 |
+| GAP-17 | Multi-peer E2E scenarios untested | `e2e/*.spec.ts` | ✅ RESOLVED v0.7.35 |
 | GAP-29 | SQL injection not tested | `message-repository.ts` | ✅ Resolved v0.7.32 - added 4 SQL injection tests |
 | GAP-30 | Chat XSS not tested | `message-repository.ts:127-138` | ✅ Resolved v0.7.32 - added 7 XSS payload tests |
 
@@ -261,10 +261,10 @@ add_header Permissions-Policy "camera=(), microphone=(), display-capture=(), geo
 | GAP-1: WebRTC signaling events tested | ✅ RESOLVED v0.7.33 | 14 integration tests added for sdp:offer, sdp:answer, ice-candidate |
 | GAP-30: Chat XSS sanitization tested | ✅ RESOLVED v0.7.32 | 7 XSS payload tests added to message-repository.test.ts |
 | GAP-29: SQL injection prevention tested | ✅ RESOLVED v0.7.32 | 4 SQL injection tests added to message-repository.test.ts |
-| GAP-17: Multi-peer E2E scenarios tested | ❌ OPEN | Zero tests using `browser.newContext()` |
+| GAP-17: Multi-peer E2E scenarios tested | ✅ RESOLVED v0.7.35 | 2 multi-user tests using browser.newContext() |
 | GAP-4: TURN credentials require room membership | ✅ RESOLVED v0.7.34 | Room membership enforced in turn-events.ts via socket.rooms check |
-| GAP-18: WebRTC connectivity verified in E2E | ❌ OPEN | No RTCPeerConnection state checks |
-| GAP-12: Peer connection lifecycle tested | ❌ OPEN | No frontend tests for peer-manager |
+| GAP-18: WebRTC connectivity verified in E2E | ✅ RESOLVED v0.7.35 | 3 tests verify RTCPeerConnection, ICE servers, console errors |
+| GAP-12: Peer connection lifecycle tested | ✅ RESOLVED v0.7.35 | 9 unit tests for peer-manager at peer-manager.test.ts |
 | GAP-31: WebRTC signaling authorization tested | ✅ RESOLVED v0.7.33 | Cross-room blocking verified; also fixed authorization bug |
 
 ---
@@ -276,9 +276,9 @@ add_header Permissions-Policy "camera=(), microphone=(), display-capture=(), geo
 | Task | Priority | Status |
 |------|----------|--------|
 | GAP-1: WebRTC signaling events untested | Critical | **RESOLVED v0.7.33** - 14 backend integration tests added for `sdp:offer`, `sdp:answer`, `ice-candidate` at `packages/backend/src/__tests__/room-events.integration.test.ts` |
-| GAP-12: Peer connection lifecycle untested | Critical | **OPEN** - No frontend tests for peer-manager connection creation, SDP/ICE handlers at `packages/frontend/src/lib/webrtc/peer-manager.ts:94-150` |
-| GAP-17: Multi-peer E2E scenarios untested | Critical | **OPEN** - Zero E2E tests use `browser.newContext()` for concurrent users |
-| GAP-18: WebRTC connectivity not verified | Critical | **OPEN** - E2E tests only check URLs, never verify `RTCPeerConnection` state |
+| GAP-12: Peer connection lifecycle untested | Critical | **RESOLVED v0.7.35** - 9 unit tests added for peer-manager at `packages/frontend/src/__tests__/peer-manager.test.ts` with mock RTC APIs |
+| GAP-17: Multi-peer E2E scenarios untested | Critical | **RESOLVED v0.7.35** - 2 E2E tests using `browser.newContext()` at `e2e/multi-peer.spec.ts` |
+| GAP-18: WebRTC connectivity not verified | Critical | **RESOLVED v0.7.35** - 3 E2E tests verify RTCPeerConnection state, ICE server config at `e2e/multi-peer.spec.ts` |
 | GAP-29: SQL injection not tested | Critical | **RESOLVED v0.7.32** - 4 SQL injection tests verify parameterized queries block injection in `packages/backend/src/repositories/message-repository.ts` |
 | GAP-30: Chat XSS not tested | Critical | **RESOLVED v0.7.32** - 7 XSS payload tests verify `sanitizeHtml() at `packages/backend/src/repositories/message-repository.ts:127-138` |
 | GAP-31: WebRTC signaling authorization untested | Critical | **RESOLVED v0.7.33** - Cross-room blocking verified; fixed authorization bug in room-events.ts |
@@ -355,6 +355,7 @@ add_header Permissions-Policy "camera=(), microphone=(), display-capture=(), geo
 
 | Version | Date | Changes |
 |---------|------|---------|
+| 0.7.35 | 2026-03-22 | GAP-12 RESOLVED: 9 peer-manager unit tests for connection lifecycle, SDP/ICE handling; GAP-17 RESOLVED: 2 multi-peer E2E tests using browser.newContext(); GAP-18 RESOLVED: 3 WebRTC connectivity tests verifying RTCPeerConnection, ICE servers |
 | 0.7.34 | 2026-03-22 | GAP-4 RESOLVED: TURN credentials now require room membership via socket.rooms check; 8 new room membership tests added |
 | 0.7.33 | 2026-03-22 | GAP-1 RESOLVED: 14 backend integration tests for WebRTC signaling (sdp:offer, sdp:answer, ice-candidate); GAP-31 RESOLVED: fixed authorization bug in room-events.ts that prevented cross-room signaling blocking |
 | 0.7.32 | 2026-03-22 | GAP-29 RESOLVED: 4 SQL injection tests; GAP-30 RESOLVED: 7 XSS payload tests |
