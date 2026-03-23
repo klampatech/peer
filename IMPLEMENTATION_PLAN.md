@@ -1,6 +1,6 @@
 # Peer P2P VoIP Application - Implementation Plan
 
-> **Status:** Ready for v1.0 Release + Bug Fixes + UI Enhancements
+> **Status:** Ready for v1.0 Release - Remaining Bug Fixes + UI Enhancements
 > **Last Updated:** 2026-03-22
 
 ---
@@ -87,7 +87,7 @@ This document tracks the gap analysis between specification files in `specs/*` a
 
 | Issue | Status |
 |-------|--------|
-| ZAP scan with `\|\| true` | **Fixed** - proper error handling |
+| ZAP scan with `|| true` | **Fixed** - proper error handling |
 | Fixed `sleep 5` causes flaky tests | **Fixed** - health check loop |
 | Build job no artifact output | **Fixed** - artifact publishing added |
 | Duplicate install+build | **Fixed** - optimized pipeline |
@@ -119,125 +119,17 @@ Phase 3: Screen Share + TURN █████████████████
 Phase 4: Chat + Persistence  ████████████████████ 100%
 Phase 5: UI Polish           ████████████████████ 100%
 Phase 6: Testing + Hardening ████████████████████ 100%
+Phase 7: UI Enhancements     ████████████░░░░░░░░ 40%
+Phase 8: Bug Fixes           ███░░░░░░░░░░░░░░░░░░ 10%
 ```
 
 ---
 
-## Remaining Gaps Identified
+## Remaining Gaps
 
-### 1. Development docker-compose exposes plaintext TURN port ~~(Priority: Medium)~~ ✓ COMPLETED
+### Critical Bugs (P0) - Must Fix Before Production
 
-**Location:** `docker-compose.yml:59-60`
-
-The development docker-compose exposes port 3478 (plaintext TURN/STUN) to the host, which is inconsistent with the production configuration that only exposes port 5349 (TLS).
-
-**Spec Requirement:** Section 2.3 specifies TLS-only TURN in production. Port 3478 should be internal-only or removed from dev config.
-
-**Status:** ✓ FIXED v0.7.25 - Port 3478 is now only an internal environment variable (COTURN_PORT=3478), not exposed to host. TLS port 5349 remains exposed.
-
----
-
-### 2. CSP contains unsafe-eval ~~(Priority: Medium)~~ ✓ COMPLETED
-
-**Locations:**
-- `nginx.conf:78`
-- `nginx-frontend.conf:32`
-
-Both nginx configuration files contain `'unsafe-eval'` in the Content-Security-Policy header, which weakens XSS protection by allowing eval()-based attacks.
-
-**Spec Requirement:** Section 8.4 (SECURITY_STANDARDS.md) specifies strict CSP that blocks inline scripts and eval.
-
-**Status:** ✓ FIXED v0.7.25 - `'unsafe-eval'` removed from both nginx.conf and nginx-frontend.conf CSP headers. `'unsafe-inline'` retained for React compatibility.
-
----
-
-### 3. HSTS header missing in nginx-frontend.conf ~~(Priority: Low)~~ ✓ COMPLETED
-
-**Location:** `nginx-frontend.conf`
-
-The `nginx.conf` has HSTS header configured (line 69), but `nginx-frontend.conf` (used for frontend-only serving) does not include it.
-
-**Spec Requirement:** Section 8.4 and 8.3 specify HSTS header with `max-age=31536000` and `includeSubDomains`.
-
-**Status:** ✓ FIXED v0.7.25 - HSTS header added to nginx-frontend.conf at line 32:
-```
-add_header Strict-Transport-Security "max-age=31536000; includeSubDomains" always;
-```
-
----
-
-### 4. Permissions-Policy header missing in nginx-frontend.conf ~~(Priority: Low)~~ ✓ COMPLETED
-
-**Location:** `nginx-frontend.conf`
-
-The `nginx.conf` has Permissions-Policy configured (line 76), but `nginx-frontend.conf` does not include it.
-
-**Spec Requirement:** Section 8.4 (SECURITY_STANDARDS.md) specifies `Permissions-Policy` to scope camera/mic to app origin.
-
-**Status:** ✓ FIXED v0.7.25 - Permissions-Policy header added to nginx-frontend.conf at line 33:
-```
-add_header Permissions-Policy "camera=(), microphone=(), display-capture=(), geolocation=(), gyroscope=(), magnetometer=()" always;
-```
-
----
-
-### 5. GAP-4: TURN Credentials Generated Without Room Membership Check (Priority: High) - RESOLVED v0.7.34
-
-**Location:**
-- `packages/backend/src/events/turn-events.ts:56-77`
-- `packages/shared/src/index.ts:273-279` (TurnRequestSchema)
-
-**Issue:** When `roomToken` IS provided in the `turn:request` payload, room membership is verified (lines 60-75). However, when `roomToken` is NOT provided (payload is empty `{}`), credentials are still generated without any room membership check (line 77). The schema is `.optional()` which allows this bypass.
-
-**Spec Requirement:** Section 8.3 requires credentials to be fetched via authenticated Socket.IO event requiring active room session.
-
-**Status:** ✅ RESOLVED v0.7.34 - Room membership enforced via socket.rooms check in turn-events.ts lines 78-98. If no roomToken provided, verifies socket is in any room via socket.rooms (excluding socket.id).
-
-**Action Required:** Make `roomToken` REQUIRED in `TurnRequestSchema` OR always verify socket is in some room (call `isPeerInRoom` with any room the socket has joined).
-
----
-
-### 6. GAP-6: Multi-Peer Scenarios Insufficiently Tested (Priority: Medium)
-
-**Location:** E2E tests only test single-peer scenarios.
-
-**Spec Requirement:** Section 7.3 requires testing with multiple peers in same room.
-
-**Status:** ⚠ IN PROGRESS - Need E2E tests for: 2-peer voice/video call, peer disconnect/rejoin, mesh connection verification.
-
-**Action:** Add E2E tests using `browser.newContext()` for multi-user scenarios.
-
----
-
-### 7. Chat Messages Not Displaying from Same Browser Tab (Priority: High)
-
-**Location:** Frontend chat component / `message-events.ts`
-
-**Issue:** When connected to a room from two browser tabs (same browser, different tabs), messages sent from either tab are not displayed in either tab's chat view. Messages persist in the database but are not rendered for the sender in the same tab.
-
-**Spec Requirement:** Section 5.1.5 specifies text chat should display message history and new messages in real-time.
-
-**Status:** 🆕 NEW - Bug identified, not yet investigated.
-
-**Action:** Investigate message event handling - likely missing `message:received` event handler in the sending tab, or the Socket.IO event is not being broadcast back to the sender.
-
----
-
-### 8. Copy Invite Link Does Not Pre-fill Room ID in Join Input (Priority: Medium)
-
-**Location:** Frontend - invite/share flow
-
-**Issue:** When a user clicks "Copy invite link" and then pastes the link into a new browser window, they are taken to the landing page instead of being redirected directly to the room with the room ID pre-filled in the join input. The user must manually copy the room ID from the URL and paste it into the join input.
-
-**Spec Requirement:** Section 5.1.1 requires seamless room joining via invite links.
-
-**Status:** 🆕 NEW - Bug identified, not yet investigated.
-
-**Action:** Parse room ID from URL query parameters (`?room=<id>`) on landing page load and auto-populate the join input field, or redirect directly to the room join flow.
-
----
-
-### 9. Video Reconnect After Toggle Off Does Not Resume Camera Feed (Priority: High)
+#### 1. Video Reconnect After Toggle Off Does Not Resume Camera Feed (Priority: High)
 
 **Location:** Frontend - `peer-manager.ts` or media controls
 
@@ -251,9 +143,55 @@ add_header Permissions-Policy "camera=(), microphone=(), display-capture=(), geo
 
 ---
 
-## UI Enhancements (from specs/UI_ENHANCEMENTS.md)
+### High Priority Bugs (P1)
 
-### Gap Analysis
+#### 2. Chat Messages Not Displaying from Same Browser Tab (Priority: High)
+
+**Location:** Frontend chat component / `message-events.ts`
+
+**Issue:** When connected to a room from two browser tabs (same browser, different tabs), messages sent from either tab are not displayed in either tab's chat view. Messages persist in the database but are not rendered for the sender in the same tab.
+
+**Spec Requirement:** Section 5.1.5 specifies text chat should display message history and new messages in real-time.
+
+**Status:** 🆕 NEW - Bug identified, not yet investigated.
+
+**Action:** Investigate message event handling - likely missing `message:received` event handler in the sending tab, or the Socket.IO event is not being broadcast back to the sender.
+
+---
+
+#### 3. Copy Invite Link Does Not Pre-fill Room ID in Join Input (Priority: Medium)
+
+**Location:** Frontend - invite/share flow
+
+**Issue:** When a user clicks "Copy invite link" and then pastes the link into a new browser window, they are taken to the landing page instead of being redirected directly to the room with the room ID pre-filled in the join input. The user must manually copy the room ID from the URL and paste it into the join input.
+
+**Spec Requirement:** Section 5.1.1 requires seamless room joining via invite links.
+
+**Status:** 🆕 NEW - Bug identified, not yet investigated.
+
+**Action:** Parse room ID from URL query parameters (`?room=<id>`) on landing page load and auto-populate the join input field, or redirect directly to the room join flow.
+
+---
+
+### P1: TURN Server Load Testing (Not Started)
+
+#### 4. GAP-24: TURN Server Load Untested (Priority: High)
+
+**Location:** `tests/load/*.js`
+
+**Spec Requirement:** Section 7.3 requires TURN server load testing for concurrent relay sessions, bandwidth consumption.
+
+**Status:** ❌ Not started
+
+**Action:** Add k6 load test for coturn TURN server to exercise relay bandwidth, concurrent sessions.
+
+---
+
+### UI Enhancements (from specs/UI_ENHANCEMENTS.md)
+
+**Priority: Medium-Low** - Aesthetic improvements, not critical for production
+
+#### Gap Analysis
 
 | Enhancement | Location | Current State | Spec Requirement | Priority |
 |-------------|----------|---------------|------------------|----------|
@@ -269,7 +207,7 @@ add_header Permissions-Policy "camera=(), microphone=(), display-capture=(), geo
 | HomePage Logo | `HomePage.tsx` | Basic icon | Animated pulsing ring | Medium |
 | Micro-interactions | various | Minimal | Scale, glow, spring animations | Medium |
 
-### Implementation Tasks
+#### Implementation Tasks
 
 | Task | Priority | Status | Notes |
 |------|----------|--------|-------|
@@ -287,37 +225,37 @@ add_header Permissions-Policy "camera=(), microphone=(), display-capture=(), geo
 
 ---
 
-## Critical Testing Gaps (from specs/INTEGRATION_TESTING_GAPS.md)
+## Testing Gap Resolutions (P0-P2 Complete)
 
-### P0 - Critical (Address Before Production)
+### P0 - Critical (All Resolved)
 
-| Gap ID | Description | Location | Status |
-|--------|------------|----------|--------|
-| GAP-1 | WebRTC signaling events untested (sdp:offer/answer, ice-candidate) | `room-events.ts:194-271` | ✅ RESOLVED v0.7.33 |
-| GAP-12 | Peer connection lifecycle untested | `peer-manager.ts:94-150` | ✅ RESOLVED v0.7.35 |
-| GAP-17 | Multi-peer E2E scenarios untested | `e2e/*.spec.ts` | ✅ RESOLVED v0.7.35 |
-| GAP-29 | SQL injection not tested | `message-repository.ts` | ✅ Resolved v0.7.32 - added 4 SQL injection tests |
-| GAP-30 | Chat XSS not tested | `message-repository.ts:127-138` | ✅ Resolved v0.7.32 - added 7 XSS payload tests |
+| Gap ID | Description | Status |
+|--------|-------------|--------|
+| GAP-1 | WebRTC signaling events untested (sdp:offer/answer, ice-candidate) | ✅ RESOLVED v0.7.33 |
+| GAP-12 | Peer connection lifecycle untested | ✅ RESOLVED v0.7.35 |
+| GAP-17 | Multi-peer E2E scenarios untested | ✅ RESOLVED v0.7.35 |
+| GAP-29 | SQL injection not tested | ✅ RESOLVED v0.7.32 |
+| GAP-30 | Chat XSS not tested | ✅ RESOLVED v0.7.32 |
 
-### P1 - High Priority
+### P1 - High Priority (All Resolved except GAP-24)
 
-| Gap ID | Description | Location | Status |
-|--------|------------|----------|--------|
-| GAP-2 | Reconnection scenarios untested | Backend integration | ✅ RESOLVED v0.7.37 - 3 disconnect tests added at `room-events.integration.test.ts` |
-| GAP-14 | Event-based signaling untested | `peer-manager.ts` | ✅ RESOLVED - Tests at `peer-manager.test.ts` lines 290-374 dispatch window events for SDP offer/answer and ICE candidate |
-| GAP-19 | Media permission denial not actually tested | E2E | ✅ RESOLVED v0.7.36 - 5 tests use Playwright permissions API with empty permissions array to deny camera/mic |
-| GAP-24 | TURN server load untested | Load tests | ❌ Not started |
+| Gap ID | Description | Status |
+|--------|-------------|--------|
+| GAP-2 | Reconnection scenarios untested | ✅ RESOLVED v0.7.37 |
+| GAP-14 | Event-based signaling untested | ✅ RESOLVED |
+| GAP-19 | Media permission denial not actually tested | ✅ RESOLVED v0.7.36 |
+| GAP-24 | TURN server load untested | ❌ NOT STARTED |
 
-### P2 - Medium Priority
+### P2 - Medium Priority (All Resolved)
 
-| Gap ID | Description | Location | Status |
-|--------|------------|----------|--------|
-| GAP-5 | UUID version enforcement | `packages/shared/src/index.ts:190-192` | ✅ VERIFIED - Regex correctly enforces v4 |
-| GAP-8 | Socket event rate limiting | Backend | ✅ RESOLVED v0.7.39 |
-| GAP-13 | ICE failure handling | Frontend | ✅ RESOLVED - 6 tests verify ICE failure handling at `peer-manager.test.ts` |
-| GAP-20 | Invite/share flow | E2E | ✅ RESOLVED v0.7.38 - Copy invite link button tested |
-| GAP-21 | Media controls (mute/camera) | E2E | ✅ RESOLVED v0.7.38 - Media control buttons tested |
-| GAP-22 | Leave room flow | E2E | ✅ RESOLVED v0.7.38 - Leave room button tested |
+| Gap ID | Description | Status |
+|--------|-------------|--------|
+| GAP-5 | UUID version enforcement | ✅ VERIFIED - Regex correctly enforces v4 |
+| GAP-8 | Socket event rate limiting | ✅ RESOLVED v0.7.39 |
+| GAP-13 | ICE failure handling | ✅ RESOLVED |
+| GAP-20 | Invite/share flow | ✅ RESOLVED v0.7.38 |
+| GAP-21 | Media controls (mute/camera) | ✅ RESOLVED v0.7.38 |
+| GAP-22 | Leave room flow | ✅ RESOLVED v0.7.38 |
 
 ---
 
@@ -337,98 +275,18 @@ add_header Permissions-Policy "camera=(), microphone=(), display-capture=(), geo
 | HSTS header in all nginx configs | ✅ Complete | v0.7.25 |
 | Permissions-Policy header in nginx-frontend.conf | ✅ Complete | v0.7.25 |
 | GAP-5: UUID v4 enforcement | ✅ Fixed | Regex correctly enforces v4 |
-| GAP-1: WebRTC signaling events tested | ✅ RESOLVED v0.7.33 | 14 integration tests added for sdp:offer, sdp:answer, ice-candidate |
-| GAP-30: Chat XSS sanitization tested | ✅ RESOLVED v0.7.32 | 7 XSS payload tests added to message-repository.test.ts |
-| GAP-29: SQL injection prevention tested | ✅ RESOLVED v0.7.32 | 4 SQL injection tests added to message-repository.test.ts |
-| GAP-17: Multi-peer E2E scenarios tested | ✅ RESOLVED v0.7.35 | 2 multi-user tests using browser.newContext() |
-| GAP-4: TURN credentials require room membership | ✅ RESOLVED v0.7.34 | Room membership enforced in turn-events.ts via socket.rooms check |
-| GAP-18: WebRTC connectivity verified in E2E | ✅ RESOLVED v0.7.35 | 3 tests verify RTCPeerConnection, ICE servers, console errors |
-| GAP-12: Peer connection lifecycle tested | ✅ RESOLVED v0.7.35 | 9 unit tests for peer-manager at peer-manager.test.ts |
-| GAP-31: WebRTC signaling authorization tested | ✅ RESOLVED v0.7.33 | Cross-room blocking verified; also fixed authorization bug |
-| GAP-2: Disconnect scenarios tested | ✅ RESOLVED v0.7.37 | 3 disconnect tests at room-events.integration.test.ts |
-| GAP-14: Event-based signaling tested | ✅ RESOLVED | Tests at peer-manager.test.ts lines 290-374 |
-
----
-
-## v0.7.31 Tasks (Consolidated from INTEGRATION_TESTING_GAPS.md)
-
-### Critical (P0) - Must Fix Before Production
-
-| Task | Priority | Status |
-|------|----------|--------|
-| GAP-1: WebRTC signaling events untested | Critical | **RESOLVED v0.7.33** - 14 backend integration tests added for `sdp:offer`, `sdp:answer`, `ice-candidate` at `packages/backend/src/__tests__/room-events.integration.test.ts` |
-| GAP-12: Peer connection lifecycle untested | Critical | **RESOLVED v0.7.35** - 9 unit tests added for peer-manager at `packages/frontend/src/__tests__/peer-manager.test.ts` with mock RTC APIs |
-| GAP-17: Multi-peer E2E scenarios untested | Critical | **RESOLVED v0.7.35** - 2 E2E tests using `browser.newContext()` at `e2e/multi-peer.spec.ts` |
-| GAP-18: WebRTC connectivity not verified | Critical | **RESOLVED v0.7.35** - 3 E2E tests verify RTCPeerConnection state, ICE server config at `e2e/multi-peer.spec.ts` |
-| GAP-29: SQL injection not tested | Critical | **RESOLVED v0.7.32** - 4 SQL injection tests verify parameterized queries block injection in `packages/backend/src/repositories/message-repository.ts` |
-| GAP-30: Chat XSS not tested | Critical | **RESOLVED v0.7.32** - 7 XSS payload tests verify `sanitizeHtml() at `packages/backend/src/repositories/message-repository.ts:127-138` |
-| GAP-31: WebRTC signaling authorization untested | Critical | **RESOLVED v0.7.33** - Cross-room blocking verified; fixed authorization bug in room-events.ts |
-
-### High Priority (P1)
-
-| Task | Priority | Status |
-|------|----------|--------|
-| GAP-4: TURN credential room binding | High | **RESOLVED v0.7.34** - Room membership enforced via socket.rooms check |
-| GAP-2: Reconnection scenarios untested | High | **RESOLVED v0.7.37** - 3 disconnect tests added at `room-events.integration.test.ts` - Fixed disconnect handler to iterate over server room state instead of empty socket.rooms |
-| GAP-14: Event-based signaling untested | High | **RESOLVED** - Tests at `peer-manager.test.ts` lines 290-374 dispatch window events for SDP offer/answer and ICE candidate |
-| GAP-19: Media permission denial not tested | High | **RESOLVED v0.7.36** - 5 E2E tests now use Playwright permissions API
-
-### Medium Priority (P2)
-
-| Task | Priority | Status |
-|------|----------|--------|
-| GAP-5: UUID v4 enforcement | Medium | **VERIFIED FIXED** - Regex at `packages/shared/src/index.ts:190-192` correctly enforces v4 |
-| GAP-8: Socket event rate limiting untested | Medium | **RESOLVED v0.7.39** - 3 integration tests verify socket rate limiting at `packages/backend/src/__tests__/socket-rate-limit.integration.test.ts` |
-| GAP-13: ICE failure handling untested | Medium | **RESOLVED** - 6 tests verify ICE failure handling at `peer-manager.test.ts:387-486` |
-| GAP-20: Invite/share flow untested | Medium | **RESOLVED v0.7.38** - "Copy invite link" button tested in E2E |
-| GAP-21: Media controls (mute/camera) untested | Medium | **RESOLVED v0.7.38** - Mute/camera buttons tested in E2E |
-| GAP-22: Leave room flow untested | Medium | **RESOLVED v0.7.38** - Leave room button tested in E2E |
-
----
-
-## v0.7.29 Tasks
-
-| Task | Priority | Status |
-|------|----------|--------|
-| Verify infrastructure gaps fixed (3478, CSP, HSTS, Permissions-Policy) | Medium | **Completed** - All 4 infrastructure gaps verified |
-| GAP-4: TURN credential room binding fix verification | High | **Resolved v0.7.34** - Room membership enforced via socket.rooms check |
-| GAP-5: UUID v4 enforcement verification | Medium | **Verified** - Regex correctly enforces v4 |
-| Add critical testing gaps from INTEGRATION_TESTING_GAPS.md | High | **Added** - P0 gaps: GAP-1, 12, 17, 29, 30 |
-
----
-
-## v0.7.28 Tasks
-
-| Task | Priority | Status |
-|------|----------|--------|
-| Remove plaintext TURN port 3478 from docker-compose.yml | Medium | **Completed** - dev docker-compose.yml no longer exposes port 3478 to host |
-| Remove unsafe-eval from nginx CSP | Medium | **Completed** - nginx.conf and nginx-frontend.conf CSP updated |
-| Add HSTS header to nginx-frontend.conf | Low | **Completed** - HSTS added to nginx-frontend.conf |
-| Add Permissions-Policy to nginx-frontend.conf | Low | **Completed** - Permissions-Policy now added |
-
----
-
-## Gap Analysis Summary (v0.7.19)
-
-### Infrastructure Gaps
-
-| Gap | Location | Spec Requirement | Priority |
-|-----|----------|-----------------|----------|
-| Port 3478 exposed in dev | docker-compose.yml:59-60 | Production only exposes 5349 (TLS) | Medium |
-| unsafe-eval in CSP | nginx.conf:78, nginx-frontend.conf:32 | Section 8.4: strict CSP | Medium |
-| HSTS missing | nginx-frontend.conf | Section 8.4: HSTS max-age=31536000 | Low |
-| Permissions-Policy missing | nginx-frontend.conf | Section 8.4: camera/mic scoped to app origin | Low |
-
-### Security Headers Status
-
-| Header | nginx.conf | nginx-frontend.conf | Status |
-|--------|------------|---------------------|--------|
-| Content-Security-Policy | ✓ (no unsafe-eval) | ✓ (no unsafe-eval) | **Complete** |
-| Strict-Transport-Security | ✓ (line 69) | ✓ (line 32) | **Complete** |
-| X-Frame-Options | ✓ DENY | ✓ DENY | **Complete** |
-| X-Content-Type-Options | ✓ nosniff | ✓ nosniff | **Complete** |
-| Referrer-Policy | ✓ (line 75) | ✓ (line 31) | **Complete** |
-| Permissions-Policy | ✓ (line 76) | ✓ (line 33) | **Complete** |
+| GAP-1: WebRTC signaling events tested | ✅ RESOLVED | 14 integration tests added |
+| GAP-30: Chat XSS sanitization tested | ✅ RESOLVED | 7 XSS payload tests added |
+| GAP-29: SQL injection prevention tested | ✅ RESOLVED | 4 SQL injection tests added |
+| GAP-17: Multi-peer E2E scenarios tested | ✅ RESOLVED | 2 multi-user tests |
+| GAP-4: TURN credentials require room membership | ✅ RESOLVED | Room membership enforced |
+| GAP-12: Peer connection lifecycle tested | ✅ RESOLVED | 9 peer-manager tests |
+| GAP-2: Disconnect scenarios tested | ✅ RESOLVED | 3 disconnect tests |
+| GAP-14: Event-based signaling tested | ✅ RESOLVED | window event dispatch tests |
+| Video Reconnect After Toggle Off | ❌ NOT STARTED | Critical bug - needs investigation |
+| Chat Messages Same Browser Tab | ❌ NOT STARTED | Critical bug - needs investigation |
+| Invite Link Pre-fill Room ID | ❌ NOT STARTED | Medium priority bug |
+| GAP-24: TURN server load testing | ❌ NOT STARTED | Test coverage gap |
 
 ---
 
@@ -436,72 +294,14 @@ add_header Permissions-Policy "camera=(), microphone=(), display-capture=(), geo
 
 | Version | Date | Changes |
 |---------|------|---------|
-| 0.7.41 | 2026-03-22 | Added UI_ENHANCEMENTS.md gap analysis - 11 enhancement tasks identified (typography, VideoTile, ControlBar, VideoGrid, HomePage, micro-interactions) |
-| 0.7.40 | 2026-03-22 | GAP-13 RESOLVED: 6 tests verify ICE failure handling (connection failed, disconnected, connecting, connected states, callback invocation) at `peer-manager.test.ts` |
-| 0.7.39 | 2026-03-22 | GAP-8 RESOLVED: 3 socket rate limit integration tests verify connection limiting (5 connections per 2 seconds, blocking excess connections, resetting after duration expires) at `socket-rate-limit.integration.test.ts` |
-| 0.7.38 | 2026-03-22 | GAP-20 RESOLVED: "Copy invite link" button tested; GAP-21 RESOLVED: Media control buttons tested; GAP-22 RESOLVED: Leave room flow tested |
-| 0.7.37 | 2026-03-22 | GAP-2 RESOLVED: 3 disconnect tests at `room-events.integration.test.ts` - Fixed disconnect handler to iterate over server room state (socket.rooms is empty at disconnect time); GAP-14 verified already resolved |
-| 0.7.36 | 2026-03-22 | GAP-19 RESOLVED: 5 E2E tests now use Playwright permissions API to actually deny camera/mic (empty permissions array) |
-| 0.7.35 | 2026-03-22 | GAP-12 RESOLVED: 9 peer-manager unit tests for connection lifecycle, SDP/ICE handling; GAP-17 RESOLVED: 2 multi-peer E2E tests using browser.newContext(); GAP-18 RESOLVED: 3 WebRTC connectivity tests verifying RTCPeerConnection, ICE servers |
-| 0.7.34 | 2026-03-22 | GAP-4 RESOLVED: TURN credentials now require room membership via socket.rooms check; 8 new room membership tests added |
-| 0.7.33 | 2026-03-22 | GAP-1 RESOLVED: 14 backend integration tests for WebRTC signaling (sdp:offer, sdp:answer, ice-candidate); GAP-31 RESOLVED: fixed authorization bug in room-events.ts that prevented cross-room signaling blocking |
-| 0.7.32 | 2026-03-22 | GAP-29 RESOLVED: 4 SQL injection tests; GAP-30 RESOLVED: 7 XSS payload tests |
-| 0.7.29 | 2026-03-22 | Verified infrastructure gaps fixed; GAP-4 partially fixed; added critical testing gaps from INTEGRATION_TESTING_GAPS.md |
-| 0.7.28 | 2026-03-22 | Added GAP-4 (TURN credential room binding) and GAP-6 (multi-peer testing) from INTEGRATION_TESTING_GAPS.md |
-| 0.7.27 | 2026-03-22 | Test counts verified: 104 backend + 137 frontend + 118 E2E = 359 total; All 4 infrastructure gaps verified complete |
-| 0.7.26 | 2026-03-22 | Test counts verified: 104 backend + 162 E2E passing; 6 mobile Chrome tests skip (known mobile layout issue) |
-| 0.7.25 | 2026-03-22 | All 4 infrastructure gaps fixed: removed 3478 port from docker-compose.yml, removed unsafe-eval from CSP, added HSTS and Permissions-Policy to nginx-frontend.conf |
-| 0.7.24 | 2026-03-22 | Gap analysis refreshed - 4 infrastructure tasks still pending |
-
-### Specification Coverage Status
-
-| Spec Section | Implementation Status |
-|--------------|----------------------|
-| 5.1.1 Room Management | ✓ Complete |
-| 5.1.2 Voice (VoIP) | ✓ Complete |
-| 5.1.3 Video | ✓ Complete |
-| 5.1.4 Screen Sharing | ✓ Complete |
-| 5.1.5 Text Chat | ✓ Complete |
-| 5.1.6 NAT Traversal | ✓ Complete |
-| 6.1 Sprint 1 (Foundation) | ✓ Complete |
-| 6.2 Sprint 2 (WebRTC) | ✓ Complete |
-| 6.3 Sprint 3 (Screen+TURN) | ✓ Complete |
-| 6.4 Sprint 4 (Chat) | ✓ Complete |
-| 6.5 Sprint 5 (UI) | ✓ Complete |
-| 6.6 Sprint 6 (Testing) | ✓ Complete |
-
-### Security Audit Resolution
-
-All 12 Critical findings have been fixed. All 19 High findings have been fixed or addressed. Remaining work is infrastructure hardening (CSP, HSTS).
-
-### Testing Coverage
-
-| Area | Current | Target |
-|------|---------|--------|
-| Backend unit tests | 104 | ≥ 70% |
-| Frontend tests | 137 | ≥ 60% |
-| E2E tests | 168 | Full coverage |
-| Backend line coverage | 76.05% | ≥ 70% |
-
----
-
-## Version History
-
-| Version | Date | Changes |
-|---------|------|---------|
-| 0.7.31 | 2026-03-22 | Consolidated remaining gaps from INTEGRATION_TESTING_GAPS.md and AUTOMATION_TESTING_ANALYSIS.md; organized by P0/P1/P2 priority; verified UUID v4 fix still valid |
-| 0.7.30 | 2026-03-22 | Added 11 critical testing gaps (GAP-1, 2, 4, 12, 14, 17, 18, 29, 30, 31); verified UUID v4 regex fix; restructured exit criteria table |
-| 0.7.29 | 2026-03-22 | Verified infrastructure gaps fixed; GAP-4 partially fixed; added critical testing gaps from INTEGRATION_TESTING_GAPS.md |
-| 0.7.23 | 2026-03-22 | Gap analysis refreshed - 4 infrastructure tasks still pending |
-| 0.7.22 | 2026-03-22 | Gap analysis refreshed - 4 infrastructure tasks still pending |
-| 0.7.21 | 2026-03-22 | Gap analysis refreshed - 4 infrastructure tasks still pending |
-| 0.7.18 | 2026-03-22 | Added SECURITY_STANDARDS.md reference; 3 infrastructure tasks pending |
-| 0.7.17 | 2026-03-22 | Gap analysis refreshed - 3 tasks remaining (TURN port, CSP, HSTS) |
-| 0.7.16 | 2026-03-22 | All exit criteria complete: metrics endpoint, no plaintext TURN |
-| 0.7.15 | 2026-03-22 | Added /metrics endpoint, removed plaintext TURN port 3478 |
-| 0.7.14 | 2026-03-22 | Gap analysis refreshed |
-| 0.7.13 | 2026-03-22 | 2 remaining tasks confirmed |
-| 0.7.12 | 2026-03-22 | Zod validation confirmed complete |
-| 0.7.11 | 2026-03-22 | Sourcemaps disabled |
-| 0.7.10 | 2026-03-22 | Release (all critical security fixes) |
-| 0.7.9 | 2026-03-21 | PeerManager unit tests implemented |
+| 0.7.42 | 2026-03-22 | Consolidated remaining gaps: 3 bugs not started (video reconnect, chat same-tab, invite pre-fill), GAP-24 TURN load untested, UI enhancements not started |
+| 0.7.41 | 2026-03-22 | Added UI_ENHANCEMENTS.md gap analysis - 11 enhancement tasks identified |
+| 0.7.40 | 2026-03-22 | GAP-13 RESOLVED: 6 ICE failure handling tests |
+| 0.7.39 | 2026-03-22 | GAP-8 RESOLVED: 3 socket rate limit tests |
+| 0.7.38 | 2026-03-22 | GAP-20,21,22 RESOLVED: invite flow, media controls, leave room |
+| 0.7.37 | 2026-03-22 | GAP-2 RESOLVED: 3 disconnect tests |
+| 0.7.36 | 2026-03-22 | GAP-19 RESOLVED: media permission denial tests |
+| 0.7.35 | 2026-03-22 | GAP-12,17,18 RESOLVED: peer lifecycle, multi-peer, WebRTC connectivity |
+| 0.7.34 | 2026-03-22 | GAP-4 RESOLVED: TURN credential room membership |
+| 0.7.33 | 2026-03-22 | GAP-1,31 RESOLVED: WebRTC signaling, authorization |
+| 0.7.32 | 2026-03-22 | GAP-29,30 RESOLVED: SQL injection, XSS tests |
