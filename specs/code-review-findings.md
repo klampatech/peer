@@ -1688,3 +1688,386 @@ This is brittle and can cause intermittent failures.
 ---
 
 *Review completed by testing-review agent*
+
+---
+
+# Code Audit Findings - 2026-03-22
+
+**Reviewer:** Claude Code Audit (4 parallel agents)
+**Scope:** Full codebase audit (backend, frontend, WebRTC, infrastructure)
+**Confidence Score:** 85-95/100
+
+---
+
+## Critical Severity
+
+### 1. ICE Candidate Private IP Leakage
+
+**Severity:** Critical
+**Files:**
+- `packages/shared/src/index.ts:312-319`
+- `packages/backend/src/events/room-events.ts:252-271`
+
+**Description:** SDP offers/answers are validated for private IPs via `validateSdpNoPrivateIPs()`, but ICE candidates bypass this check entirely. The `IceCandidateSchema` only validates structure, not content. The candidate string contains the actual IP address (`candidate:0 1 UDP 2112 192.168.1.100 12345 typ host...`) and is not validated for private IPs.
+
+**Evidence:** Compare the `sdp:offer` handler (lines 194-220 in room-events.ts) which calls `validateSdpNoPrivateIPs(sdp.sdp)` against the `ice-candidate` handler (lines 252-271) which performs no such check.
+
+**Remediation:** Add a `validateIceCandidateNoPrivateIPs()` function similar to `validateSdpNoPrivateIPs()` and call it in the `ice-candidate` handler after schema validation.
+
+---
+
+### 2. Screen Share Track Leak on Browser-Stopped Share
+
+**Severity:** Critical
+**File:** `packages/frontend/src/components/ControlBar.tsx:104-123`
+
+**Description:** When a user stops screen sharing via the browser's built-in stop button (not the app's button), the `videoTrack.onended` handler restores the camera but **never stops the screen share stream's tracks**. The screen stream tracks continue running indefinitely, causing media resource leaks.
+
+**Evidence:**
+```typescript
+if (videoTrack) {
+  videoTrack.onended = async () => {
+    // Restore camera but screenStream tracks are never stopped!
+    const cameraStream = await getUserMedia({ video: true, audio: false });
+    // ...
+    setScreenSharing(false);
+    // BUG: screenStream tracks still running
+  };
+}
+```
+
+**Remediation:** Before restoring the camera, stop all tracks on the screen share stream:
+```typescript
+if (localStream) {
+  localStream.getTracks().forEach(track => track.stop());
+}
+```
+
+---
+
+### 3. Missing Diffie-Hellman Parameters
+
+**Severity:** Critical
+**File:** `nginx.conf:63`
+
+**Description:** nginx.conf references `/etc/letsencrypt/live/peer/dhparam.pem` for TLS configuration but this file is never generated or mounted. Without custom DH parameters, nginx uses weaker default DH groups for exported cipher suites.
+
+**Remediation:** Generate and mount DH parameters:
+```bash
+openssl dhparam -out dhparam.pem 2048
+```
+And add to nginx.conf:
+```nginx
+ssl_dhparam /etc/letsencrypt/live/peer/dhparam.pem;
+```
+
+---
+
+## High Severity
+
+### 4. Previous Stream Tracks Not Stopped on Screen Share Start
+
+**Severity:** High
+**File:** `packages/frontend/src/hooks/use-webrtc.ts:158-163`
+
+**Description:** In `startScreenShare`, the previous stream is saved but its tracks are not stopped before starting screen share. The camera tracks continue running while screen share tracks also run, wasting resources.
+
+**Evidence:**
+```typescript
+if (localStream) {
+  previousStreamRef.current = localStream;  // Saved but NOT stopped
+}
+const displayStream = await getDisplayMedia();
+```
+
+**Remediation:** Stop the previous stream's tracks before acquiring display media.
+
+---
+
+### 5. Camera Stream Ref Never Cleaned Up
+
+**Severity:** High
+**File:** `packages/frontend/src/components/ControlBar.tsx:55,90`
+
+**Description:** `cameraStreamRef.current` stores the camera stream when screen sharing starts but is never cleared when screen sharing ends. This holds a reference to the old camera stream preventing garbage collection.
+
+**Remediation:** Clear `cameraStreamRef.current = null` when screen sharing stops.
+
+---
+
+### 6. Peer remoteStream Not Cleared on Disconnect
+
+**Severity:** High
+**File:** `packages/frontend/src/lib/webrtc/peer-manager.ts:233-244`
+
+**Description:** When a peer disconnects, `handlePeerDisconnected` closes the connection and removes the peer from the map, but does not clear `peer.remoteStream`. The store's `removePeer` only removes the peer from state, not the stream reference.
+
+**Evidence:**
+```typescript
+private handlePeerDisconnected(peerId: string): void {
+  const peer = this.peers.get(peerId);
+  if (peer) {
+    peer.connection.close();
+    this.peers.delete(peerId);
+  }
+  // BUG: peer.remoteStream is not set to undefined
+  useRoomStore.getState().removePeer(peerId);
+}
+```
+
+**Remediation:** Set `peer.remoteStream = undefined` before closing the connection.
+
+---
+
+### 7. Connection State 'closed' Not Handled
+
+**Severity:** High
+**File:** `packages/frontend/src/lib/webrtc/peer-manager.ts:141-147`
+
+**Description:** The connection state change handler only handles `disconnected` and `failed` states. If `connection.close()` is called directly, the state becomes `closed` and `handlePeerDisconnected` is not called, potentially leaving dangling peer entries.
+
+**Evidence:**
+```typescript
+connection.onconnectionstatechange = () => {
+  if (connection.connectionState === 'disconnected' || connection.connectionState === 'failed') {
+    this.handlePeerDisconnected(peerId);
+  }
+  // Missing: connectionState === 'closed'
+};
+```
+
+**Remediation:** Also handle `connectionState === 'closed'`.
+
+---
+
+### 8. Timing-Safe Comparison Not Used for TURN Password
+
+**Severity:** High
+**File:** `packages/backend/src/services/turn-credentials.ts:67-84`
+
+**Description:** Password comparison uses `===` instead of `crypto.timingSafeEqual`, vulnerable to timing attacks that could allow attackers to guess valid TURN credentials by measuring response times.
+
+**Evidence:**
+```typescript
+return password === expectedPassword;
+```
+
+**Remediation:** Replace with constant-time comparison:
+```typescript
+if (password.length !== expectedPassword.length) {
+  return false;
+}
+return crypto.timingSafeEqual(Buffer.from(password), Buffer.from(expectedPassword));
+```
+
+---
+
+## Medium Severity
+
+### 9. Plaintext TURN Port 3478 Exposed in Development
+
+**Severity:** Medium
+**File:** `docker-compose.yml:58-60`
+
+**Description:** The development docker-compose exposes port 3478 (plaintext STUN/TURN) to all interfaces. Production only exposes TLS port 5349. This is inconsistent with the production configuration.
+
+**Evidence:**
+```yaml
+coturn:
+  ports:
+    - "3478:3478"
+    - "3478:3478/udp"
+```
+
+**Remediation:** Either remove the plaintext port exposure or bind it to localhost only (`127.0.0.1:3478:3478`).
+
+---
+
+### 10. CSP Contains unsafe-inline and unsafe-eval
+
+**Severity:** Medium
+**Files:**
+- `nginx.conf:78`
+- `nginx-frontend.conf:32`
+
+**Description:** Content Security Policy allows `'unsafe-inline'` and `'unsafe-eval'` which significantly weakens XSS protection.
+
+**Evidence:**
+```nginx
+add_header Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; ...";
+```
+
+**Remediation:** Remove `'unsafe-eval'` from both configurations. Use nonces or hashes for inline scripts if needed.
+
+---
+
+### 11. HSTS Header Missing in nginx-frontend.conf
+
+**Severity:** Medium
+**File:** `nginx-frontend.conf`
+
+**Description:** The main nginx.conf has HSTS header configured, but the frontend-specific config used as the default server does not include it.
+
+**Remediation:** Add to nginx-frontend.conf server block:
+```nginx
+add_header Strict-Transport-Security "max-age=31536000; includeSubDomains" always;
+```
+
+---
+
+### 12. certbot Uses latest Tag
+
+**Severity:** Medium
+**File:** `docker-compose.production.yml:115`
+
+**Description:** The certbot image uses `latest` tag instead of a versioned tag, breaking reproducible deployments.
+
+**Evidence:**
+```yaml
+certbot:
+  image: certbot/certbot:latest
+```
+
+**Remediation:** Pin to specific version:
+```yaml
+image: certbot/certbot:v2.11.0
+```
+
+---
+
+### 13. Room Token Logged on Every Chat Message
+
+**Severity:** Medium
+**File:** `packages/frontend/src/lib/signalling.ts:224`
+
+**Description:** The room token is logged on every chat send operation, potentially exposing room tokens in development logs and production log aggregation systems.
+
+**Evidence:**
+```typescript
+console.log('sendChatMessage called, roomToken:', roomToken, 'socket id:', this.socket?.id);
+```
+
+**Remediation:** Remove roomToken from log output or use a non-sensitive reference (e.g., token prefix/suffix).
+
+---
+
+### 14. Development Docker Compose Lacks Security Hardening
+
+**Severity:** Medium
+**File:** `docker-compose.yml`
+
+**Description:** The development docker-compose lacks security options that production has:
+- No `read_only: true` filesystem restriction
+- No `security_opt: no-new-privileges:true`
+- No resource limits (cpus, memory)
+- No user specification for services
+
+**Remediation:** Apply the same security hardening from production compose to development compose.
+
+---
+
+### 15. coturn Image Tag Not Pinned to Digest
+
+**Severity:** Low
+**File:** `docker-compose.production.yml:56`
+
+**Description:** The coturn image uses `coturn/coturn:4.6.2` without an exact digest pin, which does not guarantee reproducible builds.
+
+**Remediation:** Pin to exact digest:
+```yaml
+image: coturn/coturn:4.6.2@sha256:<exact-digest>
+```
+
+---
+
+### 16. TURN URL Scheme Not Validated in Frontend
+
+**Severity:** Medium
+**File:** `packages/frontend/src/lib/webrtc/peer-manager.ts:291-312`
+
+**Description:** TURN server URLs from the server are used without validating that they use the `turn:` or `turns:` scheme. A malicious or compromised server could provide `http://` URLs that would cause WebRTC to attempt routing traffic through an unintended server.
+
+**Remediation:** Add URL scheme validation before using TURN URLs:
+```typescript
+const validScheme = url.startsWith('turn:') || url.startsWith('turns:');
+if (!validScheme) {
+  console.warn('Invalid TURN URL scheme:', url);
+  continue;
+}
+```
+
+---
+
+## Low Severity
+
+### 17. X-XSS-Protection Header Deprecated
+
+**Severity:** Low
+**File:** `nginx.conf:74`
+
+**Description:** The `X-XSS-Protection: 1; mode=block` header is deprecated and can be used to introduce XSS vulnerabilities in some browsers. Modern browsers support CSP which makes this header unnecessary.
+
+**Remediation:** Remove the X-XSS-Protection header. XSS protection is better handled via CSP.
+
+---
+
+### 18. CORS Defaults to localhost in Production
+
+**Severity:** Low
+**File:** `packages/backend/src/middleware/security.ts:60`
+
+**Description:** CORS configuration defaults to `'http://localhost:5173'` when `CORS_ORIGIN` environment variable is not set. If misconfigured in production, cross-site connections could be permitted.
+
+**Remediation:** Add validation to ensure `CORS_ORIGIN` is a valid origin when `NODE_ENV=production`.
+
+---
+
+### 19. Rate Limiting Uses req.ip Without trust proxy
+
+**Severity:** Low
+**File:** `packages/backend/src/middleware/rate-limit.ts:22-23`
+
+**Description:** The HTTP rate limiting middleware uses `req.ip` without configuring Express's `trust proxy` setting. When behind a reverse proxy, `req.ip` may return the proxy's IP rather than the client's actual IP.
+
+**Remediation:** Configure `trust proxy` in Express when behind a reverse proxy:
+```typescript
+app.set('trust proxy', 1);
+```
+
+---
+
+## Summary
+
+| Severity | Count |
+|----------|-------|
+| Critical | 3 |
+| High | 5 |
+| Medium | 7 |
+| Low | 3 |
+
+### Top Priority Items
+
+1. **ICE candidate private IP validation** - Currently SDP is validated but ICE candidates bypass this check
+2. **Screen share track leak** - Browser-stopped screen share leaves tracks running
+3. **Diffie-Hellman parameters** - nginx references a file that doesn't exist
+4. **Stream cleanup on screen share** - Previous stream tracks not stopped
+5. **Timing-safe password comparison** - TURN password validation vulnerable to timing attacks
+
+---
+
+## Positive Findings
+
+The following are implemented correctly:
+
+- **SQL injection protection** via parameterized queries
+- **Zod validation** on all socket payloads
+- **Room membership checks** on all sensitive events
+- **Media stream cleanup** in `use-webrtc.ts` (though not in `ControlBar.tsx`)
+- **Non-root users** in Docker containers
+- **DTLS-SRTP encryption** enabled by default in WebRTC
+- **Graceful shutdown** handling in backend
+- **Soft delete** for room messages
+
+---
+
+*Review completed by Claude Code audit agents - 2026-03-22*

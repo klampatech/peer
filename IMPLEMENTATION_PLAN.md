@@ -9,7 +9,7 @@
 
 This document tracks the gap analysis between specification files in `specs/*` and the current codebase implementation.
 
-**Current Status: v0.7.21** | **Tests: 241+ passing** | **Coverage: 76.05%**
+**Current Status: v0.7.22** | **Tests: 241+ passing** | **Coverage: 76.05%**
 
 ---
 
@@ -236,6 +236,7 @@ add_header Permissions-Policy "camera=(), microphone=(), display-capture=(), geo
 
 | Version | Date | Changes |
 |---------|------|---------|
+| 0.7.22 | 2026-03-22 | Gap analysis refreshed - 4 infrastructure tasks still pending |
 | 0.7.21 | 2026-03-22 | Gap analysis refreshed - 4 infrastructure tasks still pending |
 | 0.7.20 | 2026-03-22 | Gap analysis refreshed - 4 infrastructure tasks still pending |
 | 0.7.19 | 2026-03-22 | Gap analysis refreshed - 4 infrastructure tasks pending (added Permissions-Policy gap) |
@@ -279,6 +280,7 @@ All 12 Critical findings have been fixed. All 19 High findings have been fixed o
 
 | Version | Date | Changes |
 |---------|------|---------|
+| 0.7.22 | 2026-03-22 | Gap analysis refreshed - 4 infrastructure tasks still pending |
 | 0.7.21 | 2026-03-22 | Gap analysis refreshed - 4 infrastructure tasks still pending |
 | 0.7.18 | 2026-03-22 | Added SECURITY_STANDARDS.md reference; 3 infrastructure tasks pending |
 | 0.7.17 | 2026-03-22 | Gap analysis refreshed - 3 tasks remaining (TURN port, CSP, HSTS) |
