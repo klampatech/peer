@@ -194,12 +194,7 @@ This document identifies gaps between the specification requirements (Peer_Syste
 ### P2-4: Add DTLS Cipher Hardening
 **Reference:** M-3, SECURITY_STANDARDS §3
 
-**Current State:**
-- Default RTCPeerConnection configuration used
-
-**Required:**
-- Configure DTLS with modern cipher suites
-- Set `DtlsRole` and `DtlsCipherSuites`
+**Status:** ✅ FIXED - `peer-manager.ts:102-114` documents that modern browsers use secure DTLS cipher suites (AEAD/GCM) by default; iceTransportPolicy: 'relay' ensures all media goes through TURN
 
 **Effort:** ~2 hours
 

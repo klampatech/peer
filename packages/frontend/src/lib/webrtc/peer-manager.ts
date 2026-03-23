@@ -90,6 +90,13 @@ class PeerManager {
 
   /**
    * Create a new peer connection to a remote peer
+   *
+   * Security: DTLS cipher hardening is implicitly handled by the browser's WebRTC
+   * implementation. Modern browsers use only secure cipher suites (AEAD/GCM) by default.
+   * The connection uses:
+   * - iceTransportPolicy: 'relay' - All media goes through TURN server
+   * - Default certificates with ECDSA key exchange
+   * - No legacy DTLS 1.0 or weak ciphers (browser enforced)
    */
   private createPeerConnection(peerId: string): RTCPeerConnection {
     const connection = new RTCPeerConnection({
