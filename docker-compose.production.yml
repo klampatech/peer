@@ -101,6 +101,8 @@ services:
       - certbot-var:/var/lib/letsencrypt
       - nginx-data:/var/log/nginx
       - nginx-cache:/var/cache/nginx
+    tmpfs:
+      - /run
     depends_on:
       - backend
       - frontend
