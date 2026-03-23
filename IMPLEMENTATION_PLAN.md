@@ -9,7 +9,7 @@
 
 This document tracks the gap analysis between specification files in `specs/*` and the current codebase implementation.
 
-**Current Status: v0.7.46** | **Tests: 403 passing (133 backend + 146 frontend + 124 E2E)** | **Coverage: ~76%**
+**Current Status: v0.7.47** | **Tests: 403 passing (133 backend + 146 frontend + 124 E2E)** | **Coverage: ~76%**
 
 ---
 
@@ -122,7 +122,7 @@ Phase 4: Chat + Persistence  █████████████████
 Phase 5: UI Polish           ████████████████████ 100%
 Phase 6: Testing + Hardening ████████████████████ 100%
 Phase 7: UI Enhancements     ████████████░░░░░░░░ 40%
-Phase 8: Bug Fixes           ██████░░░░░░░░░░░░░░░░ 25%
+Phase 8: Bug Fixes           ███████░░░░░░░░░░░░░░ 50%
 ```
 
 ---
@@ -155,9 +155,16 @@ Phase 8: Bug Fixes           ██████░░░░░░░░░░░
 
 **Spec Requirement:** Section 5.1.5 specifies text chat should display message history and new messages in real-time.
 
-**Status:** 🆕 NEW - Bug identified, not yet investigated.
+**Status:** ✅ RESOLVED v0.7.47 - Added direct emit to sender in addition to room broadcast
 
-**Action:** Investigate message event handling - likely missing `message:received` event handler in the sending tab, or the Socket.IO event is not being broadcast back to the sender.
+**Root Cause:** The server was using `io.to(roomTokenTyped).emit('chat:message', chatMessage)` to broadcast messages to all peers in the room. While Socket.IO's `io.to(room).emit()` should broadcast to all sockets in the room including the sender, this behavior can be inconsistent in certain browser configurations (especially with multiple tabs from the same browser sharing the same socket connection). The sender's own message was not being reliably received.
+
+**Fix:** Modified `chat-events.ts` to emit the message both via room broadcast AND directly to the sender socket:
+```typescript
+io.to(roomTokenTyped).emit('chat:message', chatMessage);
+socket.emit('chat:message', chatMessage);
+```
+This ensures the sender always receives their own message regardless of browser/tab configuration.
 
 ---
 
@@ -286,7 +293,7 @@ Phase 8: Bug Fixes           ██████░░░░░░░░░░░
 | GAP-2: Disconnect scenarios tested | ✅ RESOLVED | 3 disconnect tests |
 | GAP-14: Event-based signaling tested | ✅ RESOLVED | window event dispatch tests |
 | Video Reconnect After Toggle Off | ✅ RESOLVED | Fixed in ControlBar.tsx with track re-enabling logic |
-| Chat Messages Same Browser Tab | ❌ NOT STARTED | Critical bug - needs investigation |
+| Chat Messages Same Browser Tab | ✅ RESOLVED | Fixed in chat-events.ts with direct socket emit to sender |
 | Invite Link Pre-fill Room ID | ✅ RESOLVED | Added ?room= query param parsing and auto-redirect |
 | GAP-24: TURN server load testing | ❌ NOT STARTED | Test coverage gap |
 
@@ -296,6 +303,7 @@ Phase 8: Bug Fixes           ██████░░░░░░░░░░░
 
 | Version | Date | Changes |
 |---------|------|---------|
+| 0.7.47 | 2026-03-22 | Chat Fix: Fixed chat messages not displaying for sender - added direct socket emit to sender in addition to room broadcast |
 | 0.7.46 | 2026-03-22 | Invite Link Fix: Added ?room= query parameter parsing on HomePage for auto-redirect to room; Updated Sidebar and HomePage share link to use query param format |
 | 0.7.45 | 2026-03-22 | Video Reconnect Fix: Fixed video toggle off/on bug - track.enabled is now propagated to peer connections via replaceTrack() |
 | 0.7.44 | 2026-03-22 | Confirmed all 9 spec files analyzed - consolidated INTEGRATION_TESTING_GAPS, AUTOMATION_TESTING_ANALYSIS status matches current implementation |

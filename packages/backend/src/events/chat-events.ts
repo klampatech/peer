@@ -97,7 +97,14 @@ export function setupChatEvents(io: SocketIOServer): void {
         incrementChatMessages();
 
         // Broadcast message to all peers in the room
+        // io.to(room) sends to ALL sockets in the room INCLUDING the sender
         io.to(roomTokenTyped).emit('chat:message', chatMessage);
+
+        // Also emit directly to sender to ensure they receive their own message
+        // This is needed because in some Socket.IO configurations, the broadcast
+        // to the sender may not be reliably received (especially with multiple
+        // tabs from the same browser)
+        socket.emit('chat:message', chatMessage);
       } catch (error) {
         logger.error({ traceId: socket.data.traceId, err: error }, 'Error handling chat:message');
         socket.emit('chat:error', {

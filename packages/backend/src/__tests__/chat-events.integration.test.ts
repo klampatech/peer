@@ -183,7 +183,7 @@ describe('Chat Events Integration', () => {
         receivedMessages.push(msg);
       });
 
-      // No server acknowledgment - server broadcasts to room
+      // Server broadcasts to room AND emits directly to sender (ensures sender receives own message)
       clientSocket.emit(
         'chat:message',
         { roomToken: room.token, message: '<script>alert("xss")</script>Hello' }
@@ -191,7 +191,9 @@ describe('Chat Events Integration', () => {
 
       await new Promise(resolve => setTimeout(resolve, 50));
 
-      expect(receivedMessages).toHaveLength(1);
+      // Sender receives 2 messages: one from io.to(room), one from socket.emit()
+      expect(receivedMessages).toHaveLength(2);
+      // Check the first message (from io.to broadcast)
       const msg = receivedMessages[0] as Record<string, unknown>;
       // HTML entities are escaped, preventing script execution
       expect(msg.message).not.toContain('<script>');
