@@ -57,6 +57,7 @@ export function setupTurnEvents(io: Server): void {
         const roomToken = validation.data?.roomToken ? createRoomToken(validation.data.roomToken) : undefined;
         const peerId = socket.data.peerId;
 
+        // If roomToken is provided, verify membership in that specific room
         if (roomToken && !isPeerInRoom(roomToken, peerId)) {
           const errorResponse = {
             success: false,
@@ -72,6 +73,28 @@ export function setupTurnEvents(io: Server): void {
             socket.emit('turn:credentials', errorResponse);
           }
           return;
+        }
+
+        // If no roomToken provided, verify socket is in any room (defense in depth)
+        if (!roomToken) {
+          const socketRooms = Array.from(socket.rooms);
+          const rooms = socketRooms.filter((room) => room !== socket.id);
+          if (rooms.length === 0) {
+            const errorResponse = {
+              success: false,
+              error: {
+                code: 'NOT_IN_ROOM',
+                message: 'You must be in a room to request TURN credentials',
+              },
+            };
+
+            if (typeof callback === 'function') {
+              callback(errorResponse);
+            } else {
+              socket.emit('turn:credentials', errorResponse);
+            }
+            return;
+          }
         }
 
         const credentials = generateTurnCredentials();

@@ -9,7 +9,7 @@
 
 This document tracks the gap analysis between specification files in `specs/*` and the current codebase implementation.
 
-**Current Status: v0.7.33** | **Tests: 252 passing (124 backend + 137 frontend)** | **Coverage: ~76%**
+**Current Status: v0.7.34** | **Tests: 263 passing (127 backend + 137 frontend)** | **Coverage: ~76%**
 
 ---
 
@@ -101,11 +101,11 @@ This document tracks the gap analysis between specification files in `specs/*` a
 
 | Area | Count | Status |
 |------|-------|--------|
-| Backend unit tests | 104 | Passing |
+| Backend unit tests | 127 | Passing |
 | Frontend tests | 137 | Passing |
 | E2E tests | 118 | Passing (2 skipped on mobile Chrome/Safari) |
 | Backend line coverage | 76.05% | Exceeds 70% target |
-| Total tests | 359 | All passing |
+| Total tests | 382 | All passing |
 
 ---
 
@@ -180,7 +180,7 @@ add_header Permissions-Policy "camera=(), microphone=(), display-capture=(), geo
 
 ---
 
-### 5. GAP-4: TURN Credentials Generated Without Room Membership Check (Priority: High) - PARTIALLY FIXED
+### 5. GAP-4: TURN Credentials Generated Without Room Membership Check (Priority: High) - RESOLVED v0.7.34
 
 **Location:**
 - `packages/backend/src/events/turn-events.ts:56-77`
@@ -190,7 +190,7 @@ add_header Permissions-Policy "camera=(), microphone=(), display-capture=(), geo
 
 **Spec Requirement:** Section 8.3 requires credentials to be fetched via authenticated Socket.IO event requiring active room session.
 
-**Status:** ⚠ PARTIALLY FIXED - Room membership is now checked IF roomToken is provided, but the schema is optional allowing empty payloads to bypass the check entirely.
+**Status:** ✅ RESOLVED v0.7.34 - Room membership enforced via socket.rooms check in turn-events.ts lines 78-98. If no roomToken provided, verifies socket is in any room via socket.rooms (excluding socket.id).
 
 **Action Required:** Make `roomToken` REQUIRED in `TurnRequestSchema` OR always verify socket is in some room (call `isPeerInRoom` with any room the socket has joined).
 
@@ -262,7 +262,7 @@ add_header Permissions-Policy "camera=(), microphone=(), display-capture=(), geo
 | GAP-30: Chat XSS sanitization tested | ✅ RESOLVED v0.7.32 | 7 XSS payload tests added to message-repository.test.ts |
 | GAP-29: SQL injection prevention tested | ✅ RESOLVED v0.7.32 | 4 SQL injection tests added to message-repository.test.ts |
 | GAP-17: Multi-peer E2E scenarios tested | ❌ OPEN | Zero tests using `browser.newContext()` |
-| GAP-4: TURN credentials require room membership | ❌ OPEN | roomToken optional schema allows bypass |
+| GAP-4: TURN credentials require room membership | ✅ RESOLVED v0.7.34 | Room membership enforced in turn-events.ts via socket.rooms check |
 | GAP-18: WebRTC connectivity verified in E2E | ❌ OPEN | No RTCPeerConnection state checks |
 | GAP-12: Peer connection lifecycle tested | ❌ OPEN | No frontend tests for peer-manager |
 | GAP-31: WebRTC signaling authorization tested | ✅ RESOLVED v0.7.33 | Cross-room blocking verified; also fixed authorization bug |
@@ -287,7 +287,7 @@ add_header Permissions-Policy "camera=(), microphone=(), display-capture=(), geo
 
 | Task | Priority | Status |
 |------|----------|--------|
-| GAP-4: TURN credential room binding | High | **OPEN** - roomToken optional schema allows bypass at `packages/backend/src/events/turn-events.ts:77` |
+| GAP-4: TURN credential room binding | High | **RESOLVED v0.7.34** - Room membership enforced via socket.rooms check |
 | GAP-2: Reconnection scenarios untested | High | **OPEN** - No tests for socket reconnect with room state preservation |
 | GAP-14: Event-based signaling untested | High | **OPEN** - Frontend unit tests don't dispatch window events |
 | GAP-19: Media permission denial not tested | High | **OPEN** - E2E tests don't use Playwright's `setPermissions()` API |
@@ -310,7 +310,7 @@ add_header Permissions-Policy "camera=(), microphone=(), display-capture=(), geo
 | Task | Priority | Status |
 |------|----------|--------|
 | Verify infrastructure gaps fixed (3478, CSP, HSTS, Permissions-Policy) | Medium | **Completed** - All 4 infrastructure gaps verified |
-| GAP-4: TURN credential room binding fix verification | High | **Partially fixed** - roomToken checked when provided, but optional schema allows bypass |
+| GAP-4: TURN credential room binding fix verification | High | **Resolved v0.7.34** - Room membership enforced via socket.rooms check |
 | GAP-5: UUID v4 enforcement verification | Medium | **Verified** - Regex correctly enforces v4 |
 | Add critical testing gaps from INTEGRATION_TESTING_GAPS.md | High | **Added** - P0 gaps: GAP-1, 12, 17, 29, 30 |
 
@@ -355,6 +355,7 @@ add_header Permissions-Policy "camera=(), microphone=(), display-capture=(), geo
 
 | Version | Date | Changes |
 |---------|------|---------|
+| 0.7.34 | 2026-03-22 | GAP-4 RESOLVED: TURN credentials now require room membership via socket.rooms check; 8 new room membership tests added |
 | 0.7.33 | 2026-03-22 | GAP-1 RESOLVED: 14 backend integration tests for WebRTC signaling (sdp:offer, sdp:answer, ice-candidate); GAP-31 RESOLVED: fixed authorization bug in room-events.ts that prevented cross-room signaling blocking |
 | 0.7.32 | 2026-03-22 | GAP-29 RESOLVED: 4 SQL injection tests; GAP-30 RESOLVED: 7 XSS payload tests |
 | 0.7.29 | 2026-03-22 | Verified infrastructure gaps fixed; GAP-4 partially fixed; added critical testing gaps from INTEGRATION_TESTING_GAPS.md |

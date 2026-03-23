@@ -10,6 +10,7 @@ import http from 'http';
 import express from 'express';
 import request from 'supertest';
 import { setupTurnEvents } from '../events/turn-events.js';
+import { setupRoomEvents } from '../events/room-events.js';
 
 // Mock at top level - database
 vi.mock('../db/index', () => ({
@@ -61,6 +62,7 @@ describe('TURN Events Integration', () => {
     io = new SocketIOServer(httpServer, { cors: { origin: '*' } });
 
     setupTurnEvents(io);
+    setupRoomEvents(io);
 
     await new Promise<void>((resolve) => {
       httpServer.listen(0, () => {
@@ -82,13 +84,43 @@ describe('TURN Events Integration', () => {
   });
 
   describe('turn:request via socket event', () => {
-    it('should generate TURN credentials on request', async () => {
+    it('should generate TURN credentials on request when in a room', async () => {
+      // First create a room
+      const createRoomSocket = ioc(`http://localhost:${testPort}`, { forceNew: true });
+      await new Promise<void>((resolve, reject) => {
+        const t = setTimeout(() => reject(new Error('Connect timeout')), 5000);
+        createRoomSocket.on('connect', () => {
+          clearTimeout(t);
+          resolve();
+        });
+      });
+
+      const room: { token?: string } = {};
+      await new Promise<void>((resolve, reject) => {
+        createRoomSocket.emit('room:create', { displayName: 'Host' }, (res: unknown) => {
+          const response = res as Record<string, unknown>;
+          if (response.success && response.data) {
+            room.token = (response.data as Record<string, unknown>).token as string;
+          }
+          resolve();
+        });
+      });
+
+      // Client socket joins the room
       clientSocket = ioc(`http://localhost:${testPort}`, { forceNew: true });
 
       await new Promise<void>((resolve, reject) => {
         const t = setTimeout(() => reject(new Error('Connect timeout')), 5000);
         clientSocket.on('connect', () => {
           clearTimeout(t);
+          resolve();
+        });
+      });
+
+      await new Promise<void>((resolve) => {
+        clientSocket.emit('room:join', { token: room.token, displayName: 'Peer' }, (res: unknown) => {
+          const response = res as Record<string, unknown>;
+          expect(response.success).toBe(true);
           resolve();
         });
       });
@@ -119,13 +151,43 @@ describe('TURN Events Integration', () => {
       expect(credentials.password as string).toMatch(/^[A-Za-z0-9+/=]+$/);
     });
 
-    it('should generate credentials with valid HMAC-SHA1 password', async () => {
+    it('should generate credentials with valid HMAC-SHA1 password when in a room', async () => {
+      // First create a room
+      const createRoomSocket = ioc(`http://localhost:${testPort}`, { forceNew: true });
+      await new Promise<void>((resolve, reject) => {
+        const t = setTimeout(() => reject(new Error('Connect timeout')), 5000);
+        createRoomSocket.on('connect', () => {
+          clearTimeout(t);
+          resolve();
+        });
+      });
+
+      const room: { token?: string } = {};
+      await new Promise<void>((resolve) => {
+        createRoomSocket.emit('room:create', { displayName: 'Host' }, (res: unknown) => {
+          const response = res as Record<string, unknown>;
+          if (response.success && response.data) {
+            room.token = (response.data as Record<string, unknown>).token as string;
+          }
+          resolve();
+        });
+      });
+
+      // Client socket joins the room
       clientSocket = ioc(`http://localhost:${testPort}`, { forceNew: true });
 
       await new Promise<void>((resolve, reject) => {
         const t = setTimeout(() => reject(new Error('Connect timeout')), 5000);
         clientSocket.on('connect', () => {
           clearTimeout(t);
+          resolve();
+        });
+      });
+
+      await new Promise<void>((resolve) => {
+        clientSocket.emit('room:join', { token: room.token, displayName: 'Peer' }, (res: unknown) => {
+          const response = res as Record<string, unknown>;
+          expect(response.success).toBe(true);
           resolve();
         });
       });
@@ -156,13 +218,43 @@ describe('TURN Events Integration', () => {
       expect(credentials.password).toBe(expectedPassword);
     });
 
-    it('should generate credentials with all required fields', async () => {
+    it('should generate credentials with all required fields when in a room', async () => {
+      // First create a room
+      const createRoomSocket = ioc(`http://localhost:${testPort}`, { forceNew: true });
+      await new Promise<void>((resolve, reject) => {
+        const t = setTimeout(() => reject(new Error('Connect timeout')), 5000);
+        createRoomSocket.on('connect', () => {
+          clearTimeout(t);
+          resolve();
+        });
+      });
+
+      const room: { token?: string } = {};
+      await new Promise<void>((resolve) => {
+        createRoomSocket.emit('room:create', { displayName: 'Host' }, (res: unknown) => {
+          const response = res as Record<string, unknown>;
+          if (response.success && response.data) {
+            room.token = (response.data as Record<string, unknown>).token as string;
+          }
+          resolve();
+        });
+      });
+
+      // Client socket joins the room
       clientSocket = ioc(`http://localhost:${testPort}`, { forceNew: true });
 
       await new Promise<void>((resolve, reject) => {
         const t = setTimeout(() => reject(new Error('Connect timeout')), 5000);
         clientSocket.on('connect', () => {
           clearTimeout(t);
+          resolve();
+        });
+      });
+
+      await new Promise<void>((resolve) => {
+        clientSocket.emit('room:join', { token: room.token, displayName: 'Peer' }, (res: unknown) => {
+          const response = res as Record<string, unknown>;
+          expect(response.success).toBe(true);
           resolve();
         });
       });
@@ -184,13 +276,43 @@ describe('TURN Events Integration', () => {
       expect(credentials.ttl).toBe(3600);
     });
 
-    it('should include TURN/STUN URLs with correct format', async () => {
+    it('should include TURN/STUN URLs with correct format when in a room', async () => {
+      // First create a room
+      const createRoomSocket = ioc(`http://localhost:${testPort}`, { forceNew: true });
+      await new Promise<void>((resolve, reject) => {
+        const t = setTimeout(() => reject(new Error('Connect timeout')), 5000);
+        createRoomSocket.on('connect', () => {
+          clearTimeout(t);
+          resolve();
+        });
+      });
+
+      const room: { token?: string } = {};
+      await new Promise<void>((resolve) => {
+        createRoomSocket.emit('room:create', { displayName: 'Host' }, (res: unknown) => {
+          const response = res as Record<string, unknown>;
+          if (response.success && response.data) {
+            room.token = (response.data as Record<string, unknown>).token as string;
+          }
+          resolve();
+        });
+      });
+
+      // Client socket joins the room
       clientSocket = ioc(`http://localhost:${testPort}`, { forceNew: true });
 
       await new Promise<void>((resolve, reject) => {
         const t = setTimeout(() => reject(new Error('Connect timeout')), 5000);
         clientSocket.on('connect', () => {
           clearTimeout(t);
+          resolve();
+        });
+      });
+
+      await new Promise<void>((resolve) => {
+        clientSocket.emit('room:join', { token: room.token, displayName: 'Peer' }, (res: unknown) => {
+          const response = res as Record<string, unknown>;
+          expect(response.success).toBe(true);
           resolve();
         });
       });
@@ -216,13 +338,43 @@ describe('TURN Events Integration', () => {
       expect(urls[4]).toMatch(/^turn:127\.0\.0\.1:3478\/tcp$/);
     });
 
-    it('should set correct TTL value', async () => {
+    it('should set correct TTL value when in a room', async () => {
+      // First create a room
+      const createRoomSocket = ioc(`http://localhost:${testPort}`, { forceNew: true });
+      await new Promise<void>((resolve, reject) => {
+        const t = setTimeout(() => reject(new Error('Connect timeout')), 5000);
+        createRoomSocket.on('connect', () => {
+          clearTimeout(t);
+          resolve();
+        });
+      });
+
+      const room: { token?: string } = {};
+      await new Promise<void>((resolve) => {
+        createRoomSocket.emit('room:create', { displayName: 'Host' }, (res: unknown) => {
+          const response = res as Record<string, unknown>;
+          if (response.success && response.data) {
+            room.token = (response.data as Record<string, unknown>).token as string;
+          }
+          resolve();
+        });
+      });
+
+      // Client socket joins the room
       clientSocket = ioc(`http://localhost:${testPort}`, { forceNew: true });
 
       await new Promise<void>((resolve, reject) => {
         const t = setTimeout(() => reject(new Error('Connect timeout')), 5000);
         clientSocket.on('connect', () => {
           clearTimeout(t);
+          resolve();
+        });
+      });
+
+      await new Promise<void>((resolve) => {
+        clientSocket.emit('room:join', { token: room.token, displayName: 'Peer' }, (res: unknown) => {
+          const response = res as Record<string, unknown>;
+          expect(response.success).toBe(true);
           resolve();
         });
       });
@@ -239,6 +391,158 @@ describe('TURN Events Integration', () => {
       const response = receivedCredentials[0] as Record<string, unknown>;
       const credentials = response.data as Record<string, unknown>;
       expect(credentials.ttl).toBe(3600);
+    });
+
+    it('should reject TURN request when socket is not in any room', async () => {
+      // Socket connects but doesn't join any room
+      clientSocket = ioc(`http://localhost:${testPort}`, { forceNew: true });
+
+      await new Promise<void>((resolve, reject) => {
+        const t = setTimeout(() => reject(new Error('Connect timeout')), 5000);
+        clientSocket.on('connect', () => {
+          clearTimeout(t);
+          resolve();
+        });
+      });
+
+      const receivedCredentials: unknown[] = [];
+      clientSocket.on('turn:credentials', (data: unknown) => {
+        receivedCredentials.push(data);
+      });
+
+      // Emit turn:request with no room - should fail
+      clientSocket.emit('turn:request');
+
+      await new Promise(resolve => setTimeout(resolve, 100));
+
+      expect(receivedCredentials).toHaveLength(1);
+      const response = receivedCredentials[0] as Record<string, unknown>;
+      expect(response).toHaveProperty('success', false);
+      expect(response.error).toHaveProperty('code', 'NOT_IN_ROOM');
+    });
+
+    it('should allow TURN request when socket is in a room', async () => {
+      // First create a room
+      const createRoomSocket = ioc(`http://localhost:${testPort}`, { forceNew: true });
+      await new Promise<void>((resolve, reject) => {
+        const t = setTimeout(() => reject(new Error('Connect timeout')), 5000);
+        createRoomSocket.on('connect', () => {
+          clearTimeout(t);
+          resolve();
+        });
+      });
+
+      const room: { token?: string } = {};
+      await new Promise<void>((resolve, reject) => {
+        createRoomSocket.emit('room:create', { displayName: 'Host' }, (res: unknown) => {
+          const response = res as Record<string, unknown>;
+          if (response.success && response.data) {
+            room.token = (response.data as Record<string, unknown>).token as string;
+          }
+          resolve();
+        });
+      });
+
+      // Second socket joins the room
+      clientSocket = ioc(`http://localhost:${testPort}`, { forceNew: true });
+      await new Promise<void>((resolve, reject) => {
+        const t = setTimeout(() => reject(new Error('Connect timeout')), 5000);
+        clientSocket.on('connect', () => {
+          clearTimeout(t);
+          resolve();
+        });
+      });
+
+      await new Promise<void>((resolve) => {
+        clientSocket.emit('room:join', { token: room.token, displayName: 'Peer 2' }, (res: unknown) => {
+          const response = res as Record<string, unknown>;
+          expect(response.success).toBe(true);
+          resolve();
+        });
+      });
+
+      const receivedCredentials: unknown[] = [];
+      clientSocket.on('turn:credentials', (data: unknown) => {
+        receivedCredentials.push(data);
+      });
+
+      // Now emit turn:request without roomToken - should succeed because socket is in a room
+      clientSocket.emit('turn:request');
+
+      await new Promise(resolve => setTimeout(resolve, 100));
+
+      expect(receivedCredentials).toHaveLength(1);
+      const response = receivedCredentials[0] as Record<string, unknown>;
+      expect(response).toHaveProperty('success', true);
+      expect(response).toHaveProperty('data');
+    });
+
+    it('should reject TURN request when roomToken provided but socket not in that room', async () => {
+      // Create two rooms
+      const createRoomSocket = ioc(`http://localhost:${testPort}`, { forceNew: true });
+      await new Promise<void>((resolve, reject) => {
+        const t = setTimeout(() => reject(new Error('Connect timeout')), 5000);
+        createRoomSocket.on('connect', () => {
+          clearTimeout(t);
+          resolve();
+        });
+      });
+
+      const roomA: { token?: string } = {};
+      const roomB: { token?: string } = {};
+
+      await new Promise<void>((resolve, reject) => {
+        createRoomSocket.emit('room:create', { displayName: 'Host A' }, (res: unknown) => {
+          const response = res as Record<string, unknown>;
+          if (response.success && response.data) {
+            roomA.token = (response.data as Record<string, unknown>).token as string;
+          }
+          resolve();
+        });
+      });
+
+      await new Promise<void>((resolve, reject) => {
+        createRoomSocket.emit('room:create', { displayName: 'Host B' }, (res: unknown) => {
+          const response = res as Record<string, unknown>;
+          if (response.success && response.data) {
+            roomB.token = (response.data as Record<string, unknown>).token as string;
+          }
+          resolve();
+        });
+      });
+
+      // Socket joins roomA
+      clientSocket = ioc(`http://localhost:${testPort}`, { forceNew: true });
+      await new Promise<void>((resolve, reject) => {
+        const t = setTimeout(() => reject(new Error('Connect timeout')), 5000);
+        clientSocket.on('connect', () => {
+          clearTimeout(t);
+          resolve();
+        });
+      });
+
+      await new Promise<void>((resolve) => {
+        clientSocket.emit('room:join', { token: roomA.token, displayName: 'Peer A' }, (res: unknown) => {
+          const response = res as Record<string, unknown>;
+          expect(response.success).toBe(true);
+          resolve();
+        });
+      });
+
+      const receivedCredentials: unknown[] = [];
+      clientSocket.on('turn:credentials', (data: unknown) => {
+        receivedCredentials.push(data);
+      });
+
+      // Request TURN with roomB token (socket is in roomA, not roomB) - should fail
+      clientSocket.emit('turn:request', { roomToken: roomB.token });
+
+      await new Promise(resolve => setTimeout(resolve, 100));
+
+      expect(receivedCredentials).toHaveLength(1);
+      const response = receivedCredentials[0] as Record<string, unknown>;
+      expect(response).toHaveProperty('success', false);
+      expect(response.error).toHaveProperty('code', 'NOT_IN_ROOM');
     });
   });
 
