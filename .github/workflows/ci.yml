@@ -273,14 +273,15 @@ jobs:
       - name: Wait for services to be ready
         run: |
           for i in $(seq 1 30); do
-            if curl -sf http://localhost:3000/health > /dev/null 2>&1 && curl -sf http://localhost/health > /dev/null 2>&1; then
-              echo "Services ready after ${i} attempts"
+            # Check backend directly (nginx proxies to backend but we can't resolve 'backend' hostname with --no-deps)
+            if curl -sf http://localhost:3000/health > /dev/null 2>&1; then
+              echo "Backend ready after ${i} attempts"
               exit 0
             fi
-            echo "Waiting for services... ($i/30)"
+            echo "Waiting for backend... ($i/30)"
             sleep 2
           done
-          echo "FAIL: Services did not become ready within 60 seconds"
+          echo "FAIL: Backend did not become ready within 60 seconds"
           exit 1
 
       - name: Run OWASP ZAP scan
