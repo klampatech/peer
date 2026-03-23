@@ -9,7 +9,7 @@
 
 This document tracks the gap analysis between specification files in `specs/*` and the current codebase implementation.
 
-**Current Status: v0.7.30** | **Tests: 241 passing (104 backend + 137 frontend)** | **Coverage: 76.05%**
+**Current Status: v0.7.31** | **Tests: 241 passing (104 backend + 137 frontend)** | **Coverage: 76.05%**
 
 ---
 
@@ -265,24 +265,43 @@ add_header Permissions-Policy "camera=(), microphone=(), display-capture=(), geo
 | GAP-4: TURN credentials require room membership | ❌ OPEN | roomToken optional schema allows bypass |
 | GAP-18: WebRTC connectivity verified in E2E | ❌ OPEN | No RTCPeerConnection state checks |
 | GAP-12: Peer connection lifecycle tested | ❌ OPEN | No frontend tests for peer-manager |
+| GAP-31: WebRTC signaling authorization tested | ❌ OPEN | No tests for cross-room signaling prevention |
 
 ---
 
-## v0.7.30 Tasks
+## v0.7.31 Tasks (Consolidated from INTEGRATION_TESTING_GAPS.md)
+
+### Critical (P0) - Must Fix Before Production
 
 | Task | Priority | Status |
 |------|----------|--------|
-| GAP-1: WebRTC signaling events untested | Critical | **OPEN** - No backend integration tests for `sdp:offer`, `sdp:answer`, `ice-candidate` at `room-events.ts:194-271` |
-| GAP-12: Peer connection lifecycle untested | Critical | **OPEN** - No frontend tests for peer-manager connection creation, SDP/ICE handlers |
+| GAP-1: WebRTC signaling events untested | Critical | **OPEN** - No backend integration tests for `sdp:offer`, `sdp:answer`, `ice-candidate` at `packages/backend/src/events/room-events.ts:194-271` |
+| GAP-12: Peer connection lifecycle untested | Critical | **OPEN** - No frontend tests for peer-manager connection creation, SDP/ICE handlers at `packages/frontend/src/lib/webrtc/peer-manager.ts:94-150` |
 | GAP-17: Multi-peer E2E scenarios untested | Critical | **OPEN** - Zero E2E tests use `browser.newContext()` for concurrent users |
 | GAP-18: WebRTC connectivity not verified | Critical | **OPEN** - E2E tests only check URLs, never verify `RTCPeerConnection` state |
-| GAP-29: SQL injection not tested | Critical | **OPEN** - No security tests verify parameterized queries block injection |
-| GAP-30: Chat XSS not tested | Critical | **OPEN** - `sanitizeHtml()` exists but untested with XSS payloads |
+| GAP-29: SQL injection not tested | Critical | **OPEN** - No security tests verify parameterized queries block injection in `packages/backend/src/repositories/message-repository.ts` |
+| GAP-30: Chat XSS not tested | Critical | **OPEN** - `sanitizeHtml()` exists at `packages/backend/src/repositories/message-repository.ts:127-138` but untested with XSS payloads |
 | GAP-31: WebRTC signaling authorization untested | Critical | **OPEN** - Security tests don't verify peers can't send signaling to other rooms |
-| GAP-4: TURN credential room binding | High | **Still open** - roomToken optional schema allows bypass at `turn-events.ts:77` |
-| GAP-5: UUID v4 enforcement | Medium | **FIXED** - Regex at `packages/shared/src/index.ts:190-192` correctly enforces v4 |
+
+### High Priority (P1)
+
+| Task | Priority | Status |
+|------|----------|--------|
+| GAP-4: TURN credential room binding | High | **OPEN** - roomToken optional schema allows bypass at `packages/backend/src/events/turn-events.ts:77` |
 | GAP-2: Reconnection scenarios untested | High | **OPEN** - No tests for socket reconnect with room state preservation |
 | GAP-14: Event-based signaling untested | High | **OPEN** - Frontend unit tests don't dispatch window events |
+| GAP-19: Media permission denial not tested | High | **OPEN** - E2E tests don't use Playwright's `setPermissions()` API |
+
+### Medium Priority (P2)
+
+| Task | Priority | Status |
+|------|----------|--------|
+| GAP-5: UUID v4 enforcement | Medium | **VERIFIED FIXED** - Regex at `packages/shared/src/index.ts:190-192` correctly enforces v4 |
+| GAP-8: Socket event rate limiting untested | Medium | **OPEN** - Backend has rate limiter but untested for socket events |
+| GAP-13: ICE failure handling untested | Medium | **OPEN** - No frontend tests for ICE connection failure, timeout, TURN fallback |
+| GAP-20: Invite/share flow untested | Medium | **OPEN** - E2E tests don't verify "Copy Link" button |
+| GAP-21: Media controls (mute/camera) untested | Medium | **OPEN** - E2E tests don't verify mute/camera toggle |
+| GAP-22: Leave room flow untested | Medium | **OPEN** - E2E tests don't verify end call flow |
 
 ---
 
@@ -379,6 +398,7 @@ All 12 Critical findings have been fixed. All 19 High findings have been fixed o
 
 | Version | Date | Changes |
 |---------|------|---------|
+| 0.7.31 | 2026-03-22 | Consolidated remaining gaps from INTEGRATION_TESTING_GAPS.md and AUTOMATION_TESTING_ANALYSIS.md; organized by P0/P1/P2 priority; verified UUID v4 fix still valid |
 | 0.7.30 | 2026-03-22 | Added 11 critical testing gaps (GAP-1, 2, 4, 12, 14, 17, 18, 29, 30, 31); verified UUID v4 regex fix; restructured exit criteria table |
 | 0.7.29 | 2026-03-22 | Verified infrastructure gaps fixed; GAP-4 partially fixed; added critical testing gaps from INTEGRATION_TESTING_GAPS.md |
 | 0.7.23 | 2026-03-22 | Gap analysis refreshed - 4 infrastructure tasks still pending |
