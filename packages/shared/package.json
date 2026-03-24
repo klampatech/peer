@@ -12,7 +12,7 @@
     }
   },
   "scripts": {
-    "build": "tsc",
+    "build": "tsc --skipLibCheck",
     "clean": "rm -rf dist",
     "typecheck": "tsc --noEmit"
   },
