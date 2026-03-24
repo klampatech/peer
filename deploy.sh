@@ -65,7 +65,7 @@ $SSH_CMD "$SSH_HOST" "cd $DEPLOY_DIR && docker compose -f $COMPOSE_FILE down && 
 # Step 3: Verify containers are running
 STEP="verify"
 echo ">>> Verifying containers..."
-$SSH_CMD "$SSH_HOST" "docker compose -f $COMPOSE_FILE ps"
+$SSH_CMD "$SSH_HOST" "cd $DEPLOY_DIR && docker compose -f $COMPOSE_FILE ps"
 
 echo ""
 echo "=== Deployment Complete ==="
