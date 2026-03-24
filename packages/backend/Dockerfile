@@ -30,17 +30,12 @@ RUN addgroup -g 1001 -S nodejs && \
 
 WORKDIR /app
 
-# Copy package files for production dependencies (use root lockfile - per-package lockfiles are not tracked)
-COPY packages/backend/package.json pnpm-lock.yaml ./
+# Copy package files (needed at runtime for health check etc)
+COPY packages/backend/package.json ./
 
-# Install pnpm and production dependencies only
-RUN corepack enable && corepack prepare pnpm@9 --activate
-
-# Install production dependencies
-RUN pnpm install --frozen-lockfile --prod
-
-# Copy built artifacts
+# Copy built artifacts and node_modules from builder
 COPY --from=builder /app/packages/backend/dist ./dist
+COPY --from=builder /app/node_modules ./node_modules
 COPY --from=builder /app/packages/shared/dist ./node_modules/@peer/shared
 
 # Copy data directory for SQLite
