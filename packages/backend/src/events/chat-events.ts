@@ -5,8 +5,8 @@
 import { Server as SocketIOServer, Socket } from 'socket.io';
 import { v4 as uuidv4 } from 'uuid';
 import type { RoomToken, ChatMessageResponsePayload } from '@peer/shared';
-import { createMessage, getMessagesByRoom, validateMessage } from '../repositories/message-repository';
-import { isPeerInRoom } from '../rooms';
+import { createMessage, getMessagesByRoom, validateMessage } from '../repositories/message-repository.js';
+import { isPeerInRoom } from '../rooms.js';
 import { logger } from '../utils/logger.js';
 import { incrementChatMessages } from '../routes/metrics.js';
 import {

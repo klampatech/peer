@@ -1,29 +1,5 @@
-# Build stage
-FROM node:22-alpine AS builder
-
-# Install pnpm
-RUN corepack enable && corepack prepare pnpm@9 --activate
-
-WORKDIR /app
-
-# Copy workspace files
-COPY pnpm-workspace.yaml ./
-COPY pnpm-lock.yaml ./
-COPY tsconfig.json ./
-COPY packages/shared packages/shared
-COPY packages/backend packages/backend
-
-# Install dependencies
-RUN pnpm install --frozen-lockfile
-
-# Build shared types first
-RUN pnpm --filter @peer/shared build
-
-# Build backend
-RUN pnpm --filter @peer/backend build
-
-# Production stage
-FROM node:22-alpine AS production
+# Production stage only - built files are copied from build context
+FROM node:22-alpine
 
 # Create non-root user for security
 RUN addgroup -g 1001 -S nodejs && \
@@ -31,13 +7,20 @@ RUN addgroup -g 1001 -S nodejs && \
 
 WORKDIR /app
 
-# Copy package files (needed at runtime for health check etc)
+# Copy package files first
 COPY packages/backend/package.json ./
 
-# Copy built artifacts and node_modules from builder
-COPY --from=builder /app/packages/backend/dist ./dist
-COPY --from=builder /app/node_modules ./node_modules
-COPY --from=builder /app/packages/shared/dist ./node_modules/@peer/shared
+# Remove workspace dependency BEFORE npm install
+RUN sed -i '/"@peer\/shared": "file:\.\.\/shared"/d' package.json
+
+# Now install production dependencies
+RUN npm install --omit=dev --ignore-scripts
+
+# Copy @peer/shared AFTER npm install (so it doesn't get removed)
+COPY packages/shared/dist ./node_modules/@peer/shared
+
+# Copy built backend dist
+COPY packages/backend/dist ./dist
 
 # Copy data directory for SQLite
 RUN mkdir -p /app/data && chown -R nodejs:nodejs /app

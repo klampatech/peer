@@ -76,7 +76,7 @@ class SignallingClient {
       });
 
       // Handle peer joined
-      this.socket.on('peer-joined', async (data: { peerId: string; displayName: string }) => {
+      this.socket.on('peer-joined', (data: { peerId: string; displayName: string }) => {
         console.log('Peer joined:', data);
         useRoomStore.getState().addPeer({
           id: data.peerId,
@@ -84,12 +84,9 @@ class SignallingClient {
           audioEnabled: true,
           videoEnabled: true,
         });
-
-        // Initiate WebRTC connection to the new peer
-        const { localStream, isConnected } = useRoomStore.getState();
-        if (localStream && isConnected) {
-          await peerManager.connectToPeer(data.peerId);
-        }
+        // Note: Do NOT call connectToPeer here. The joiner already initiates via peer-list.
+        // Both sides initiating causes double-offer WebRTC collision where neither connection
+        // completes. The joiner (peer-list recipient) initiates; existing peers wait for offers.
       });
 
       // Handle peer left

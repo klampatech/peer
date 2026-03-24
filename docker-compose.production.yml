@@ -12,7 +12,7 @@ services:
       - TURN_HOST=204.168.181.142
       - TURN_SECRET=${TURN_SECRET}
       - TURN_REALM=peer
-      - COTURN_PORT=3478
+      - COTURN_PORT=5349
       - RATE_LIMIT_MAX_POINTS=100
       - RATE_LIMIT_WINDOW_MS=60000
       - LOG_LEVEL=info
@@ -63,6 +63,8 @@ services:
     security_opt:
       - no-new-privileges:true
     ports:
+      - "3478:3478/udp"
+      - "3478:3478/tcp"
       - "5349:5349/udp"
     environment:
       - TURN_SECRET=${TURN_SECRET}

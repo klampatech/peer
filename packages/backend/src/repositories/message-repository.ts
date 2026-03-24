@@ -2,7 +2,7 @@
  * Message Repository - Data access layer for chat messages
  */
 
-import { getDatabase } from '../db/index';
+import { getDatabase } from '../db/index.js';
 import { v4 as uuidv4 } from 'uuid';
 import type { RoomToken, ChatMessageResponsePayload } from '@peer/shared';
 
