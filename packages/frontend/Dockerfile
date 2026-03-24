@@ -13,6 +13,7 @@ ENV VITE_API_URL=$VITE_API_URL
 # Copy workspace files
 COPY pnpm-workspace.yaml ./
 COPY pnpm-lock.yaml ./
+COPY tsconfig.json ./
 COPY packages/shared packages/shared
 COPY packages/frontend packages/frontend
 
