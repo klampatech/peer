@@ -29,8 +29,8 @@ RUN addgroup -g 1001 -S nodejs && \
 
 WORKDIR /app
 
-# Copy package files for production dependencies
-COPY packages/backend/package.json packages/backend/pnpm-lock.yaml ./
+# Copy package files for production dependencies (use root lockfile - per-package lockfiles are not tracked)
+COPY packages/backend/package.json pnpm-lock.yaml ./
 
 # Install pnpm and production dependencies only
 RUN corepack enable && corepack prepare pnpm@9 --activate
