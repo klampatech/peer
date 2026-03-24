@@ -55,7 +55,7 @@ fi
 # Step 1: Pull latest code
 STEP="pull"
 echo ">>> Pulling latest code..."
-$SSH_CMD "$SSH_HOST" "cd $DEPLOY_DIR && git pull origin main"
+$SSH_CMD "$SSH_HOST" "cd $DEPLOY_DIR && git fetch origin main && git reset --hard origin/main && git clean -fd"
 
 # Step 2: Build and restart containers
 STEP="build"
