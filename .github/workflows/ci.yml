@@ -454,6 +454,6 @@ jobs:
           ssh-keyscan -t ed25519,rsa 204.168.181.142 >> ~/.ssh/known_hosts 2>/dev/null
 
       - name: Deploy to server
-        env:
-          SSH_KEY_FILE: ~/.ssh/deploy_key
-        run: ./deploy.sh
+        run: |
+          export SSH_KEY_FILE="$HOME/.ssh/deploy_key"
+          ./deploy.sh
