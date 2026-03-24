@@ -66,8 +66,7 @@ class SignallingClient {
       this.socket.on('connect_error', (error) => {
         console.error('Connection error:', error);
         clearTimeout(connectionTimeout);
-        // Don't reject - resolve with false to allow offline/local mode
-        resolve(false);
+        reject(new Error(`Signalling connection failed: ${error.message}`));
       });
 
       this.socket.on('disconnect', () => {

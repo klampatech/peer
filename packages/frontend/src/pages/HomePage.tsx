@@ -43,9 +43,12 @@ export default function HomePage({ displayName, onDisplayNameChange }: HomePageP
       }
 
       // Connect to Socket.IO and create the room on the server
+      // Use a generous timeout for CI environments and disable reconnection
+      // so we fail fast instead of retrying in the background
       const socket = io(SOCKET_URL, {
         transports: ['websocket', 'polling'],
-        timeout: 5000,
+        timeout: 15000,
+        reconnection: false,
       });
 
       // Wait for connection
@@ -56,8 +59,8 @@ export default function HomePage({ displayName, onDisplayNameChange }: HomePageP
         socket.on('connect_error', () => {
           reject(new Error('Failed to connect'));
         });
-        // Timeout after 5 seconds
-        setTimeout(() => reject(new Error('Connection timeout')), 5000);
+        // Timeout after 15 seconds to match socket timeout
+        setTimeout(() => reject(new Error('Connection timeout')), 15000);
       });
 
       // Create the room
@@ -69,8 +72,29 @@ export default function HomePage({ displayName, onDisplayNameChange }: HomePageP
             reject(new Error(response.error?.message || 'Failed to create room'));
           }
         });
-        // Timeout after 5 seconds
-        setTimeout(() => reject(new Error('Room creation timeout')), 5000);
+        // Timeout after 15 seconds for room creation
+        setTimeout(() => reject(new Error('Room creation timeout')), 15000);
+      });
+
+      // Leave the room so it persists for RoomPage to join
+      // Important: The creator socket was added to the room by room:create, so we must
+      // leave it before disconnecting. Otherwise, the disconnect handler will remove
+      // the peer and delete the room since it was the only peer.
+      await new Promise<void>((resolve) => {
+        socket.emit('room:leave', { token }, (response: { success: boolean; error?: { message: string } }) => {
+          if (response.success) {
+            resolve();
+          } else {
+            // Non-fatal: room might already be empty, just log and continue
+            console.warn('room:leave warning:', response.error?.message);
+            resolve();
+          }
+        });
+        // Timeout after 2 seconds
+        setTimeout(() => {
+          console.warn('room:leave timeout, continuing anyway');
+          resolve();
+        }, 2000);
       });
 
       // Disconnect the temporary socket - RoomPage will create its own connection
