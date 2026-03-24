@@ -26,6 +26,11 @@ if [ -n "$SSH_AUTH_SOCK" ]; then
     SSH_CMD="ssh -o StrictHostKeyChecking=yes -o AddKeysToAgent=yes"
     SCP_CMD="scp -o StrictHostKeyChecking=yes"
     echo "Using SSH agent for key-based auth."
+elif [ -n "$SSH_KEY_FILE" ] && [ -f "$SSH_KEY_FILE" ]; then
+    # Direct SSH key file — use with -i flag (GitHub Actions workflow)
+    SSH_CMD="ssh -o StrictHostKeyChecking=yes -i $SSH_KEY_FILE"
+    SCP_CMD="scp -o StrictHostKeyChecking=yes -i $SSH_KEY_FILE"
+    echo "Using SSH key file for auth: $SSH_KEY_FILE"
 elif [ -n "$DEPLOY_PASSWORD" ]; then
     # DEPRECATED: Password auth via DEPLOY_PASSWORD is not supported.
     # SSH key auth via ssh-agent is the only acceptable method.
@@ -35,7 +40,7 @@ elif [ -n "$DEPLOY_PASSWORD" ]; then
 else
     echo "Error: No SSH authentication available."
     echo "  - Ensure ssh-agent is running and SSH_AUTH_SOCK is set (use webfactory/ssh-agent in CI)"
-    echo "  - Or set DEPLOY_SSH_KEY as a GitHub Actions secret"
+    echo "  - Or set SSH_KEY_FILE env var pointing to the private key file"
     exit 1
 fi
 

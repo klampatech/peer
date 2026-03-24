@@ -447,7 +447,6 @@ jobs:
           mkdir -p ~/.ssh
           printf '%s' "${{ secrets.DEPLOY_SSH_KEY }}" | base64 -d > ~/.ssh/deploy_key
           chmod 600 ~/.ssh/deploy_key
-          ssh-add ~/.ssh/deploy_key
 
       - name: Fetch host key for known_hosts
         run: |
@@ -455,4 +454,6 @@ jobs:
           ssh-keyscan -t ed25519,rsa 204.168.181.142 >> ~/.ssh/known_hosts 2>/dev/null
 
       - name: Deploy to server
+        env:
+          SSH_KEY_FILE: ~/.ssh/deploy_key
         run: ./deploy.sh
