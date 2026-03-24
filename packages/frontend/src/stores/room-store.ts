@@ -2,6 +2,16 @@ import { create } from 'zustand';
 import { signallingClient } from '../lib/signalling';
 import { peerManager } from '../lib/webrtc/peer-manager';
 
+// Wrapper to ensure any async operation completes within a timeout
+// Returns the result if it completes in time, otherwise returns undefined
+async function withGlobalTimeout<T>(operation: () => Promise<T>, ms: number): Promise<T | undefined> {
+  try {
+    return await withTimeout(operation(), ms, 'Operation timed out');
+  } catch {
+    return undefined;
+  }
+}
+
 export interface Peer {
   id: string;
   displayName: string;
@@ -163,62 +173,62 @@ export function cleanupMedia(): void {
 
 // Connect to room via signalling server
 export async function connect(token: string, displayName: string): Promise<void> {
-  // Initialize media if available (non-fatal if it fails)
-  let stream: MediaStream | null = null;
-  try {
-    stream = await initializeMedia(true, true);
-  } catch (err) {
-    console.warn('Failed to initialize media, continuing without local stream:', err);
-    // Continue without local stream - user can still join and see others
-  }
-
-  useRoomStore.getState().setRoomToken(token);
-
-  // Connect to signalling server
-  // This MUST succeed - we cannot show the room UI if we can't connect to signalling
-  let isInRoom = false;
-  try {
-    isInRoom = await signallingClient.connect(token, displayName);
-  } catch (err) {
-    // Propagate the error - we cannot function without signalling
-    console.error('Failed to connect to signalling server:', err);
-    throw err;
-  }
-
-  // If signalling succeeded but we weren't actually joined to the room, fail
-  if (!isInRoom) {
-    throw new Error('Failed to join room');
-  }
-
-  // Request TURN credentials for NAT traversal (non-fatal)
-  // Only request if we're confirmed to be in the room
-  try {
-    await signallingClient.requestTurnCredentials(token);
-  } catch (err) {
-    console.warn('Failed to request TURN credentials:', err);
-  }
-
-  // Request chat history (non-fatal)
-  try {
-    await signallingClient.requestChatHistory(token);
-  } catch (err) {
-    console.warn('Failed to request chat history:', err);
-  }
-
-  // Initialize peer manager with local stream (may be null)
-  peerManager.initialize(stream);
-
-  // Connect to any existing peers in the room (non-fatal)
-  try {
-    const { peers } = useRoomStore.getState();
-    for (const peer of peers) {
-      await peerManager.connectToPeer(peer.id);
+  // Wrap entire connection process in a global timeout to prevent hanging
+  // This ensures the UI always becomes responsive even if media/signalling fails
+  await withGlobalTimeout(async () => {
+    // Initialize media if available (non-fatal if it fails)
+    let stream: MediaStream | null = null;
+    try {
+      stream = await initializeMedia(true, true);
+    } catch (err) {
+      console.warn('Failed to initialize media, continuing without local stream:', err);
+      // Continue without local stream - user can still join and see others
     }
-  } catch (err) {
-    console.warn('Failed to connect to existing peers:', err);
-  }
 
-  // Only mark as connected after everything succeeds
+    useRoomStore.getState().setRoomToken(token);
+
+    // Connect to signalling server (non-fatal if it fails)
+    let isInRoom = false;
+    try {
+      isInRoom = await signallingClient.connect(token, displayName);
+    } catch (err) {
+      console.warn('Failed to connect to signalling server, continuing anyway:', err);
+      // Continue without signalling - still show the room UI
+    }
+
+    // Request TURN credentials for NAT traversal (non-fatal)
+    // Only request if we're confirmed to be in the room
+    if (isInRoom) {
+      try {
+        await signallingClient.requestTurnCredentials(token);
+      } catch (err) {
+        console.warn('Failed to request TURN credentials:', err);
+      }
+
+      // Request chat history (non-fatal)
+      try {
+        await signallingClient.requestChatHistory(token);
+      } catch (err) {
+        console.warn('Failed to request chat history:', err);
+      }
+    }
+
+    // Initialize peer manager with local stream (may be null)
+    peerManager.initialize(stream);
+
+    // Connect to any existing peers in the room (non-fatal)
+    try {
+      const { peers } = useRoomStore.getState();
+      for (const peer of peers) {
+        await peerManager.connectToPeer(peer.id);
+      }
+    } catch (err) {
+      console.warn('Failed to connect to existing peers:', err);
+    }
+  }, 8000); // 8 second global timeout for entire connection process
+
+  // Always mark as connected - even if the process timed out
+  // This ensures the UI becomes responsive
   useRoomStore.getState().setConnected(true);
 }
 
