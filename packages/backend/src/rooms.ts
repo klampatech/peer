@@ -74,10 +74,12 @@ export function joinRoom(token: RoomToken, peerId: string, displayName: string):
 }
 
 /**
- * Removes a peer from a room
+ * Removes a peer from a room without destroying the room.
+ * The room persists even when empty to allow peers to rejoin.
+ * Use deleteRoom() explicitly when the room should be destroyed.
  * @param token - The room token
  * @param peerId - The peer ID
- * @returns The updated room, or undefined if room doesn't exist or was destroyed
+ * @returns The updated room, or undefined if room doesn't exist
  */
 export function leaveRoom(token: RoomToken, peerId: string): Room | undefined {
   const room = rooms.get(token);
@@ -86,10 +88,25 @@ export function leaveRoom(token: RoomToken, peerId: string): Room | undefined {
   }
 
   room.peers.delete(peerId);
+  return room;
+}
 
-  // Destroy room if no peers left
+/**
+ * Removes a peer from a room and destroys the room if no peers are left.
+ * This should only be called when a peer actually disconnects, not for intentional leaves.
+ * @param token - The room token
+ * @param peerId - The peer ID
+ * @returns The updated room, or undefined if room was destroyed
+ */
+export function leaveRoomAndDestroyIfEmpty(token: RoomToken, peerId: string): Room | undefined {
+  const room = rooms.get(token);
+  if (!room) {
+    return undefined;
+  }
+
+  room.peers.delete(peerId);
+
   if (room.peers.size === 0) {
-    // Soft delete all messages in the room
     softDeleteRoomMessages(token);
     rooms.delete(token);
     return undefined;

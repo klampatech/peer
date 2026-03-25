@@ -5,6 +5,7 @@ import {
   getRoom,
   joinRoom,
   leaveRoom,
+  leaveRoomAndDestroyIfEmpty,
   deleteRoom,
   getAllRooms,
   getPeersInRoom,
@@ -105,12 +106,25 @@ describe('Room Management', () => {
       expect(updatedRoom?.peers.has(peer2Id)).toBe(true);
     });
 
-    it('should destroy room when last peer leaves', () => {
+    it('should keep room when last peer leaves (room persists for rejoining)', () => {
       const room = createRoom();
       const peerId = uuidv4();
 
       joinRoom(room.token, peerId, 'Test User');
       leaveRoom(room.token, peerId);
+
+      // Room should still exist but be empty - this allows peers to rejoin
+      const updatedRoom = getRoom(room.token);
+      expect(updatedRoom).toBeDefined();
+      expect(updatedRoom?.peers.size).toBe(0);
+    });
+
+    it('should destroy room when last peer leaves via leaveRoomAndDestroyIfEmpty', () => {
+      const room = createRoom();
+      const peerId = uuidv4();
+
+      joinRoom(room.token, peerId, 'Test User');
+      leaveRoomAndDestroyIfEmpty(room.token, peerId);
 
       const updatedRoom = getRoom(room.token);
       expect(updatedRoom).toBeUndefined();

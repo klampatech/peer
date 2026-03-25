@@ -6,6 +6,7 @@ import {
   getAllRooms,
   joinRoom,
   leaveRoom,
+  leaveRoomAndDestroyIfEmpty,
   getPeersInRoom,
   getRoomCount,
   type Room,
@@ -323,11 +324,12 @@ export function setupRoomEvents(io: Server): void {
       // IMPORTANT: At disconnect time, Socket.IO has already removed the socket from all rooms.
       // We need to search our room state to find where this peer was.
       // This is more reliable than relying on socket.rooms which is empty at this point.
+      // Use leaveRoomAndDestroyIfEmpty to clean up empty rooms on actual disconnect.
       const allRooms = getAllRooms();
       for (const [token, room] of allRooms) {
         if (room.peers.has(socket.id)) {
           logger.info({ traceId: socket.data?.traceId, peerId: socket.id, roomToken: token, peersBefore: room.peers.size }, 'Removing peer from room (disconnect)');
-          leaveRoom(token, socket.id);
+          leaveRoomAndDestroyIfEmpty(token, socket.id);
           socket.to(token).emit('peer-left', { peerId: socket.id });
           logger.info({ traceId: socket.data?.traceId, peerId: socket.id, roomToken: token }, 'Peer removed from room (disconnect)');
         }
