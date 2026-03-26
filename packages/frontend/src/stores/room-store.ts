@@ -105,9 +105,12 @@ export const useRoomStore = create<RoomState>((set) => ({
   setScreenSharing: (sharing) => set({ screenSharing: sharing }),
 
   addPeer: (peer) =>
-    set((state) => ({
-      peers: [...state.peers, peer],
-    })),
+    set((state) => {
+      if (state.peers.some((p) => p.id === peer.id)) {
+        return state;
+      }
+      return { peers: [...state.peers, peer] };
+    }),
 
   removePeer: (peerId) =>
     set((state) => ({
