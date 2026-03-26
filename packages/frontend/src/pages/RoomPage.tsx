@@ -19,13 +19,20 @@ export default function RoomPage({ displayName }: RoomPageProps) {
   // Audio level detection for speaking indicator
   const { isSpeaking: isLocalSpeaking } = useAudioLevel();
 
+  // Synchronous check at render time - before any async behavior
+  // Handles direct URL navigation where App.tsx's useEffect may not have populated the prop yet
+  const savedDisplayName = sessionStorage.getItem('peer_display_name');
+  const effectiveDisplayName = displayName || savedDisplayName;
+
+  // Guard: redirect immediately if no displayName available
+  // Use window.location.href for synchronous navigation to prevent React render delay
+  if (!effectiveDisplayName) {
+    window.location.href = '/';
+    return null;
+  }
+
   useEffect(() => {
     if (!token) {
-      navigate('/');
-      return;
-    }
-
-    if (!displayName) {
       navigate('/');
       return;
     }
@@ -33,7 +40,7 @@ export default function RoomPage({ displayName }: RoomPageProps) {
     // Connect to the room
     const connectToRoom = async () => {
       try {
-        await connect(token, displayName);
+        await connect(token, effectiveDisplayName);
         setIsConnecting(false);
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Failed to connect to room');
@@ -48,7 +55,7 @@ export default function RoomPage({ displayName }: RoomPageProps) {
     return () => {
       // Intentionally empty - let the socket persist across remounts
     };
-  }, [token, displayName, navigate]);
+  }, [token, effectiveDisplayName, navigate]);
 
   const handleLeave = () => {
     disconnect();

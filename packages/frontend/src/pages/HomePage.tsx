@@ -34,14 +34,6 @@ export default function HomePage({ displayName, onDisplayNameChange }: HomePageP
 
     setIsCreating(true);
     try {
-      // Check if backend is available
-      const response = await fetch(`${SOCKET_URL}/health`);
-      if (!response.ok) {
-        alert('Server is not available. Please try again later.');
-        setIsCreating(false);
-        return;
-      }
-
       // Connect to Socket.IO and create the room on the server
       // Use a generous timeout for CI environments and disable reconnection
       // so we fail fast instead of retrying in the background

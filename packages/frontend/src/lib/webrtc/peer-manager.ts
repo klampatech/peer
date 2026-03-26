@@ -269,6 +269,22 @@ class PeerManager {
   }
 
   /**
+   * Get ICE connection state for a specific peer
+   */
+  getIceConnectionState(peerId: string): RTCIceConnectionState | null {
+    const peer = this.peers.get(peerId);
+    return peer?.connection.iceConnectionState ?? null;
+  }
+
+  /**
+   * Get connection state for a specific peer
+   */
+  getConnectionState(peerId: string): RTCPeerConnectionState | null {
+    const peer = this.peers.get(peerId);
+    return peer?.connection.connectionState ?? null;
+  }
+
+  /**
    * Replace local video track (for screen sharing)
    */
   async replaceVideoTrack(newTrack: MediaStreamTrack): Promise<void> {
@@ -331,3 +347,8 @@ class PeerManager {
 
 // Singleton instance
 export const peerManager = new PeerManager();
+
+// Expose for E2E testing
+if (typeof window !== 'undefined') {
+  (window as Window & { __peerManager?: typeof peerManager }).__peerManager = peerManager;
+}

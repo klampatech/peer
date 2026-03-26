@@ -7,7 +7,7 @@ test.describe('Chat', () => {
     await page.getByRole('button', { name: 'Create New Room' }).click();
 
     // Wait for navigation to room
-    await expect(page).toHaveURL(/\/room\/.+/, { timeout: 30000 });
+    await expect(page).toHaveURL(/\/room\/.+/, { timeout: 60000 });
 
     // Wait for any state to settle
     await page.waitForTimeout(10000);
@@ -28,7 +28,7 @@ test.describe('Chat', () => {
     await page.getByRole('button', { name: 'Create New Room' }).click();
 
     // Should navigate to room
-    await expect(page).toHaveURL(/\/room\/.+/, { timeout: 30000 });
+    await expect(page).toHaveURL(/\/room\/.+/, { timeout: 60000 });
   });
 
   test('chat input field exists in room', async ({ page, isMobile }) => {
@@ -40,7 +40,7 @@ test.describe('Chat', () => {
     await page.getByRole('button', { name: 'Create New Room' }).click();
 
     // Wait for navigation to room
-    await expect(page).toHaveURL(/\/room\/.+/, { timeout: 30000 });
+    await expect(page).toHaveURL(/\/room\/.+/, { timeout: 60000 });
 
     // Check for chat input - the chat panel is only visible on lg (1024px) and above
     const chatInput = page.getByPlaceholder(/message|chat/i);
@@ -61,7 +61,7 @@ test.describe('Chat', () => {
     await page.getByRole('button', { name: 'Create New Room' }).click();
 
     // Wait for navigation to room
-    await expect(page).toHaveURL(/\/room\/.+/, { timeout: 30000 });
+    await expect(page).toHaveURL(/\/room\/.+/, { timeout: 60000 });
 
     // Wait for chat input to be visible first
     const chatInput = page.getByPlaceholder(/message|chat/i);

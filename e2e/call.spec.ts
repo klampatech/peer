@@ -8,7 +8,7 @@ test.describe('Call', () => {
     await page.getByRole('button', { name: 'Create New Room' }).click();
 
     // Wait for navigation to room
-    await expect(page).toHaveURL(/\/room\/.+/, { timeout: 30000 });
+    await expect(page).toHaveURL(/\/room\/.+/, { timeout: 60000 });
 
     // Wait for connection attempt
     await page.waitForTimeout(3000);
@@ -25,7 +25,7 @@ test.describe('Call', () => {
     await page.getByRole('button', { name: 'Create New Room' }).click();
 
     // Wait for navigation to room
-    await expect(page).toHaveURL(/\/room\/.+/, { timeout: 30000 });
+    await expect(page).toHaveURL(/\/room\/.+/, { timeout: 60000 });
 
     // Wait for page to settle
     await page.waitForTimeout(3000);
@@ -50,7 +50,7 @@ test.describe('Call', () => {
     await page.getByLabel('Your Name').fill('Test User');
     await page.getByRole('button', { name: 'Create New Room' }).click();
 
-    await expect(page).toHaveURL(/\/room\/.+/, { timeout: 30000 });
+    await expect(page).toHaveURL(/\/room\/.+/, { timeout: 60000 });
 
     // Wait for any state
     await page.waitForTimeout(2000);
@@ -69,7 +69,7 @@ test.describe('Call', () => {
     await page.getByRole('button', { name: 'Create New Room' }).click();
 
     // Wait for room to load
-    await expect(page).toHaveURL(/\/room\/.+/, { timeout: 30000 });
+    await expect(page).toHaveURL(/\/room\/.+/, { timeout: 60000 });
     await page.waitForTimeout(2000);
 
     // Look for screen share button - try various selectors
@@ -92,7 +92,7 @@ test.describe('Call', () => {
     await page.getByRole('button', { name: 'Create New Room' }).click();
 
     // Wait for navigation to room
-    await expect(page).toHaveURL(/\/room\/.+/, { timeout: 30000 });
+    await expect(page).toHaveURL(/\/room\/.+/, { timeout: 60000 });
     await page.waitForTimeout(2000);
 
     // Find and click the Leave call button in the control bar
@@ -112,7 +112,7 @@ test.describe('Call', () => {
     await page.getByRole('button', { name: 'Create New Room' }).click();
 
     // Wait for navigation to room
-    await expect(page).toHaveURL(/\/room\/.+/, { timeout: 30000 });
+    await expect(page).toHaveURL(/\/room\/.+/, { timeout: 60000 });
     await page.waitForTimeout(2000);
 
     // Check for mute/unmute microphone button

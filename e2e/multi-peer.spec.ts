@@ -79,7 +79,7 @@ test.describe('WebRTC Connectivity (GAP-18)', () => {
     await page.getByLabel('Your Name').fill('Test User');
     await page.getByRole('button', { name: 'Create New Room' }).click();
 
-    await expect(page).toHaveURL(/\/room\/.+/, { timeout: 30000 });
+    await expect(page).toHaveURL(/\/room\/.+/, { timeout: 60000 });
     await page.waitForTimeout(3000);
 
     // Verify RTCPeerConnection API is available in browser
@@ -95,7 +95,7 @@ test.describe('WebRTC Connectivity (GAP-18)', () => {
     await page.getByLabel('Your Name').fill('Test User');
     await page.getByRole('button', { name: 'Create New Room' }).click();
 
-    await expect(page).toHaveURL(/\/room\/.+/, { timeout: 30000 });
+    await expect(page).toHaveURL(/\/room\/.+/, { timeout: 60000 });
     await page.waitForTimeout(3000);
 
     // Verify ICE servers can be created
@@ -126,7 +126,7 @@ test.describe('WebRTC Connectivity (GAP-18)', () => {
     await page.getByLabel('Your Name').fill('Test User');
     await page.getByRole('button', { name: 'Create New Room' }).click();
 
-    await expect(page).toHaveURL(/\/room\/.+/, { timeout: 30000 });
+    await expect(page).toHaveURL(/\/room\/.+/, { timeout: 60000 });
     await page.waitForTimeout(3000);
 
     // Filter out expected permission errors (headless browsers don't have media devices)

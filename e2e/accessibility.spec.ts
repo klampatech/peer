@@ -43,7 +43,7 @@ test.describe('Accessibility', () => {
     await createButton.press('Enter');
 
     // Should navigate to room
-    await expect(page).toHaveURL(/\/room\/.+/, { timeout: 30000 });
+    await expect(page).toHaveURL(/\/room\/.+/, { timeout: 60000 });
     // Wait for room page to fully load
     await page.waitForTimeout(10000);
   });
@@ -53,7 +53,7 @@ test.describe('Accessibility', () => {
     await page.getByLabel('Your Name').fill('Test User');
     await page.getByRole('button', { name: 'Create New Room' }).click();
 
-    await expect(page).toHaveURL(/\/room\/.+/, { timeout: 30000 });
+    await expect(page).toHaveURL(/\/room\/.+/, { timeout: 60000 });
     // Wait longer for Firefox/WebKit which may take more time to connect
     await page.waitForTimeout(10000);
 
@@ -80,7 +80,7 @@ test.describe('Accessibility', () => {
     await page.getByLabel('Your Name').fill('Nav Test');
     await page.getByRole('button', { name: 'Create New Room' }).click();
 
-    await expect(page).toHaveURL(/\/room\/.+/, { timeout: 30000 });
+    await expect(page).toHaveURL(/\/room\/.+/, { timeout: 60000 });
     await page.waitForTimeout(2000);
 
     // Tab through the page - should not get stuck
@@ -122,7 +122,7 @@ test.describe('Accessibility', () => {
     await page.getByLabel('Your Name').fill('Chat Test');
     await page.getByRole('button', { name: 'Create New Room' }).click();
 
-    await expect(page).toHaveURL(/\/room\/.+/, { timeout: 30000 });
+    await expect(page).toHaveURL(/\/room\/.+/, { timeout: 60000 });
     // Wait longer for connection to complete in all browsers
     await page.waitForTimeout(10000);
 

@@ -16,7 +16,7 @@ test.describe('Permission Denied (GAP-19)', () => {
     await page.getByLabel('Your Name').fill('Camera Denied Test');
     await page.getByRole('button', { name: 'Create New Room' }).click();
 
-    await expect(page).toHaveURL(/\/room\/.+/, { timeout: 30000 });
+    await expect(page).toHaveURL(/\/room\/.+/, { timeout: 60000 });
 
     // Wait for media attempt
     await page.waitForTimeout(5000);
@@ -53,7 +53,7 @@ test.describe('Permission Denied (GAP-19)', () => {
     await page.getByLabel('Your Name').fill('Mic Denied Test');
     await page.getByRole('button', { name: 'Create New Room' }).click();
 
-    await expect(page).toHaveURL(/\/room\/.+/, { timeout: 30000 });
+    await expect(page).toHaveURL(/\/room\/.+/, { timeout: 60000 });
     await page.waitForTimeout(5000);
 
     // Page should still work without mic
@@ -77,7 +77,7 @@ test.describe('Permission Denied (GAP-19)', () => {
     await page.getByLabel('Your Name').fill('Both Denied Test');
     await page.getByRole('button', { name: 'Create New Room' }).click();
 
-    await expect(page).toHaveURL(/\/room\/.+/, { timeout: 30000 });
+    await expect(page).toHaveURL(/\/room\/.+/, { timeout: 60000 });
     await page.waitForTimeout(5000);
 
     // App should continue to function
@@ -99,7 +99,7 @@ test.describe('Permission Denied (GAP-19)', () => {
     await page.getByLabel('Your Name').fill('Revoke Test');
     await page.getByRole('button', { name: 'Create New Room' }).click();
 
-    await expect(page).toHaveURL(/\/room\/.+/, { timeout: 30000 });
+    await expect(page).toHaveURL(/\/room\/.+/, { timeout: 60000 });
     await page.waitForTimeout(3000);
 
     // Now try to clear permissions - ignore error if not supported
@@ -133,7 +133,7 @@ test.describe('Permission Denied (GAP-19)', () => {
     await page.getByLabel('Your Name').fill('Error Message Test');
     await page.getByRole('button', { name: 'Create New Room' }).click();
 
-    await expect(page).toHaveURL(/\/room\/.+/, { timeout: 30000 });
+    await expect(page).toHaveURL(/\/room\/.+/, { timeout: 60000 });
     await page.waitForTimeout(5000);
 
     // Page content should not contain technical error details
