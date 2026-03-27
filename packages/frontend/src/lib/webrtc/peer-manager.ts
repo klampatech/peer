@@ -160,6 +160,12 @@ class PeerManager {
    * Initiate connection to a peer (as caller)
    */
   async connectToPeer(peerId: string): Promise<void> {
+    // Prevent duplicate connections to the same peer
+    if (this.peers.has(peerId)) {
+      console.log('Already connected to peer, skipping:', peerId);
+      return;
+    }
+
     if (!this.signalingReady) {
       console.warn('Signaling not ready, queuing connection to:', peerId);
       return;

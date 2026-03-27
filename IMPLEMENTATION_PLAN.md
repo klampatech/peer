@@ -11,7 +11,7 @@ The Peer application is a functional P2P VOIP application with a working signali
 
 | Category | Count | Status |
 |----------|-------|--------|
-| Critical Issues | 1 | Blocked |
+| Critical Issues | 0 | ✅ Complete |
 | Medium Issues | 3 | Need Fix |
 | Low Issues | 5 | Backlog |
 | UI Enhancements | 10+ | Proposed |
@@ -19,20 +19,20 @@ The Peer application is a functional P2P VOIP application with a working signali
 
 ---
 
-## Priority 1: Critical (Fix Before Next Deploy)
+## Priority 1: Critical (Fix Before Next Deploy) ✅ COMPLETED
 
-### 1.1 Fix Conditional React Hook in RoomPage.tsx
+### 1.1 Fix Conditional React Hook in RoomPage.tsx ✅ DONE
 - **File**: `packages/frontend/src/pages/RoomPage.tsx:34`
 - **Issue**: `useEffect` is called conditionally after an early return (line 29-31)
 - **Violation**: React Hooks must be called in the exact same order in every component render
-- **Fix Required**: Move the guard logic inside the useEffect or refactor to use state-based navigation
+- **Fix Applied**: Moved the guard logic inside the useEffect - now checks `effectiveDisplayName` at the start of the effect
 - **Spec Reference**: FRONTEND_EVAL.md
 
-### 1.2 Add Duplicate Connection Guard in Peer Manager
+### 1.2 Add Duplicate Connection Guard in Peer Manager ✅ DONE
 - **File**: `packages/frontend/src/lib/webrtc/peer-manager.ts:162`
 - **Issue**: `connectToPeer` does not check if a peer connection already exists
 - **Impact**: Duplicate connections could be created for same peer
-- **Fix Required**: Add `if (this.peers.has(peerId)) return;` at start of connectToPeer method
+- **Fix Applied**: Added `if (this.peers.has(peerId)) return;` at start of connectToPeer method
 - **Spec Reference**: PRIORITY_FIX.md, VOIP_EVAL.md
 
 ---

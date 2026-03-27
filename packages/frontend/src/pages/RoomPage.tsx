@@ -24,14 +24,13 @@ export default function RoomPage({ displayName }: RoomPageProps) {
   const savedDisplayName = sessionStorage.getItem('peer_display_name');
   const effectiveDisplayName = displayName || savedDisplayName;
 
-  // Guard: redirect immediately if no displayName available
-  // Use window.location.href for synchronous navigation to prevent React render delay
-  if (!effectiveDisplayName) {
-    window.location.href = '/';
-    return null;
-  }
-
   useEffect(() => {
+    // Guard: redirect immediately if no displayName available
+    if (!effectiveDisplayName) {
+      window.location.href = '/';
+      return;
+    }
+
     if (!token) {
       navigate('/');
       return;
