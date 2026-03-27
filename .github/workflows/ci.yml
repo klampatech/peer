@@ -131,6 +131,8 @@ jobs:
         env:
           NODE_ENV: test
           TURN_SECRET: test-secret-for-ci
+          SOCKET_RATE_LIMIT_POINTS: 1000
+          SOCKET_RATE_LIMIT_DURATION: 60
 
       - name: Wait for services to be ready
         run: |
