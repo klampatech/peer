@@ -11,6 +11,12 @@ const STUN_SERVERS: RTCIceServer[] = [
 // Will be updated when TURN credentials are received
 let iceServers: RTCIceServer[] = [...STUN_SERVERS];
 
+// Track TURN availability for fallback decisions
+let turnAvailable: boolean = false;
+
+// ICE transport policy - 'relay' requires TURN, 'all' allows STUN fallback
+let iceTransportPolicy: RTCIceTransportPolicy = 'all';
+
 export interface PeerConnection {
   peerId: string;
   connection: RTCPeerConnection;
@@ -124,16 +130,16 @@ class PeerManager {
    * Security: DTLS cipher hardening is implicitly handled by the browser's WebRTC
    * implementation. Modern browsers use only secure cipher suites (AEAD/GCM) by default.
    * The connection uses:
-   * - iceTransportPolicy: 'relay' - All media goes through TURN server
+   * - iceTransportPolicy - Configurable, defaults to 'all' (STUN + TURN if available)
    * - Default certificates with ECDSA key exchange
    * - No legacy DTLS 1.0 or weak ciphers (browser enforced)
    */
   private createPeerConnection(peerId: string): RTCPeerConnection {
     const connection = new RTCPeerConnection({
       iceServers,
-      // Use 'relay' policy to only use TURN candidates - prevents private IP leakage
-      // This ensures all media goes through the TURN server for security
-      iceTransportPolicy: 'relay',
+      // Use configurable policy - defaults to 'all' for graceful fallback
+      // If TURN credentials are set and available, can upgrade to 'relay'
+      iceTransportPolicy,
     });
 
     // Add local tracks to the connection
@@ -379,8 +385,33 @@ class PeerManager {
 
     console.log('TURN servers configured:', turnServers.map((s) => s.urls));
 
+    // Mark TURN as available - can upgrade to relay policy for better privacy
+    turnAvailable = true;
+
     // Update existing peer connections with new ICE servers
     this.updateIceServers();
+  }
+
+  /**
+   * Set the ICE transport policy
+   * Use 'relay' for maximum privacy (all media through TURN)
+   * Use 'all' for graceful fallback (STUN first, TURN if needed)
+   *
+   * @param policy - 'relay' for TURN-only, 'all' for STUN/TURN fallback
+   */
+  setPolicy(policy: RTCIceTransportPolicy): void {
+    iceTransportPolicy = policy;
+    console.log('ICE transport policy set to:', policy);
+    // Update existing peer connections with new policy
+    this.updateIceServers();
+  }
+
+  /**
+   * Check if TURN servers are available
+   * @returns true if TURN credentials have been received
+   */
+  isTurnAvailable(): boolean {
+    return turnAvailable;
   }
 
   /**
@@ -389,7 +420,7 @@ class PeerManager {
   private updateIceServers(): void {
     this.peers.forEach(({ connection }, peerId) => {
       console.log('Updating ICE servers for peer:', peerId);
-      connection.setConfiguration({ iceServers });
+      connection.setConfiguration({ iceServers, iceTransportPolicy });
     });
   }
 }

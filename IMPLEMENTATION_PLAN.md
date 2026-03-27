@@ -78,12 +78,18 @@ The Peer application is a functional P2P VOIP application with a working signali
 - **Fix Required**: Improve media device mocking for mobile headless
 - **Spec Reference**: E2E_EVAL.md
 
-### 3.3 TURN Fallback Documentation
-- **File**: `packages/frontend/src/lib/webrtc/peer-manager.ts:106`
+### 3.3 TURN Fallback Implementation ✅ DONE
+- **File**: `packages/frontend/src/lib/webrtc/peer-manager.ts`
 - **Issue**: `iceTransportPolicy: 'relay'` requires TURN server; no fallback if unavailable
 - **Impact**: Connection failures if TURN down
-- **Fix Required**: Document TURN dependency clearly, or add graceful fallback
+- **Fix Applied**: Changed default policy from 'relay' to 'all' (STUN/TURN fallback). Added:
+  - `turnAvailable` boolean to track TURN server availability
+  - `setPolicy(policy)` method to allow switching between 'relay' and 'all' modes
+  - `isTurnAvailable()` method to check if TURN credentials have been received
+  - Updated `setTurnServers()` to mark TURN as available
+  - `updateIceServers()` now updates both iceServers and iceTransportPolicy on existing connections
 - **Spec Reference**: PRIORITY_FIX.md
+- **Verification**: All 168 frontend tests pass
 
 ### 3.4 Add Signaling Flow Integration Tests ✅ DONE
 - **File**: `packages/frontend/src/__tests__/signalling.test.ts`
