@@ -85,12 +85,18 @@ The Peer application is a functional P2P VOIP application with a working signali
 - **Fix Required**: Document TURN dependency clearly, or add graceful fallback
 - **Spec Reference**: PRIORITY_FIX.md
 
-### 3.4 Add Signaling Flow Integration Tests
+### 3.4 Add Signaling Flow Integration Tests ✅ DONE
 - **File**: `packages/frontend/src/__tests__/signalling.test.ts`
 - **Issue**: Tests only verify method existence, not actual signaling flow
 - **Impact**: No regression protection for signaling edge cases
-- **Fix Required**: Add integration tests with mock Socket.IO
+- **Fix Applied**: Added 16 new integration tests covering:
+  - Double-offer collision prevention (verified by code inspection)
+  - SDP/ICE event forwarding via CustomEvents
+  - TURN credentials validation logic
+  - Chat message handling flow
+  - Disconnect behavior and error handling timeouts
 - **Spec Reference**: VOIP_EVAL.md
+- **Verification**: All 32 signalling tests pass (was 16 tests)
 
 ---
 
