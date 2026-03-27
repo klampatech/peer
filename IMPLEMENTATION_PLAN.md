@@ -1,332 +1,186 @@
-# Implementation Plan — Peer P2P VoIP Application
+# Implementation Plan - Peer P2P VOIP Application
 
-> **Generated:** 2026-03-23
-> **Source:** Analysis of `specs/*.md` vs current `packages/*` codebase
-> **Status:** Prioritized task list for closing spec/code gaps
-
----
-
-## ⚠️ NEXT STEPS — Just Execute These
-
-```
-┌─────────────────────────────────────────────────────────────────────────────┐
-│  NEXT STEPS - Execute these first                                          │
-│                                                                             │
-│  Verification (2026-03-23):                                               │
-│  • P0-2: Screen share stop restores camera in use-webrtc.ts:172-174       │
-│  • P1-1: CSP 'unsafe-inline' removed - nginx.conf:72                     │
-│  • P1-2: CORS_ORIGIN required in production - server.ts:38-40             │
-│  • P1-3: Port 3000 not exposed - docker-compose.yml                      │
-│  • P1-4: TURN room membership verified - turn-events.ts:56-98              │
-│  • P1-5: Display name allowlist enforced - shared/index.ts:205           │
-│  • P1-6: iceTransportPolicy='relay' - peer-manager.ts:99                  │
-│  • P2-1: All events use Zod validation - event handlers                   │
-│  • P2-2: Structured logging with pino - logger.ts                         │
-│  • P2-3: Metrics endpoint working - routes/metrics.ts                     │
-│  • P2-4: DTLS cipher hardening done - peer-manager.ts                      │
-│  • P3-1: Per-socket rate limiting - rate-limit.ts                          │
-│  • P3-2: getStats() exists - peer-manager.ts:287-290                       │
-│  • P3-3: Dev network isolation - docker-compose.yml                      │
-│                                                                             │
-│  NEW (from PROD_SECURITY_AUDIT.md - 2026-03-23):                           │
-│  • NEW-P1: USER directive in Dockerfile.frontend (HIGH)                   │
-│  • NEW-P2: certbot uses 'latest' tag (MEDIUM)                              │
-│  • NEW-P3: Coturn TCP 5349 exposed (MEDIUM)                                │
-└─────────────────────────────────────────────────────────────────────────────┘
-```
+**Generated**: 2026-03-27
+**Based on**: specs/*.md specifications and codebase analysis
 
 ---
 
-## Executive Summary
+## Summary
 
-This document identifies gaps between the specification requirements (Peer_System_Design.md, SECURITY_AUDIT.md, SECURITY_STANDARDS.md) and the current implementation. Tasks are prioritized by:
-- **P0 (Deploy Blockers):** Critical issues preventing safe production deployment
-- **P1 (Critical Path):** Core features broken or security gaps requiring immediate attention
-- **P2 (Hardening):** Security improvements needed before full production release
-- **P3 (Polish):** Nice-to-have improvements for post-launch
+The Peer application is a functional P2P VOIP application with a working signaling server, WebRTC mesh, and basic UI. However, there are several issues that need to be addressed:
 
-### Already Fixed (from SECURITY_AUDIT.md)
-
-| Issue | Status | Notes |
-|-------|--------|-------|
-| CR-2: TURN_SECRET fallback | ✅ FIXED | `server.ts:3-6` throws if TURN_SECRET not set |
-| CR-3: Rate limiter not wired | ✅ FIXED | `setupSocketRateLimiter(io)` called in `server.ts:48` |
-| CR-5: coturn authentication | ✅ FIXED | `static-auth-secret` in `turnserver.conf:23` |
-| CR-7: Certbot staging flag | ✅ FIXED | `docker-compose.production.yml:130` removes `--staging` |
-| CR-9: Chat broken (peerId) | ✅ FIXED | Set in `room-events.ts:76,129` |
-| Network isolation (production) | ✅ FIXED | Separate `proxy-network` and `turn-network` in prod compose |
-| Container resource limits | ✅ FIXED | Defined in `docker-compose.production.yml` |
-| P1-4: Disable sourcemaps | ✅ FIXED | `vite.config.ts:24` sets `sourcemap: false` |
-| P0-4: Event listener cleanup | ✅ FIXED | `peer-manager.ts:38-41` stores bound handlers |
-| P0-5: Non-root container user | ✅ FIXED | `Dockerfile.frontend:41-49` creates nginx user |
-| SDP validation | ✅ FIXED | `room-events.ts:204-208` validates no private IPs |
-| Room membership verification | ✅ FIXED | `room-events.ts:210-228` verifies same room |
-| P2-4: Container hardening | ✅ FIXED | `docker-compose.production.yml:38,63-64,89,120` |
+| Category | Count | Status |
+|----------|-------|--------|
+| Critical Issues | 1 | Blocked |
+| Medium Issues | 3 | Need Fix |
+| Low Issues | 5 | Backlog |
+| UI Enhancements | 10+ | Proposed |
+| Test Gaps | 4 | Need Coverage |
 
 ---
 
-## P0 — Deploy Blockers (Fix Before Any Deployment)
+## Priority 1: Critical (Fix Before Next Deploy)
 
-### P0-1: Enable HTTPS in Nginx Configuration
-**Reference:** CR-4, SECURITY_STANDARDS §2
+### 1.1 Fix Conditional React Hook in RoomPage.tsx
+- **File**: `packages/frontend/src/pages/RoomPage.tsx:34`
+- **Issue**: `useEffect` is called conditionally after an early return (line 29-31)
+- **Violation**: React Hooks must be called in the exact same order in every component render
+- **Fix Required**: Move the guard logic inside the useEffect or refactor to use state-based navigation
+- **Spec Reference**: FRONTEND_EVAL.md
 
-**Status:** ✅ FIXED - `nginx.conf:40-103` adds HTTPS server block with TLS 1.2/1.3, modern cipher suites, HTTP→HTTPS redirect
-
-**Effort:** ~30 minutes
-
----
-
-### P0-2: Fix Media Stream Cleanup on Screen Share Stop
-**Reference:** CR-10, SECURITY_STANDARDS §3
-
-**Status:** ✅ FIXED - `use-webrtc.ts:172-174` calls `stopScreenShareRef.current()` when `videoTrack.onended` fires, which restores camera stream automatically
-
-**Effort:** ~2 hours
+### 1.2 Add Duplicate Connection Guard in Peer Manager
+- **File**: `packages/frontend/src/lib/webrtc/peer-manager.ts:162`
+- **Issue**: `connectToPeer` does not check if a peer connection already exists
+- **Impact**: Duplicate connections could be created for same peer
+- **Fix Required**: Add `if (this.peers.has(peerId)) return;` at start of connectToPeer method
+- **Spec Reference**: PRIORITY_FIX.md, VOIP_EVAL.md
 
 ---
 
-### P0-3: Remove Plaintext TURN Port Exposure in Dev
-**Reference:** CR-6
+## Priority 2: High (Next Sprint)
 
-**Current State:**
-- `docker-compose.yml:58-60` only exposes 5349 (TLS) ✅ GOOD
-- Need to verify production compose doesn't expose 3478
+### 2.1 Add Retry Mechanism for Peer Connections
+- **Files**: `packages/frontend/src/lib/signalling.ts:100-117`, `packages/frontend/src/hooks/use-webrtc.ts:88-109`
+- **Issue**: When `peer-list` is received and `localStream` is null, connections are skipped. No retry when `localStream` becomes available.
+- **Impact**: User may join room, enable camera later, but remain disconnected from peers
+- **Fix Required**: Store pending peers or retry connection when localStream becomes available
+- **Spec Reference**: PRIORITY_FIX.md, VOIP_EVAL.md
 
-**Verification Required:**
-- ✅ Confirmed: `docker-compose.production.yml:65-67` only exposes 5349
+### 2.2 Fix E2E Test Flakiness - Room Creation Navigation
+- **File**: `e2e/rooms.spec.ts:15`
+- **Issue**: `toHaveURL(/\/room\/([a-f0-9-]+)/)` times out intermittently on Chromium
+- **Impact**: Core room creation tests fail sporadically
+- **Fix Required**: Investigate form submission/client-side routing timing
+- **Spec Reference**: E2E_EVAL.md
 
-**Status:** ALREADY FIXED - No action needed
-
----
-
-## P1 — Critical Path (Fix Before Production)
-
-### P1-1: Fix CSP - Remove unsafe-inline
-**Reference:** H-8, SECURITY_STANDARDS §5
-
-**Status:** ✅ FIXED - `nginx.conf:72` has no 'unsafe-inline', comment explains Vite hashes inline styles
-
-**Effort:** ~1 hour
-
----
-
-### P1-2: Fix CORS Fallback to Localhost
-**Reference:** H-5, SECURITY_STANDARDS §4
-
-**Status:** ✅ FIXED - `server.ts:38-40` throws if CORS_ORIGIN not set in production
-
-**Effort:** ~1 hour
+### 2.3 Fix E2E Test - Copy Invite Link Button Timing
+- **File**: `e2e/rooms.spec.ts:70`
+- **Issue**: Button with `/copy invite link|copied/i` selector not visible
+- **Fix Required**: Add waitForSelector or delay before checking
+- **Spec Reference**: E2E_EVAL.md
 
 ---
 
-### P1-3: Fix Dev Docker Compose Network Isolation
-**Reference:** H-6, H-7
+## Priority 3: Medium (Backlog)
 
-**Status:** ✅ FIXED - `docker-compose.yml` has no port 3000 exposed for backend (lines 18-36)
+### 3.1 E2E Test Infrastructure - Non-Chromium Browsers
+- **Files**: `e2e/multi-peer.spec.ts`, `e2e/chat.spec.ts`
+- **Issue**: 16 failures across Firefox and WebKit due to:
+  - ICE servers test timeout (Firefox)
+  - Console errors test timeout (Firefox)
+  - NAT traversal suite fails (WebKit)
+  - Permission denied tests fail (WebKit)
+- **Fix Required**: Browser-specific test adjustments or skip in CI
+- **Spec Reference**: E2E_EVAL.md
 
-**Effort:** ~30 minutes
+### 3.2 E2E Test Infrastructure - Mobile Browsers
+- **Issue**: 6 failures on mobile Chrome/Safari due to `getUserMedia` constraints
+- **Fix Required**: Improve media device mocking for mobile headless
+- **Spec Reference**: E2E_EVAL.md
 
----
+### 3.3 TURN Fallback Documentation
+- **File**: `packages/frontend/src/lib/webrtc/peer-manager.ts:106`
+- **Issue**: `iceTransportPolicy: 'relay'` requires TURN server; no fallback if unavailable
+- **Impact**: Connection failures if TURN down
+- **Fix Required**: Document TURN dependency clearly, or add graceful fallback
+- **Spec Reference**: PRIORITY_FIX.md
 
-### P1-4: Add Room Membership Verification on TURN Endpoint
-**Reference:** CR-8, SECURITY_STANDARDS §3
-
-**Status:** ✅ FIXED - `turn-events.ts:56-98` verifies room membership before issuing credentials
-
-**Effort:** ~1 hour
-
----
-
-### P1-5: Add Display Name Character Allowlist
-**Reference:** H-12, SECURITY_STANDARDS §7
-
-**Status:** ✅ FIXED - `schemas.ts:205` defines displayNamePattern allowing Unicode letters/numbers + common punctuation, max 50 chars
-
-**Effort:** ~1 hour
-
----
-
-### P1-6: Change ICE Transport Policy to Relay
-**Reference:** H-2, SECURITY_STANDARDS §3
-
-**Status:** ✅ FIXED - `peer-manager.ts:99` uses `iceTransportPolicy: 'relay'` to prevent private IP leakage
-
-**Effort:** ~15 minutes
+### 3.4 Add Signaling Flow Integration Tests
+- **File**: `packages/frontend/src/__tests__/signalling.test.ts`
+- **Issue**: Tests only verify method existence, not actual signaling flow
+- **Impact**: No regression protection for signaling edge cases
+- **Fix Required**: Add integration tests with mock Socket.IO
+- **Spec Reference**: VOIP_EVAL.md
 
 ---
 
-## P2 — Hardening (Post-Launch Recommended)
+## Priority 4: UI Enhancements (Progressive)
 
-### P2-1: Implement Zod Schema Validation for All Socket Events
-**Reference:** H-13, SECURITY_STANDARDS §7
+### 4.1 Typography - Replace Inter with Outfit
+- **File**: `packages/frontend/tailwind.config.js`
+- **Spec Reference**: UI_ENHANCEMENTS.md Section 1
 
-**Status:** ✅ FIXED - All socket events already use Zod schemas from @peer/shared:
-- `RoomCreateSchema`, `RoomJoinSchema`, `RoomLeaveSchema` in room-events.ts:52,97,163
-- `SdpOfferSchema`, `SdpAnswerSchema`, `IceCandidateSchema` in room-events.ts:195,238,281
-- `ChatMessageSchema`, `ChatHistorySchema` in chat-events.ts:45,130
-- `TurnRequestSchema` in turn-events.ts:37
-- All use `validatePayload<T>()` for consistent validation
+### 4.2 Gradient Mesh Background
+- **Files**: `packages/frontend/src/components/VideoGrid.tsx`, HomePage
+- **Spec Reference**: UI_ENHANCEMENTS.md Section 2
 
-**Effort:** ~2 hours → Complete
+### 4.3 Glassmorphism on Panels
+- **Files**: `packages/frontend/src/components/Layout.tsx`, Sidebar, ChatPanel
+- **Spec Reference**: UI_ENHANCEMENTS.md Section 6
 
----
+### 4.4 VideoTile Enhancements
+- **File**: `packages/frontend/src/components/VideoTile.tsx`
+- Changes: Avatar gradient, speaking glow ring, frosted glass label, hover effect
+- **Spec Reference**: UI_ENHANCEMENTS.md Section 3
 
-### P2-2: Implement Structured Logging
-**Reference:** L-9, SECURITY_STANDARDS §10
+### 4.5 ControlBar Enhancements
+- **File**: `packages/frontend/src/components/ControlBar.tsx`
+- Changes: Glassmorphism background, hover scale/glow, tooltips
+- **Spec Reference**: UI_ENHANCEMENTS.md Section 5
 
-**Status:** ✅ FIXED - `logger.ts` uses pino with:
-- JSON output in production, pretty print in dev
-- Service name tracking (`peer-backend`)
-- Trace ID support via `createChildLogger()`
-- Used consistently in all event handlers
+### 4.6 Staggered Entrance Animations
+- **Files**: Multiple components
+- **Spec Reference**: UI_ENHANCEMENTS.md Section 3.5
 
-**Effort:** ~1 hour (audit) → Complete
-
----
-
-### P2-3: Add Metrics Endpoint Verification
-**Reference:** SECURITY_STANDARDS §10
-
-**Status:** ✅ FIXED - `routes/metrics.ts` properly tracks histogram observations and outputs correct bucket counts
-
-**Effort:** ~1 hour → Complete
+### 4.7 Enhanced Loading/Error States
+- **Files**: `packages/frontend/src/pages/RoomPage.tsx`
+- **Spec Reference**: UI_ENHANCEMENTS.md Section 8
 
 ---
 
-### P2-4: Add DTLS Cipher Hardening
-**Reference:** M-3, SECURITY_STANDARDS §3
+## Priority 5: Testing & Documentation
 
-**Status:** ✅ FIXED - `peer-manager.ts:102-114` documents that modern browsers use secure DTLS cipher suites (AEAD/GCM) by default; iceTransportPolicy: 'relay' ensures all media goes through TURN
+### 5.1 Increase Signaling Flow Test Coverage
+- **Current**: Method existence only
+- **Target**: Full integration with mock Socket.IO
+- **Spec Reference**: VOIP_EVAL.md
 
-**Effort:** ~2 hours → Complete
-
----
-
-## P3 — Polish (Future Enhancements)
-
-### P3-1: Per-Socket Rate Limiting
-**Reference:** H-16, SECURITY_STANDARDS §8
-
-**Status:** ✅ FIXED - `rate-limit.ts:71-113` adds per-socket rate limiting that tracks events per socket ID and disconnects clients exceeding 30 events per 10 seconds (configurable via SOCKET_EVENT_RATE_LIMIT_POINTS and SOCKET_EVENT_RATE_LIMIT_DURATION)
-
-**Effort:** ~4 hours → Completed in 30 minutes
-
----
-
-### P3-2: Add WebRTC Stats Reporting
-**Reference:** M-13, SECURITY_STANDARDS §10
-
-**Status:** ✅ FIXED - `peer-manager.ts:287-290` implements `getStats(peerId)` method that returns RTCStatsReport for each peer connection. Method exists and is tested.
-
-**Effort:** ~3 hours → Complete (method exists, reporting UI not implemented)
-
----
-
-### P3-3: Implement Docker Network Isolation (Dev Mode)
-**Reference:** SECURITY_STANDARDS §6
-
-**Status:** ✅ FIXED - `docker-compose.yml` uses single `peer-network` for dev mode (appropriate for development). Port 3000 not exposed to host. Production compose uses separate networks.
-
-**Effort:** ~2 hours → Complete (dev mode intentionally simple)
-
----
-
-## Testing Gaps
-
-### Existing Tests (Verified Working)
-- ✅ Unit tests: `packages/backend/src/__tests__/`
-- ✅ Integration tests: `packages/backend/src/__tests__/*.integration.test.ts`
-- ✅ E2E tests: `e2e/*.spec.ts`
-- ✅ Security tests: `tests/security/`
-
-### Missing Coverage
-- ❌ Load tests (k6) - documented but not in CI
-- ❌ OWASP ZAP scan in CI
+### 5.2 Add E2E Tests for Edge Cases
+- Room not found error page
+- Invalid room token handling
+- Permission denied UX
 
 ---
 
 ## Implementation Order
 
 ```
-Phase 1: Deploy Blockers (P0)
-├── P0-1: Enable HTTPS
-├── P0-2: Media stream cleanup
-└── P0-3: TURN port verification (DONE)
+Phase 1: Critical Fixes (1-2 days)
+├── 1.1 Fix conditional React Hook
+└── 1.2 Add duplicate connection guard
 
-Phase 2: Critical Path (P1)
-├── P1-1: Fix CSP
-├── P1-2: CORS fallback fix
-├── P1-3: Dev network isolation
-├── P1-4: TURN endpoint auth
-├── P1-5: Display name allowlist
-└── P1-6: ICE relay policy
+Phase 2: WebRTC Reliability (2-3 days)
+├── 2.1 Add retry mechanism for peer connections
+└── 2.3 Fix E2E copy invite button timing
 
-Phase 3: Hardening (P2)
-├── P2-1: Zod schema consistency
-├── P2-2: Structured logging
-├── P2-3: Metrics endpoint
-└── P2-4: DTLS cipher hardening
+Phase 3: E2E Infrastructure (3-5 days)
+├── 2.2 Fix room creation navigation flaky
+├── 3.1 Fix non-chromium browser tests
+└── 3.2 Fix mobile tests
 
-Phase 4: Polish (P3)
-├── P3-1: Per-socket rate limiting
-├── P3-2: WebRTC stats
-└── P3-3: Dev network isolation
+Phase 4: Documentation & Cleanup (1-2 days)
+├── 3.3 Document TURN dependency
+├── 3.4 Add signaling flow tests
+└── 5.1-5.2 Testing gaps
+
+Phase 5: UI Polish (Sprint ongoing)
+├── 4.1-4.7 Progressive enhancements
 ```
 
 ---
 
-## Acceptance Criteria Coverage
+## Dependencies
 
-| AC | Criterion | Status | Notes |
-|----|-----------|--------|-------|
-| AC-01 | Room Creation | ✅ | Working |
-| AC-02 | Room Join | ✅ | Working |
-| AC-03 | Voice Call | ✅ | Working |
-| AC-04 | Video Call | ✅ | Working |
-| AC-05 | Mute Toggle | ✅ | Working |
-| AC-06 | Camera Toggle | ✅ | Working |
-| AC-07 | Screen Share | ✅ | Working |
-| AC-08 | Screen Share Stop | ✅ | Fixed in use-webrtc.ts:172-174 |
-| AC-09 | Text Chat | ✅ | Working |
-| AC-10 | Chat Persistence | ✅ | Working |
-| AC-11 | Ephemeral Room | ✅ | Working |
-| AC-12 | NAT Traversal | ✅ | Working with TURN |
-| AC-13 | Performance | ✅ | E2E tests exist |
-| AC-14 | OWASP ZAP | ❌ | Need test in CI |
-| AC-15 | Security Headers | ✅ | Fixed - HTTPS enabled (P0-1), CSP fixed (P1-1) |
-| AC-16 | Cross-browser | ✅ | Configured in playwright |
-| AC-17 | Mobile | ⚠️ | Manual testing needed |
-| AC-18 | Load Test | ❌ | k6 not in CI |
-| AC-19 | Accessibility | ✅ | E2E tests exist |
-| AC-20 | Permission Denied UX | ✅ | E2E tests exist |
+- Phase 1 must complete before Phase 2
+- Phase 2 must complete before Phase 3
+- Phase 4 can run parallel to Phase 3
+- Phase 5 is independent
 
 ---
 
-## New Findings Since Last Review
+## Notes
 
-### From PROD_SECURITY_AUDIT.md (2026-03-23)
-1. **Dockerfile.frontend missing USER** - No USER directive before CMD, nginx runs as root
-2. **certbot uses latest tag** - docker-compose.production.yml:123 uses mutable 'latest'
-3. **Coturn TCP 5349 exposed** - docker-compose.production.yml:67 exposes TCP unnecessarily
-
-### Previously Fixed Issues (verified)
-1. **Socket.IO Rate Limiter** - Wired in server.ts:48
-2. **TURN Secret Validation** - Throws if missing (server.ts:3-6)
-3. **SDP Private IP Validation** - Implemented in room-events.ts:204-208
-4. **Room Membership Checks** - Implemented for all signaling events
-5. **Event Listener Cleanup** - Bound handlers stored in constructor
-6. **Non-root Container User** - nginx user created in Dockerfile
-7. **Production Network Isolation** - proxy-network and turn-network separated
-8. **Container Resource Limits** - Defined in production compose
-9. **Sourcemaps Disabled** - vite.config.ts:24
-10. **HTTPS Enabled** - nginx.conf:40-103 adds HTTPS server block with TLS 1.2/1.3
-11. **Media stream cleanup** - screen share stop restores camera (use-webrtc.ts:172-174)
-12. **CSP unsafe-inline** - removed from nginx.conf:72
-13. **CORS fallback** - throws if CORS_ORIGIN not set in production
-14. **TURN endpoint auth** - room membership check in turn-events.ts
-15. **Display name allowlist** - enforced in shared/index.ts:205
-16. **ICE relay policy** - set to 'relay' in peer-manager.ts:99
-
----
-
-*Generated by Claude Code — 2026-03-23*
+- Backend evaluation shows all tests passing (135 tests)
+- Frontend unit tests pass (152 tests)
+- Core functionality works; issues are edge cases and UI polish
+- E2E tests on Chromium (primary) are mostly stable, failures are timing-related
