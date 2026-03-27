@@ -39,6 +39,62 @@
   }
 }
 
+@layer utilities {
+  /* Staggered entrance animation for video tiles */
+  @keyframes tileEnter {
+    from {
+      opacity: 0;
+      transform: scale(0.95);
+    }
+    to {
+      opacity: 1;
+      transform: scale(1);
+    }
+  }
+
+  .animate-tile-enter {
+    animation: tileEnter 0.3s ease-out forwards;
+  }
+
+  /* Fade-in animation */
+  @keyframes fadeIn {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+
+  .animate-fade-in {
+    animation: fadeIn 0.4s ease-out forwards;
+  }
+
+  /* Fade-in with delays */
+  .animate-delay-100 {
+    animation-delay: 100ms;
+  }
+
+  .animate-delay-200 {
+    animation-delay: 200ms;
+  }
+
+  .animate-delay-300 {
+    animation-delay: 300ms;
+  }
+
+  /* Button click spring effect */
+  @keyframes buttonSpring {
+    0% { transform: scale(1); }
+    50% { transform: scale(0.95); }
+    100% { transform: scale(1); }
+  }
+
+  .btn-click {
+    animation: buttonSpring 0.2s ease-out;
+  }
+}
+
 /* Scrollbar styling */
 ::-webkit-scrollbar {
   width: 8px;

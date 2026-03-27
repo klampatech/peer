@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import { AlertCircle } from 'lucide-react';
 import { useRoomStore, connect, disconnect } from '../stores/room-store';
 import { useAudioLevel } from '../hooks/use-audio-level';
 import Layout from '../components/Layout';
@@ -64,9 +65,14 @@ export default function RoomPage({ displayName }: RoomPageProps) {
   if (isConnecting) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
-        <div className="text-center">
-          <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-textSecondary">Connecting to room...</p>
+        <div className="flex flex-col items-center gap-4">
+          {/* Animated pulsing rings */}
+          <div className="relative w-16 h-16">
+            <div className="absolute inset-0 border-2 border-primary/20 rounded-full" />
+            <div className="absolute inset-2 border-2 border-primary/40 border-t-transparent rounded-full animate-spin" />
+            <div className="absolute inset-4 border-2 border-primary border-t-transparent rounded-full animate-spin" style={{ animationDirection: 'reverse', animationDuration: '1.5s' }} />
+          </div>
+          <p className="text-textSecondary animate-pulse">Connecting to room...</p>
         </div>
       </div>
     );
@@ -76,7 +82,10 @@ export default function RoomPage({ displayName }: RoomPageProps) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="text-center max-w-md p-6">
-          <h2 className="text-xl font-semibold text-error mb-2">Connection Error</h2>
+          <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-error/10 flex items-center justify-center">
+            <AlertCircle className="w-8 h-8 text-error" />
+          </div>
+          <h2 className="text-xl font-semibold text-textPrimary mb-2">Connection Error</h2>
           <p className="text-textSecondary mb-4">{error}</p>
           <button onClick={() => navigate('/')} className="btn btn-primary">
             Back to Home

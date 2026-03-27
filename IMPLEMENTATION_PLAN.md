@@ -135,13 +135,15 @@ The Peer application is a functional P2P VOIP application with a working signali
 - **Spec Reference**: UI_ENHANCEMENTS.md Section 5
 - **Fix Applied**: Implemented glassmorphism with backdrop-blur (line 149), hover scale/glow effects (line 153, 162, 171, 180, 189)
 
-### 4.6 Staggered Entrance Animations
-- **Files**: Multiple components
+### 4.6 Staggered Entrance Animations ✅ DONE
+- **Files**: `packages/frontend/src/styles/globals.css`
 - **Spec Reference**: UI_ENHANCEMENTS.md Section 3.5
+- **Fix Applied**: Added CSS animations `tileEnter`, `fade-in`, `buttonSpring` with delay utilities `animate-delay-100/200/300`
 
-### 4.7 Enhanced Loading/Error States
+### 4.7 Enhanced Loading/Error States ✅ DONE
 - **Files**: `packages/frontend/src/pages/RoomPage.tsx`
 - **Spec Reference**: UI_ENHANCEMENTS.md Section 8
+- **Fix Applied**: Added enhanced connecting animation with pulsing rings, added AlertCircle icon for error state
 
 ---
 
