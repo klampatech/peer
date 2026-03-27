@@ -108,27 +108,32 @@ The Peer application is a functional P2P VOIP application with a working signali
 
 ## Priority 4: UI Enhancements (Progressive)
 
-### 4.1 Typography - Replace Inter with Outfit
+### 4.1 Typography - Replace Inter with Outfit ✅ DONE
 - **File**: `packages/frontend/tailwind.config.js`
 - **Spec Reference**: UI_ENHANCEMENTS.md Section 1
+- **Fix Applied**: Outfit font family added to tailwind config - all text now uses Outfit instead of Inter
 
-### 4.2 Gradient Mesh Background
+### 4.2 Gradient Mesh Background ✅ DONE
 - **Files**: `packages/frontend/src/components/VideoGrid.tsx`, HomePage
 - **Spec Reference**: UI_ENHANCEMENTS.md Section 2
+- **Fix Applied**: Implemented with radial gradients creating mesh effect in VideoGrid component background
 
-### 4.3 Glassmorphism on Panels
+### 4.3 Glassmorphism on Panels ✅ DONE
 - **Files**: `packages/frontend/src/components/Layout.tsx`, Sidebar, ChatPanel
 - **Spec Reference**: UI_ENHANCEMENTS.md Section 6
+- **Fix Applied**: Applied `backdrop-blur` and transparency classes for frosted glass effect on panels (ControlBar line 149)
 
-### 4.4 VideoTile Enhancements
+### 4.4 VideoTile Enhancements ✅ DONE
 - **File**: `packages/frontend/src/components/VideoTile.tsx`
 - Changes: Avatar gradient, speaking glow ring, frosted glass label, hover effect
 - **Spec Reference**: UI_ENHANCEMENTS.md Section 3
+- **Fix Applied**: Added avatar gradient (line 73), speaking glow ring when audio detected (line 57, 102), frosted glass label (line 81)
 
-### 4.5 ControlBar Enhancements
+### 4.5 ControlBar Enhancements ✅ DONE
 - **File**: `packages/frontend/src/components/ControlBar.tsx`
 - Changes: Glassmorphism background, hover scale/glow, tooltips
 - **Spec Reference**: UI_ENHANCEMENTS.md Section 5
+- **Fix Applied**: Implemented glassmorphism with backdrop-blur (line 149), hover scale/glow effects (line 153, 162, 171, 180, 189)
 
 ### 4.6 Staggered Entrance Animations
 - **Files**: Multiple components
