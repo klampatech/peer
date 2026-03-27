@@ -17,6 +17,7 @@ vi.mock('../lib/webrtc/peer-manager', () => ({
     initialize: vi.fn(),
     cleanup: vi.fn(),
     connectToPeer: vi.fn().mockResolvedValue(undefined),
+    setLocalStream: vi.fn(),
   },
 }));
 

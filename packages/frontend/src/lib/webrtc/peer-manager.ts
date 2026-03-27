@@ -29,6 +29,8 @@ class PeerManager {
   private onPeerConnected: PeerConnectionCallback | null = null;
   private onPeerDisconnected: PeerDisconnectedCallback | null = null;
   private signalingReady: boolean = false;
+  // Track peers waiting for localStream to become available
+  private pendingPeers: Set<string> = new Set();
   // Store bound handlers for proper cleanup
   private boundSdpOfferHandler: (event: Event) => Promise<void>;
   private boundSdpAnswerHandler: (event: Event) => Promise<void>;
@@ -55,6 +57,15 @@ class PeerManager {
     this.onPeerDisconnected = onPeerDisconnected || null;
     this.setupSignalingListeners();
     this.signalingReady = true;
+
+    // If localStream is now available, retry any pending peer connections
+    if (this.localStream && this.pendingPeers.size > 0) {
+      console.log('Retrying pending peer connections:', [...this.pendingPeers]);
+      this.pendingPeers.forEach((peerId) => {
+        this.connectToPeer(peerId);
+      });
+      this.pendingPeers.clear();
+    }
   }
 
   /**
@@ -81,11 +92,30 @@ class PeerManager {
     this.peers.clear();
     this.localStream = null;
     this.signalingReady = false;
+    this.pendingPeers.clear();
 
     // Remove event listeners using the same bound handlers
     window.removeEventListener('sdp:offer', this.boundSdpOfferHandler as EventListener);
     window.removeEventListener('sdp:answer', this.boundSdpAnswerHandler as EventListener);
     window.removeEventListener('ice-candidate', this.boundIceCandidateHandler as EventListener);
+  }
+
+  /**
+   * Update the local stream (e.g., when user enables camera/mic after joining)
+   * This triggers retry of any pending peer connections
+   */
+  setLocalStream(stream: MediaStream | null): void {
+    const wasNull = !this.localStream;
+    this.localStream = stream;
+
+    // If localStream just became available, retry pending peers
+    if (wasNull && this.localStream && this.pendingPeers.size > 0) {
+      console.log('Local stream now available, retrying pending peer connections:', [...this.pendingPeers]);
+      this.pendingPeers.forEach((peerId) => {
+        this.connectToPeer(peerId);
+      });
+      this.pendingPeers.clear();
+    }
   }
 
   /**
@@ -166,8 +196,21 @@ class PeerManager {
       return;
     }
 
+    // Check if already pending - avoid duplicate pending entries
+    if (this.pendingPeers.has(peerId)) {
+      console.log('Already pending connection to peer, skipping:', peerId);
+      return;
+    }
+
     if (!this.signalingReady) {
       console.warn('Signaling not ready, queuing connection to:', peerId);
+      return;
+    }
+
+    // If localStream is not available, queue this peer for retry
+    if (!this.localStream) {
+      console.log('localStream not available, queueing peer for retry:', peerId);
+      this.pendingPeers.add(peerId);
       return;
     }
 

@@ -78,7 +78,13 @@ export const useRoomStore = create<RoomState>((set) => ({
   setConnected: (connected) => set({ isConnected: connected }),
   setRoomToken: (token) => set({ roomToken: token }),
   setPeerId: (id) => set({ peerId: id }),
-  setLocalStream: (stream) => set({ localStream: stream }),
+  setLocalStream: (stream) => {
+    set({ localStream: stream });
+    // Also update peer manager with the new stream for retry logic
+    if (stream) {
+      peerManager.setLocalStream(stream);
+    }
+  },
 
   setAudioEnabled: (enabled) => {
     set({ audioEnabled: enabled });
