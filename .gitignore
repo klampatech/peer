@@ -47,3 +47,8 @@ data/
 # Temporary
 tmp/
 temp/
+
+
+# Local additions (not on remote)
+e2e/reports/
+e2e/screenshots/
